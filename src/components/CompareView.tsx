@@ -37,7 +37,7 @@ export function CompareView({ a, b, comparison, onReset }: Props) {
     <div className="min-h-screen pb-20">
       <header className="sticky top-0 z-20 border-b border-ink-100 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Logo />
+          <Logo onClick={onReset} />
           <button onClick={onReset} className="btn-ghost py-2.5 text-sm">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
               <path d="M5 12h14m-8-6-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

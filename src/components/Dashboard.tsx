@@ -7,6 +7,7 @@ import { ProjectionChart } from './ProjectionChart'
 interface Props {
   analysis: Analysis
   onReset: () => void
+  onOpenProfile: () => void
 }
 
 const TAG_STYLES: Record<string, string> = {
@@ -23,17 +24,18 @@ function riskColor(r: number): string {
   return '#ef4444'
 }
 
-export function Dashboard({ analysis, onReset }: Props) {
+export function Dashboard({ analysis, onReset, onOpenProfile }: Props) {
   const theme = RISK_THEME[analysis.level]
   const resilience = useCountUp(analysis.resilience, 1300)
   const risk2040 = useCountUp(analysis.riskIn2040, 1300)
+  const current = useCountUp(analysis.currentRisk, 1300)
 
   return (
     <div className="min-h-screen pb-20">
       {/* Barre supérieure */}
       <header className="sticky top-0 z-20 border-b border-ink-100 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Logo />
+          <Logo onClick={onReset} />
           <button onClick={onReset} className="btn-ghost py-2.5 text-sm">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
               <path d="M5 12h14m-8-6-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -88,9 +90,9 @@ export function Dashboard({ analysis, onReset }: Props) {
             </div>
 
             <div className="grid grid-cols-3 gap-4">
-              <MetricCard label={`Résilience humaine`} value={`${Math.round(resilience)}%`} hint="part difficile à automatiser" accent="#10b981" />
-              <MetricCard label={`Risque en ${HORIZON_YEAR}`} value={`${Math.round(risk2040)}%`} hint={`contre ${analysis.projection[0].value}% en ${BASE_YEAR}`} accent={theme.hex} />
-              <MetricCard label="Niveau d'exposition" value={analysis.level} hint="catégorie globale" accent={theme.hex} />
+              <MetricCard label="Déjà automatisable" value={`${Math.round(current)}%`} hint="à date · en hausse ↑" accent={theme.hex} />
+              <MetricCard label={`Projection ${HORIZON_YEAR}`} value={`${Math.round(risk2040)}%`} hint="potentiel à terme" accent={theme.hex} />
+              <MetricCard label="Résilience humaine" value={`${Math.round(resilience)}%`} hint="part difficile à automatiser" accent="#10b981" />
             </div>
           </div>
         </section>
@@ -104,11 +106,11 @@ export function Dashboard({ analysis, onReset }: Props) {
                 <p className="text-sm text-ink-500">Part estimée des tâches automatisables, de {BASE_YEAR} à {HORIZON_YEAR}.</p>
               </div>
               <span className={`pill ${theme.chip}`}>
-                {analysis.riskIn2040 > analysis.projection[0].value ? '↑' : '→'} +{analysis.riskIn2040 - analysis.projection[0].value} pts d'ici {HORIZON_YEAR}
+                {analysis.riskIn2040 > analysis.currentRisk ? '↑' : '→'} +{Math.max(0, analysis.riskIn2040 - analysis.currentRisk)} pts d'ici {HORIZON_YEAR}
               </span>
             </div>
             <div className="mt-4">
-              <ProjectionChart data={analysis.projection} level={analysis.level} />
+              <ProjectionChart data={analysis.projection} level={analysis.level} markerYear={analysis.currentYear} markerValue={analysis.currentRisk} />
             </div>
           </div>
         </section>
@@ -197,9 +199,14 @@ export function Dashboard({ analysis, onReset }: Props) {
 
         {/* CTA bas de page */}
         <section className="animate-fade-up mt-10 text-center" style={{ animationDelay: '400ms' }}>
-          <button onClick={onReset} className="btn-primary mx-auto">
-            Analyser un autre métier
-          </button>
+          <div className="flex flex-wrap justify-center gap-3">
+            <button onClick={onOpenProfile} className="btn-primary">
+              📈 Compléter mon profil & suivre dans le temps
+            </button>
+            <button onClick={onReset} className="btn-ghost">
+              Analyser un autre métier
+            </button>
+          </div>
           <p className="mx-auto mt-6 max-w-xl text-xs text-ink-400">
             Estimations générées par un modèle heuristique à visée pédagogique. Elles ne constituent
             pas une prédiction certaine ni un conseil en orientation professionnelle.

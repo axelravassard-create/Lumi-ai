@@ -129,23 +129,36 @@ export interface YearPoint {
   value: number
 }
 
-function projection(score: number, f: Factors): YearPoint[] {
-  // Plafond long terme = part des tâches automatisable.
-  const ceiling = score
-  // Adoption déjà réalisée en 2026 : plus élevée pour les métiers numériques.
-  const start = clamp(ceiling * (0.16 + (f.digital / 100) * 0.24))
-  // Rapidité de diffusion : accélérée par le numérique et la routine.
-  const k = 0.28 + (f.digital / 100) * 0.22 + (f.routine / 100) * 0.14
-  const midpoint = BASE_YEAR + 7 - (f.digital / 100) * 3
+// Paramètres de la courbe logistique d'adoption pour un métier.
+function curveParams(score: number, f: Factors) {
+  return {
+    ceiling: score, //                         plafond long terme = part automatisable
+    start: clamp(score * (0.16 + (f.digital / 100) * 0.24)), // adoption déjà réalisée en 2026
+    k: 0.28 + (f.digital / 100) * 0.22 + (f.routine / 100) * 0.14, // rapidité de diffusion
+    midpoint: BASE_YEAR + 7 - (f.digital / 100) * 3,
+  }
+}
 
+// Valeur de la courbe à une année (entière ou fractionnaire), normalisée
+// pour partir de `start` en 2026 et tendre vers `ceiling`.
+function riskAtYear(year: number, p: ReturnType<typeof curveParams>): number {
+  const logistic = 1 / (1 + Math.exp(-p.k * (year - p.midpoint)))
+  const logisticStart = 1 / (1 + Math.exp(-p.k * (BASE_YEAR - p.midpoint)))
+  const t = (logistic - logisticStart) / (1 - logisticStart)
+  return clamp(p.start + (p.ceiling - p.start) * t)
+}
+
+// Date courante exprimée en année fractionnaire (ex. mi-juin 2026 ≈ 2026.46).
+export function fractionalNow(): number {
+  const d = new Date()
+  return d.getFullYear() + (d.getMonth() + d.getDate() / 31) / 12
+}
+
+function projection(score: number, f: Factors): YearPoint[] {
+  const p = curveParams(score, f)
   const points: YearPoint[] = []
   for (let year = BASE_YEAR; year <= HORIZON_YEAR; year++) {
-    const logistic = 1 / (1 + Math.exp(-k * (year - midpoint)))
-    const logisticStart = 1 / (1 + Math.exp(-k * (BASE_YEAR - midpoint)))
-    // normalisation pour que la courbe parte de `start` et tende vers `ceiling`
-    const t = (logistic - logisticStart) / (1 - logisticStart)
-    const value = start + (ceiling - start) * t
-    points.push({ year, value: Math.round(clamp(value)) })
+    points.push({ year, value: Math.round(riskAtYear(year, p)) })
   }
   return points
 }
@@ -281,6 +294,8 @@ export interface Analysis {
   score: number
   level: RiskLevel
   resilience: number
+  currentRisk: number
+  currentYear: number
   projection: YearPoint[]
   riskIn2040: number
   tasks: TaskRisk[]
@@ -310,12 +325,16 @@ export function analyze(input: string): Analysis {
   const score = exposureScore(f)
   const level = riskLevel(score)
   const proj = projection(score, f)
+  const currentYear = Math.max(BASE_YEAR, fractionalNow())
+  const currentRisk = Math.round(riskAtYear(currentYear, curveParams(score, f)))
   return {
     profession,
     exact,
     score,
     level,
     resilience: 100 - score,
+    currentRisk,
+    currentYear,
     projection: proj,
     riskIn2040: proj[proj.length - 1].value,
     tasks: taskBreakdown(f),

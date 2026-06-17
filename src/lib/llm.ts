@@ -59,8 +59,8 @@ Règles :
 function factorSummary(a: Analysis): string {
   const f = a.profession.factors
   return `Métier: "${a.profession.label}" (domaine: ${a.profession.domain})
-Score de remplaçabilité par l'IA: ${a.score}/100 (niveau: ${a.level})
-Risque aujourd'hui (${a.projection[0].year}): ${a.projection[0].value}% — projeté en ${a.projection[a.projection.length - 1].year}: ${a.riskIn2040}%
+Exposition structurelle à l'IA: ${a.score}/100 (niveau: ${a.level})
+Part déjà automatisable aujourd'hui: ${a.currentRisk}% — projetée en ${a.projection[a.projection.length - 1].year}: ${a.riskIn2040}%
 Indice de résilience humaine: ${a.resilience}/100
 Profil du métier (0=absent, 100=très présent):
 - Routine/répétitivité: ${f.routine}

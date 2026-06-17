@@ -68,7 +68,7 @@ export default function App() {
     await sleep(Math.max(0, (hasApiKey() ? 1100 : 1900) - (Date.now() - started)))
     addBilan({
       role: result.profession.label,
-      score: result.score,
+      score: result.currentRisk,
       level: result.level,
       resilience: result.resilience,
       riskIn2040: result.riskIn2040,
@@ -128,7 +128,9 @@ export default function App() {
 
       {view === 'analyzing' && <AnalyzingScreen label={label} step={step} />}
 
-      {view === 'dashboard' && analysis && <Dashboard analysis={analysis} onReset={reset} />}
+      {view === 'dashboard' && analysis && (
+        <Dashboard analysis={analysis} onReset={reset} onOpenProfile={() => setView('profile')} />
+      )}
 
       {view === 'compare' && compareData && (
         <CompareView a={compareData.a} b={compareData.b} comparison={compareData.comparison} onReset={reset} />

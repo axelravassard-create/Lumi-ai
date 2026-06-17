@@ -34,7 +34,7 @@ export function ProfileScreen({ onBack, onAnalyze }: Props) {
     <div className="min-h-screen pb-20">
       <header className="sticky top-0 z-20 border-b border-ink-100 bg-white/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
-          <Logo />
+          <Logo onClick={onBack} />
           <button onClick={onBack} className="btn-ghost py-2.5 text-sm">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
               <path d="M5 12h14m-8-6-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -163,9 +163,12 @@ function HistorySection({ history, onClear }: { history: BilanRecord[]; onClear:
     <section className="animate-fade-up mt-6" style={{ animationDelay: '60ms' }}>
       <div className="card p-6">
         <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ink-900">
-            <span>📈</span> Historique de vos bilans
-          </h2>
+          <div>
+            <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ink-900">
+              <span>📈</span> Historique de vos bilans
+            </h2>
+            <p className="mt-0.5 text-xs text-ink-400">Part de votre métier déjà automatisable, à chaque bilan — elle évolue dans le temps.</p>
+          </div>
           {history.length > 0 && (
             <button onClick={onClear} className="text-xs font-medium text-ink-400 hover:text-rose-600">
               Effacer

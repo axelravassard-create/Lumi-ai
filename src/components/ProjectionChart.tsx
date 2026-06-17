@@ -5,10 +5,12 @@ import { RISK_THEME } from '../lib/ui'
 interface Props {
   data: YearPoint[]
   level: RiskLevel
+  markerYear?: number
+  markerValue?: number
 }
 
 // Graphique d'aire SVG : progression du risque d'automatisation année par année.
-export function ProjectionChart({ data, level }: Props) {
+export function ProjectionChart({ data, level, markerYear, markerValue }: Props) {
   const theme = RISK_THEME[level]
   const [hover, setHover] = useState<number | null>(null)
 
@@ -71,6 +73,19 @@ export function ProjectionChart({ data, level }: Props) {
             animation: 'dash 1.6s cubic-bezier(0.16,1,0.3,1) forwards',
           }}
         />
+
+        {/* marqueur "Aujourd'hui" */}
+        {markerYear != null && markerValue != null && (
+          <g>
+            <circle cx={x(markerYear)} cy={y(markerValue)} r="5" fill={theme.hex} stroke="white" strokeWidth="2" />
+            <g transform={`translate(${x(markerYear)}, ${y(markerValue) + 18})`}>
+              <rect x="-32" y="0" width="64" height="18" rx="9" fill="#1c2033" />
+              <text x="0" y="13" textAnchor="middle" className="fill-white" fontSize="10" fontWeight="600">
+                Aujourd'hui
+              </text>
+            </g>
+          </g>
+        )}
 
         {/* repère interactif */}
         <line
