@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { Analysis, BASE_YEAR, HORIZON_YEAR } from '../lib/engine'
 import { RISK_THEME, useCountUp } from '../lib/ui'
 import { REFERENCES } from '../lib/sources'
 import { Logo } from './Logo'
 import { RadialGauge } from './RadialGauge'
 import { ProjectionChart } from './ProjectionChart'
+import { SharePanel } from './SharePanel'
 
 interface Props {
   analysis: Analysis
@@ -30,6 +32,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile }: Props) {
   const resilience = useCountUp(analysis.resilience, 1300)
   const risk2040 = useCountUp(analysis.riskIn2040, 1300)
   const current = useCountUp(analysis.currentRisk, 1300)
+  const [showShare, setShowShare] = useState(false)
 
   return (
     <div className="min-h-screen pb-20">
@@ -64,6 +67,12 @@ export function Dashboard({ analysis, onReset, onOpenProfile }: Props) {
                 profil estimé
               </span>
             )}
+            <button onClick={() => setShowShare(true)} className="btn-ghost ml-auto py-2 text-sm">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Partager
+            </button>
           </div>
         </section>
 
@@ -260,6 +269,10 @@ export function Dashboard({ analysis, onReset, onOpenProfile }: Props) {
           </p>
         </section>
       </main>
+
+      {showShare && (
+        <SharePanel role={analysis.profession.label} score={analysis.score} onClose={() => setShowShare(false)} />
+      )}
     </div>
   )
 }
