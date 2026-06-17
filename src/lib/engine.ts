@@ -1,4 +1,5 @@
 import { Factors, Profession, PROFESSIONS } from './professions'
+import type { CareerProfile } from './profile'
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  YourCareer — Moteur d'analyse de l'exposition à l'IA
@@ -304,6 +305,8 @@ export interface Analysis {
   pivots: Pivot[]
   verdict: string
   aiEnhanced?: boolean
+  personalized?: boolean
+  adjustment?: number
 }
 
 function verdictText(level: RiskLevel, label: string): string {
@@ -364,6 +367,32 @@ export function withScore(a: Analysis, rawScore: number): Analysis {
     projection: proj,
     riskIn2040: proj[proj.length - 1].value,
   }
+}
+
+// ── Personnalisation du score selon le profil ────────────────────────────────
+// Le métier donne le risque « de base ». Le profil de la personne l'ajuste :
+// un diplôme élevé, une école sélective, de l'expérience, de la séniorité et
+// une bonne maîtrise de l'IA réduisent le risque personnel ; l'inverse l'augmente.
+const ADJUST: Record<string, Record<string, number>> = {
+  educationLevel: { 'Sans diplôme / CAP / BEP': 6, 'Bac': 2, 'Bac+2 / Bac+3': 0, 'Bac+5 (Master)': -5, 'Doctorat / Grande école': -9 },
+  schoolPrestige: { 'Établissement très sélectif (top)': -6, 'Établissement reconnu': -2, 'Établissement standard': 0, 'Formation courte / autodidacte': 2 },
+  level: { 'Débutant·e': 6, 'Confirmé·e': 0, 'Senior': -5, 'Manager / Direction': -9 },
+  experience: { "Moins d'1 an": 4, '1–3 ans': 1, '3–7 ans': 0, '7–15 ans': -3, 'Plus de 15 ans': -5 },
+  aiSkill: { 'Avancée — au quotidien': -8, 'Intermédiaire': -3, 'Débutante': 1, 'Aucune': 5 },
+}
+
+export function personalAdjustment(p: CareerProfile): number {
+  let delta = 0
+  for (const key of ['educationLevel', 'schoolPrestige', 'level', 'experience', 'aiSkill'] as const) {
+    delta += ADJUST[key]?.[p[key]] ?? 0
+  }
+  return Math.max(-22, Math.min(14, delta))
+}
+
+// Renvoie une analyse dont le score est ajusté selon le profil de l'utilisateur.
+export function applyProfileAdjustment(a: Analysis, p: CareerProfile): Analysis {
+  const delta = personalAdjustment(p)
+  return { ...withScore(a, a.score + delta), personalized: true, adjustment: delta }
 }
 
 // Quelques suggestions affichées sur la page d'accueil.

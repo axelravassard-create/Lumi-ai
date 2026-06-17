@@ -116,7 +116,12 @@ export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: 
               options={['Débutant·e', 'Confirmé·e', 'Senior', 'Manager / Direction']} />
             <Select label="Statut" value={profile.status} onChange={(v) => set('status', v)}
               options={['Salarié·e', 'Indépendant·e', 'En recherche', 'Étudiant·e', 'En reconversion']} />
+            <Select label="Niveau de diplôme" value={profile.educationLevel} onChange={(v) => set('educationLevel', v)}
+              options={['Sans diplôme / CAP / BEP', 'Bac', 'Bac+2 / Bac+3', 'Bac+5 (Master)', 'Doctorat / Grande école']} />
+            <Select label="Sélectivité de la formation" value={profile.schoolPrestige} onChange={(v) => set('schoolPrestige', v)}
+              options={['Établissement très sélectif (top)', 'Établissement reconnu', 'Établissement standard', 'Formation courte / autodidacte']} />
           </div>
+          <p className="mt-1 text-xs text-ink-400">Le niveau et la sélectivité de votre formation affinent l'estimation de votre risque personnel.</p>
         </Section>
 
         {/* Couche 2 — carburant de l'IA */}
@@ -133,6 +138,8 @@ export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: 
           </Field>
           <TagField label="Postes précédents" value={profile.pastRoles} onChange={(v) => set('pastRoles', v)}
             placeholder="Ex : technicien support, chef de projet junior…" />
+          <Select label="Maîtrise des outils d'IA" value={profile.aiSkill} onChange={(v) => set('aiSkill', v)}
+            options={['Avancée — au quotidien', 'Intermédiaire', 'Débutante', 'Aucune']} />
         </Section>
 
         {/* Couche 3 — aspirations & contraintes */}

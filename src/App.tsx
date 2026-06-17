@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { analyze, withScore, Analysis } from './lib/engine'
+import { analyze, withScore, applyProfileAdjustment, Analysis } from './lib/engine'
 import { describeError, generateComparison, generateNarrative, hasApiKey, ComparisonResult } from './lib/llm'
 import { LandingPage } from './components/LandingPage'
 import { Dashboard } from './components/Dashboard'
@@ -81,14 +81,18 @@ export default function App() {
       try {
         const context = withProfile ? profileToContext(loadProfile()) : undefined
         const n = await generateNarrative(base, context || undefined)
-        // Le score affiché est désormais celui estimé par Claude.
+        // Le score affiché est celui estimé par Claude (déjà personnalisé via le profil).
         result = withScore(
           { ...base, verdict: n.verdict, recommendations: n.recommendations, skills: n.skills, aiEnhanced: true },
           n.score,
         )
+        if (withProfile) result = { ...result, personalized: true }
       } catch (e) {
         note = describeError(e)
       }
+    } else if (withProfile) {
+      // Mode démo : on personnalise le score localement selon le profil.
+      result = applyProfileAdjustment(base, loadProfile())
     }
 
     await sleep(Math.max(0, (hasApiKey() ? 1100 : 1900) - (Date.now() - started)))
