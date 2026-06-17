@@ -345,6 +345,27 @@ export function analyze(input: string): Analysis {
   }
 }
 
+// Recalcule les champs dérivés d'une analyse à partir d'un score fourni
+// par Claude (exposition structurelle 0–100). Utilisé quand l'IA est connectée
+// pour que le chiffre affiché soit réellement produit par Claude.
+export function withScore(a: Analysis, rawScore: number): Analysis {
+  const score = Math.round(clamp(rawScore, 3, 97))
+  const f = a.profession.factors
+  const proj = projection(score, f)
+  const currentYear = Math.max(BASE_YEAR, fractionalNow())
+  const currentRisk = Math.round(riskAtYear(currentYear, curveParams(score, f)))
+  return {
+    ...a,
+    score,
+    level: riskLevel(score),
+    resilience: 100 - score,
+    currentRisk,
+    currentYear,
+    projection: proj,
+    riskIn2040: proj[proj.length - 1].value,
+  }
+}
+
 // Quelques suggestions affichées sur la page d'accueil.
 export const SUGGESTIONS = [
   'Développeur·se',

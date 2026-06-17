@@ -71,6 +71,19 @@ export function Dashboard({ analysis, onReset, onOpenProfile }: Props) {
           <div className="card flex flex-col items-center justify-center gap-2 p-8">
             <span className="text-sm font-medium text-ink-500">Risque de remplacement par l'IA</span>
             <RadialGauge score={analysis.score} level={analysis.level} />
+            <span className="mt-1 inline-flex items-center gap-1.5 text-xs text-ink-400" title={analysis.aiEnhanced ? 'Score estimé par le modèle Claude Opus 4.8' : 'Estimation calculée localement (connectez Claude pour une estimation par l\'IA)'}>
+              {analysis.aiEnhanced ? (
+                <>
+                  <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
+                  Estimation · Claude Opus 4.8
+                </>
+              ) : (
+                <>
+                  <span className="h-1.5 w-1.5 rounded-full bg-ink-300" />
+                  Estimation locale · mode démo
+                </>
+              )}
+            </span>
           </div>
 
           <div className="flex flex-col gap-6">

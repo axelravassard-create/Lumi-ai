@@ -74,6 +74,7 @@ Tâches les plus automatisables: ${a.tasks.slice(0, 3).map((t) => `${t.label} ($
 }
 
 export interface NarrativeResult {
+  score: number
   verdict: string
   recommendations: Recommendation[]
   skills: Skill[]
@@ -83,6 +84,10 @@ const NARRATIVE_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   properties: {
+    score: {
+      type: 'integer',
+      description: 'Ta propre estimation de l\'exposition structurelle du métier à l\'IA, de 0 (aucun risque) à 100 (entièrement automatisable). L\'estimation locale fournie n\'est qu\'une référence : donne TON évaluation.',
+    },
     verdict: {
       type: 'string',
       description: 'Synthèse en 2-3 phrases de la situation du métier face à l\'IA, calibrée sur le niveau de risque.',
@@ -116,7 +121,7 @@ const NARRATIVE_SCHEMA = {
       },
     },
   },
-  required: ['verdict', 'recommendations', 'skills'],
+  required: ['score', 'verdict', 'recommendations', 'skills'],
 } as const
 
 // Enrichit une analyse heuristique avec le discours généré par Claude.
@@ -132,7 +137,7 @@ export async function generateNarrative(a: Analysis, extraContext?: string): Pro
     messages: [
       {
         role: 'user',
-        content: `Voici l'analyse chiffrée d'un métier. Rédige le verdict, 4 recommandations et 4 compétences d'avenir, adaptés à ce profil précis.\n\n${factorSummary(a)}${profileBlock}`,
+        content: `Voici l'analyse d'un métier (l'estimation locale ci-dessous est une simple référence). Donne TON estimation du score d'exposition structurelle à l'IA (0–100), puis rédige le verdict, 4 recommandations et 4 compétences d'avenir, adaptés à ce profil précis.\n\n${factorSummary(a)}${profileBlock}`,
       },
     ],
   })
