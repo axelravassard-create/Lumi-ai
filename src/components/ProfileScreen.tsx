@@ -1,7 +1,15 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { CareerProfile, completeness, loadProfile, saveProfile } from '../lib/profile'
+import { BilanRecord, clearHistory, loadHistory } from '../lib/history'
 import { Logo } from './Logo'
 import { useCountUp } from '../lib/ui'
+
+function riskColor(r: number): string {
+  if (r < 30) return '#10b981'
+  if (r < 55) return '#f59e0b'
+  if (r < 75) return '#f97316'
+  return '#ef4444'
+}
 
 interface Props {
   onBack: () => void
@@ -10,6 +18,7 @@ interface Props {
 
 export function ProfileScreen({ onBack, onAnalyze }: Props) {
   const [profile, setProfile] = useState<CareerProfile>(() => loadProfile())
+  const [history, setHistory] = useState<BilanRecord[]>(() => loadHistory())
 
   // Sauvegarde automatique à chaque modification.
   useEffect(() => {
@@ -64,6 +73,9 @@ export function ProfileScreen({ onBack, onAnalyze }: Props) {
             </p>
           </div>
         </section>
+
+        {/* Historique des bilans (couche 4) */}
+        <HistorySection history={history} onClear={() => { clearHistory(); setHistory([]) }} />
 
         {/* Couche 1 — base */}
         <Section title="L'essentiel" emoji="🪪" delay={80}>
@@ -134,6 +146,102 @@ export function ProfileScreen({ onBack, onAnalyze }: Props) {
 
       <style>{`.inp{width:100%;border:1px solid #d6dae9;border-radius:0.75rem;background:#fff;padding:0.6rem 0.85rem;font-size:0.9rem;color:#1c2033;outline:none;transition:all .15s}.inp:focus{border-color:#818cf8;box-shadow:0 0 0 3px #e0e7ff}.inp::placeholder{color:#8893b8}`}</style>
     </div>
+  )
+}
+
+function HistorySection({ history, onClear }: { history: BilanRecord[]; onClear: () => void }) {
+  const fmt = (iso: string) =>
+    new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) +
+    ' · ' +
+    new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+
+  const first = history[0]
+  const last = history[history.length - 1]
+  const delta = first && last ? last.score - first.score : 0
+
+  return (
+    <section className="animate-fade-up mt-6" style={{ animationDelay: '60ms' }}>
+      <div className="card p-6">
+        <div className="flex items-center justify-between">
+          <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ink-900">
+            <span>📈</span> Historique de vos bilans
+          </h2>
+          {history.length > 0 && (
+            <button onClick={onClear} className="text-xs font-medium text-ink-400 hover:text-rose-600">
+              Effacer
+            </button>
+          )}
+        </div>
+
+        {history.length === 0 ? (
+          <p className="mt-3 rounded-xl bg-ink-50 px-4 py-6 text-center text-sm text-ink-500">
+            Lancez votre premier bilan pour démarrer le suivi de votre carrière dans le temps. 🚀
+          </p>
+        ) : (
+          <>
+            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+              <span className="text-ink-500">{history.length} bilan{history.length > 1 ? 's' : ''} enregistré{history.length > 1 ? 's' : ''}</span>
+              {history.length > 1 && (
+                <span className={`pill ${delta > 0 ? 'bg-rose-100 text-rose-700' : delta < 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-ink-100 text-ink-600'}`}>
+                  {delta > 0 ? '↑' : delta < 0 ? '↓' : '→'} {delta > 0 ? '+' : ''}{delta} pts depuis le 1er bilan
+                </span>
+              )}
+            </div>
+
+            <div className="mt-4">
+              <HistoryChart history={history} />
+            </div>
+
+            <div className="mt-4 space-y-1.5">
+              {[...history].reverse().slice(0, 6).map((r) => (
+                <div key={r.id} className="flex items-center gap-3 rounded-xl bg-ink-50 px-3 py-2 text-sm">
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: riskColor(r.score) }} />
+                  <span className="min-w-0 flex-1 truncate text-ink-700">{r.role}</span>
+                  <span className="shrink-0 text-xs text-ink-400">{fmt(r.date)}</span>
+                  <span className="shrink-0 font-semibold tabular-nums" style={{ color: riskColor(r.score) }}>{r.score}%</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </section>
+  )
+}
+
+// Mini-graphique d'évolution du score de risque au fil des bilans.
+function HistoryChart({ history }: { history: BilanRecord[] }) {
+  const W = 620
+  const H = 140
+  const pad = { top: 14, right: 14, bottom: 14, left: 28 }
+  const innerW = W - pad.left - pad.right
+  const innerH = H - pad.top - pad.bottom
+  const n = history.length
+  const x = (i: number) => (n <= 1 ? pad.left + innerW / 2 : pad.left + (i / (n - 1)) * innerW)
+  const y = (v: number) => pad.top + innerH - (v / 100) * innerH
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      {[0, 50, 100].map((g) => (
+        <g key={g}>
+          <line x1={pad.left} y1={y(g)} x2={W - pad.right} y2={y(g)} stroke="#eef0f7" strokeWidth="1" />
+          <text x={pad.left - 8} y={y(g) + 4} textAnchor="end" className="fill-ink-400" fontSize="10">{g}</text>
+        </g>
+      ))}
+      {n > 1 && (
+        <path
+          d={`M ${history.map((r, i) => `${x(i)},${y(r.score)}`).join(' L ')}`}
+          fill="none"
+          stroke="#6366f1"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+      {history.map((r, i) => (
+        <circle key={r.id} cx={x(i)} cy={y(r.score)} r={i === n - 1 ? 5 : 3.5} fill="white" stroke={riskColor(r.score)} strokeWidth="2.5" />
+      ))}
+    </svg>
   )
 }
 

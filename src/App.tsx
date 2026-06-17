@@ -8,6 +8,7 @@ import { ApiKeyModal } from './components/ApiKeyModal'
 import { ProfileScreen } from './components/ProfileScreen'
 import { Logo } from './components/Logo'
 import { loadProfile, profileToContext } from './lib/profile'
+import { addBilan } from './lib/history'
 
 type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile'
 
@@ -65,6 +66,13 @@ export default function App() {
     }
 
     await sleep(Math.max(0, (hasApiKey() ? 1100 : 1900) - (Date.now() - started)))
+    addBilan({
+      role: result.profession.label,
+      score: result.score,
+      level: result.level,
+      resilience: result.resilience,
+      riskIn2040: result.riskIn2040,
+    })
     setNotice(note)
     setAnalysis(result)
     setView('dashboard')
