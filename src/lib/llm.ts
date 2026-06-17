@@ -120,7 +120,9 @@ const NARRATIVE_SCHEMA = {
 } as const
 
 // Enrichit une analyse heuristique avec le discours généré par Claude.
-export async function generateNarrative(a: Analysis): Promise<NarrativeResult> {
+// `extraContext` permet d'injecter le profil détaillé de l'utilisateur.
+export async function generateNarrative(a: Analysis, extraContext?: string): Promise<NarrativeResult> {
+  const profileBlock = extraContext ? `\n\n${extraContext}\nAdapte les conseils à ce profil précis (objectif, contraintes, compétences).` : ''
   const response = await client().messages.create({
     model: MODEL,
     max_tokens: 2048,
@@ -130,7 +132,7 @@ export async function generateNarrative(a: Analysis): Promise<NarrativeResult> {
     messages: [
       {
         role: 'user',
-        content: `Voici l'analyse chiffrée d'un métier. Rédige le verdict, 4 recommandations et 4 compétences d'avenir, adaptés à ce profil précis.\n\n${factorSummary(a)}`,
+        content: `Voici l'analyse chiffrée d'un métier. Rédige le verdict, 4 recommandations et 4 compétences d'avenir, adaptés à ce profil précis.\n\n${factorSummary(a)}${profileBlock}`,
       },
     ],
   })

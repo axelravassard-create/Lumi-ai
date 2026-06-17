@@ -5,9 +5,11 @@ import { LandingPage } from './components/LandingPage'
 import { Dashboard } from './components/Dashboard'
 import { CompareView } from './components/CompareView'
 import { ApiKeyModal } from './components/ApiKeyModal'
+import { ProfileScreen } from './components/ProfileScreen'
 import { Logo } from './components/Logo'
+import { loadProfile, profileToContext } from './lib/profile'
 
-type View = 'landing' | 'analyzing' | 'dashboard' | 'compare'
+type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile'
 
 const ANALYSIS_STEPS = [
   'Identification du métier…',
@@ -44,7 +46,7 @@ export default function App() {
     return () => clearTimeout(t)
   }, [notice])
 
-  const handleAnalyze = async (profession: string) => {
+  const handleAnalyze = async (profession: string, withProfile = false) => {
     const base = analyze(profession)
     setLabel(base.profession.label)
     setView('analyzing')
@@ -54,7 +56,8 @@ export default function App() {
 
     if (hasApiKey()) {
       try {
-        const n = await generateNarrative(base)
+        const context = withProfile ? profileToContext(loadProfile()) : undefined
+        const n = await generateNarrative(base, context || undefined)
         result = { ...base, verdict: n.verdict, recommendations: n.recommendations, skills: n.skills, aiEnhanced: true }
       } catch (e) {
         note = describeError(e)
@@ -103,11 +106,16 @@ export default function App() {
     <>
       {view === 'landing' && (
         <LandingPage
-          onAnalyze={handleAnalyze}
+          onAnalyze={(p) => handleAnalyze(p)}
           onCompare={handleCompare}
           aiEnabled={aiEnabled}
           onOpenSettings={() => setModalOpen(true)}
+          onOpenProfile={() => setView('profile')}
         />
+      )}
+
+      {view === 'profile' && (
+        <ProfileScreen onBack={() => setView('landing')} onAnalyze={(role) => handleAnalyze(role, true)} />
       )}
 
       {view === 'analyzing' && <AnalyzingScreen label={label} step={step} />}

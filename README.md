@@ -83,11 +83,13 @@ src/
     professions.ts        # base de connaissances métiers (facteurs)
     engine.ts             # moteur : matching, score, projection, conseils
     llm.ts                # intégration Claude (narratif + comparaison)
+    profile.ts            # profil carrière : modèle, stockage, complétude
     ui.ts                 # thème par risque + hook d'animation
   components/
     LandingPage.tsx       # page d'accueil (analyse + comparaison)
     Dashboard.tsx         # tableau de bord des résultats
     CompareView.tsx       # vue de comparaison de deux métiers
+    ProfileScreen.tsx     # profil carrière + jauge de complétude
     ApiKeyModal.tsx       # configuration de la clé API Claude
     AiStatusButton.tsx    # pastille d'état IA / mode démo
     RadialGauge.tsx       # jauge circulaire

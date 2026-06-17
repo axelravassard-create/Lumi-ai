@@ -10,9 +10,10 @@ interface Props {
   onCompare: (a: string, b: string) => void
   aiEnabled: boolean
   onOpenSettings: () => void
+  onOpenProfile: () => void
 }
 
-export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings }: Props) {
+export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, onOpenProfile }: Props) {
   const [mode, setMode] = useState<Mode>('single')
   const [value, setValue] = useState('')
   const [valueB, setValueB] = useState('')
@@ -32,9 +33,9 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings }:
       {/* Barre de navigation */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <Logo />
-        <nav className="flex items-center gap-3 text-sm font-medium text-ink-600 md:gap-6">
+        <nav className="flex items-center gap-3 text-sm font-medium text-ink-600 md:gap-5">
           <a href="#how" className="hidden transition hover:text-brand-700 md:inline">Comment ça marche</a>
-          <a href="#features" className="hidden transition hover:text-brand-700 md:inline">Fonctionnalités</a>
+          <button onClick={onOpenProfile} className="transition hover:text-brand-700">Mon profil</button>
           <AiStatusButton enabled={aiEnabled} onClick={onOpenSettings} />
         </nav>
       </header>
