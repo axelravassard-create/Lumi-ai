@@ -7,11 +7,13 @@ import { CompareView } from './components/CompareView'
 import { ApiKeyModal } from './components/ApiKeyModal'
 import { ProfileScreen } from './components/ProfileScreen'
 import { PricingScreen } from './components/PricingScreen'
+import { MetiersDirectory } from './components/MetiersDirectory'
+import { MetierLanding } from './components/MetierLanding'
 import { Logo } from './components/Logo'
 import { loadProfile, profileToContext } from './lib/profile'
 import { addBilan } from './lib/history'
 
-type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing'
+type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier'
 
 const ANALYSIS_STEPS = [
   'Identification du métier…',
@@ -32,6 +34,25 @@ export default function App() {
   const [aiEnabled, setAiEnabled] = useState(hasApiKey())
   const [modalOpen, setModalOpen] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+  const [seoId, setSeoId] = useState('')
+
+  // Routage léger par hash pour les pages SEO (#/metiers, #/metier/<id>).
+  useEffect(() => {
+    const apply = () => {
+      const h = window.location.hash
+      if (h.startsWith('#/metier/')) {
+        setSeoId(decodeURIComponent(h.slice('#/metier/'.length)))
+        setView('metier')
+        window.scrollTo({ top: 0 })
+      } else if (h === '#/metiers') {
+        setView('directory')
+        window.scrollTo({ top: 0 })
+      }
+    }
+    apply()
+    window.addEventListener('hashchange', apply)
+    return () => window.removeEventListener('hashchange', apply)
+  }, [])
 
   // Séquence d'étapes animée pendant l'analyse.
   useEffect(() => {
@@ -109,9 +130,16 @@ export default function App() {
   }
 
   const reset = () => {
+    if (window.location.hash) window.location.hash = ''
     setView('landing')
     setAnalysis(null)
     setCompareData(null)
+    window.scrollTo({ top: 0 })
+  }
+
+  const goHome = () => {
+    if (window.location.hash) window.location.hash = ''
+    setView('landing')
     window.scrollTo({ top: 0 })
   }
 
@@ -125,6 +153,20 @@ export default function App() {
           onOpenSettings={() => setModalOpen(true)}
           onOpenProfile={() => setView('profile')}
           onOpenPricing={() => setView('pricing')}
+          onOpenMetiers={() => { window.location.hash = '/metiers' }}
+        />
+      )}
+
+      {view === 'directory' && (
+        <MetiersDirectory onBack={goHome} onOpenMetier={(id) => { window.location.hash = '/metier/' + id }} />
+      )}
+
+      {view === 'metier' && (
+        <MetierLanding
+          professionId={seoId}
+          onBack={goHome}
+          onOpenDirectory={() => { window.location.hash = '/metiers' }}
+          onAnalyze={(label) => { if (window.location.hash) window.location.hash = ''; handleAnalyze(label) }}
         />
       )}
 

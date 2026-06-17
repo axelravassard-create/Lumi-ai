@@ -282,7 +282,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
       </main>
 
       {showShare && (
-        <SharePanel role={analysis.profession.label} score={analysis.score} onClose={() => setShowShare(false)} />
+        <SharePanel role={analysis.profession.label} score={analysis.score} level={analysis.level} onClose={() => setShowShare(false)} />
       )}
     </div>
   )

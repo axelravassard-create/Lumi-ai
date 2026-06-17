@@ -1,16 +1,20 @@
 import { useState } from 'react'
+import { RiskLevel } from '../lib/engine'
+import { createShareCard, shareOrDownloadCard } from '../lib/shareCard'
 
 interface Props {
   role: string
   score: number
+  level: RiskLevel
   onClose: () => void
 }
 
 // Panneau de partage : l'utilisateur choisit de diffuser SON résultat et
 // d'inviter d'autres personnes à tester. Aucune donnée n'est exposée sans son
 // action explicite — cohérent avec le positionnement « vos données chez vous ».
-export function SharePanel({ role, score, onClose }: Props) {
+export function SharePanel({ role, score, level, onClose }: Props) {
   const [copied, setCopied] = useState(false)
+  const [card, setCard] = useState<'idle' | 'busy'>('idle')
   const url = typeof window !== 'undefined' ? window.location.origin : 'https://yourcareer.app'
   const text = `J'ai évalué l'exposition de mon métier (${role}) à l'intelligence artificielle sur YourCareer : ${score}%. Et le tien, où en est-il ? Teste gratuitement 👇`
   const full = `${text} ${url}`
@@ -35,6 +39,18 @@ export function SharePanel({ role, score, onClose }: Props) {
       setTimeout(() => setCopied(false), 2000)
     } catch {
       /* clipboard indisponible */
+    }
+  }
+
+  const downloadVisual = async () => {
+    setCard('busy')
+    try {
+      const blob = await createShareCard(role, score, level)
+      await shareOrDownloadCard(blob, full)
+    } catch {
+      /* génération impossible */
+    } finally {
+      setCard('idle')
     }
   }
 
@@ -66,10 +82,15 @@ export function SharePanel({ role, score, onClose }: Props) {
           <p className="mt-2 text-sm leading-relaxed text-ink-600">{text}</p>
         </div>
 
+        {/* Visuel à poster */}
+        <button onClick={downloadVisual} disabled={card === 'busy'} className="btn-primary mt-4 w-full justify-center py-2.5 text-sm">
+          {card === 'busy' ? 'Génération…' : '🖼️ Télécharger le visuel à poster'}
+        </button>
+
         {/* Partage natif + copie */}
-        <div className="mt-4 flex gap-2">
-          <button onClick={nativeShare} className="btn-primary flex-1 justify-center py-2.5 text-sm">
-            Partager
+        <div className="mt-2 flex gap-2">
+          <button onClick={nativeShare} className="btn-ghost flex-1 justify-center py-2.5 text-sm">
+            Partager le lien
           </button>
           <button onClick={copy} className="btn-ghost justify-center py-2.5 text-sm">
             {copied ? 'Copié ✓' : 'Copier'}

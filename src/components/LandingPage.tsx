@@ -12,9 +12,10 @@ interface Props {
   onOpenSettings: () => void
   onOpenProfile: () => void
   onOpenPricing: () => void
+  onOpenMetiers: () => void
 }
 
-export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, onOpenProfile, onOpenPricing }: Props) {
+export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, onOpenProfile, onOpenPricing, onOpenMetiers }: Props) {
   const [mode, setMode] = useState<Mode>('single')
   const [value, setValue] = useState('')
   const [valueB, setValueB] = useState('')
@@ -35,7 +36,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <Logo />
         <nav className="flex items-center gap-3 text-sm font-medium text-ink-600 md:gap-5">
-          <a href="#how" className="hidden transition hover:text-brand-700 md:inline">Comment ça marche</a>
+          <button onClick={onOpenMetiers} className="hidden transition hover:text-brand-700 md:inline">Métiers</button>
           <button onClick={onOpenPricing} className="transition hover:text-brand-700">Tarifs</button>
           <button onClick={onOpenProfile} className="transition hover:text-brand-700">Mon profil</button>
           <AiStatusButton enabled={aiEnabled} onClick={onOpenSettings} />
