@@ -24,7 +24,9 @@ Prototype à visée pédagogique — interface moderne, expérience guidée.
 - **Compétences d'avenir** : les compétences à développer en priorité.
 - **Pistes de reconversion** : des métiers plus résilients à explorer.
 - **Comparateur de métiers** : deux professions face à face (jauges, trajectoires superposées, verdict).
-- **IA Claude (optionnelle)** : verdict, recommandations et comparaison rédigés en direct par **Claude Opus 4.8**.
+- **Profil carrière + historique** : suivi dans le temps, jauge de complétude, frise d'évolution.
+- **Import de CV** : Claude lit un PDF (ou du texte collé) et pré-remplit le profil automatiquement.
+- **IA Claude (optionnelle)** : verdict, recommandations, comparaison et import CV propulsés par **Claude Opus 4.8**.
 
 ## 🤖 Intégration Claude (optionnelle)
 

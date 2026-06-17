@@ -123,7 +123,12 @@ export default function App() {
       )}
 
       {view === 'profile' && (
-        <ProfileScreen onBack={() => setView('landing')} onAnalyze={(role) => handleAnalyze(role, true)} />
+        <ProfileScreen
+          onBack={() => setView('landing')}
+          onAnalyze={(role) => handleAnalyze(role, true)}
+          aiEnabled={aiEnabled}
+          onOpenSettings={() => setModalOpen(true)}
+        />
       )}
 
       {view === 'analyzing' && <AnalyzingScreen label={label} step={step} />}

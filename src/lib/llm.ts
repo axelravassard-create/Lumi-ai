@@ -177,6 +177,79 @@ export async function generateComparison(a: Analysis, b: Analysis): Promise<Comp
   return parseJson<ComparisonResult>(response)
 }
 
+// ── Extraction de profil depuis un CV ────────────────────────────────────────
+export interface ExtractedProfile {
+  role: string
+  sector: string
+  experience: string
+  level: string
+  location: string
+  status: string
+  tasks: string[]
+  hardSkills: string[]
+  softSkills: string[]
+  education: string
+  pastRoles: string[]
+  goal: string
+  aiAppetite: string
+  constraints: string
+}
+
+const str = { type: 'string' } as const
+const strArray = { type: 'array', items: { type: 'string' } } as const
+const enumOf = (values: string[]) => ({ type: 'string', enum: ['', ...values] } as const)
+
+const PROFILE_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    role: str,
+    sector: str,
+    experience: enumOf(['Moins d\'1 an', '1–3 ans', '3–7 ans', '7–15 ans', 'Plus de 15 ans']),
+    level: enumOf(['Débutant·e', 'Confirmé·e', 'Senior', 'Manager / Direction']),
+    location: str,
+    status: enumOf(['Salarié·e', 'Indépendant·e', 'En recherche', 'Étudiant·e', 'En reconversion']),
+    tasks: strArray,
+    hardSkills: strArray,
+    softSkills: strArray,
+    education: str,
+    pastRoles: strArray,
+    goal: enumOf(['Évoluer dans mon métier', 'Me reconvertir', 'Sécuriser mon poste', 'Entreprendre']),
+    aiAppetite: enumOf(['Curieux·se / enthousiaste', 'Neutre', 'Plutôt réticent·e']),
+    constraints: str,
+  },
+  required: [
+    'role', 'sector', 'experience', 'level', 'location', 'status',
+    'tasks', 'hardSkills', 'softSkills', 'education', 'pastRoles',
+    'goal', 'aiAppetite', 'constraints',
+  ],
+} as const
+
+// Lit un CV (PDF en base64 ou texte brut) et en extrait un profil structuré.
+export async function extractProfileFromCV(input: { pdfBase64?: string; text?: string }): Promise<ExtractedProfile> {
+  const content: Anthropic.ContentBlockParam[] = []
+  if (input.pdfBase64) {
+    content.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: input.pdfBase64 } })
+  }
+  if (input.text) {
+    content.push({ type: 'text', text: `Voici le CV (texte) :\n${input.text}` })
+  }
+  content.push({
+    type: 'text',
+    text: 'Extrais les informations de ce CV pour pré-remplir un profil carrière. Pour les champs à choix, utilise EXACTEMENT une des valeurs autorisées (ou "" si indéterminé). Pour les listes, renvoie des entrées courtes. Laisse vide ce que tu ne peux pas déterminer — n\'invente rien.',
+  })
+
+  const response = await client().messages.create({
+    model: MODEL,
+    max_tokens: 2048,
+    thinking: { type: 'adaptive' },
+    system: 'Tu extrais des données structurées d\'un CV pour pré-remplir un profil carrière. Sois fidèle au document, ne fabrique aucune information.',
+    output_config: { format: { type: 'json_schema', schema: PROFILE_SCHEMA } },
+    messages: [{ role: 'user', content }],
+  })
+  return parseJson<ExtractedProfile>(response)
+}
+
 // Extrait et parse le bloc texte JSON renvoyé par l'API.
 function parseJson<T>(response: Anthropic.Message): T {
   const text = response.content

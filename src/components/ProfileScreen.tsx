@@ -1,6 +1,7 @@
-import { ReactNode, useEffect, useState } from 'react'
+import { ReactNode, useEffect, useRef, useState } from 'react'
 import { CareerProfile, completeness, loadProfile, saveProfile } from '../lib/profile'
 import { BilanRecord, clearHistory, loadHistory } from '../lib/history'
+import { describeError, extractProfileFromCV } from '../lib/llm'
 import { Logo } from './Logo'
 import { useCountUp } from '../lib/ui'
 
@@ -14,11 +15,28 @@ function riskColor(r: number): string {
 interface Props {
   onBack: () => void
   onAnalyze: (role: string) => void
+  aiEnabled: boolean
+  onOpenSettings: () => void
 }
 
-export function ProfileScreen({ onBack, onAnalyze }: Props) {
+export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: Props) {
   const [profile, setProfile] = useState<CareerProfile>(() => loadProfile())
   const [history, setHistory] = useState<BilanRecord[]>(() => loadHistory())
+
+  // Fusionne les champs extraits d'un CV (uniquement les valeurs non vides).
+  const mergeExtracted = (extracted: Partial<CareerProfile>) => {
+    setProfile((p) => {
+      const merged = { ...p }
+      for (const key of Object.keys(extracted) as (keyof CareerProfile)[]) {
+        const v = extracted[key]
+        if (v == null) continue
+        if (Array.isArray(v) ? v.length > 0 : String(v).trim().length > 0) {
+          ;(merged as Record<string, unknown>)[key] = v
+        }
+      }
+      return merged
+    })
+  }
 
   // Sauvegarde automatique à chaque modification.
   useEffect(() => {
@@ -73,6 +91,9 @@ export function ProfileScreen({ onBack, onAnalyze }: Props) {
             </p>
           </div>
         </section>
+
+        {/* Import de CV */}
+        <CVImport aiEnabled={aiEnabled} onOpenSettings={onOpenSettings} onExtracted={mergeExtracted} />
 
         {/* Historique des bilans (couche 4) */}
         <HistorySection history={history} onClear={() => { clearHistory(); setHistory([]) }} />
@@ -146,6 +167,117 @@ export function ProfileScreen({ onBack, onAnalyze }: Props) {
 
       <style>{`.inp{width:100%;border:1px solid #d6dae9;border-radius:0.75rem;background:#fff;padding:0.6rem 0.85rem;font-size:0.9rem;color:#1c2033;outline:none;transition:all .15s}.inp:focus{border-color:#818cf8;box-shadow:0 0 0 3px #e0e7ff}.inp::placeholder{color:#8893b8}`}</style>
     </div>
+  )
+}
+
+function CVImport({ aiEnabled, onOpenSettings, onExtracted }: { aiEnabled: boolean; onOpenSettings: () => void; onExtracted: (p: Partial<CareerProfile>) => void }) {
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+  const [message, setMessage] = useState('')
+  const [showPaste, setShowPaste] = useState(false)
+  const [text, setText] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const run = async (input: { pdfBase64?: string; text?: string }) => {
+    setStatus('loading')
+    setMessage('')
+    try {
+      const extracted = await extractProfileFromCV(input)
+      onExtracted(extracted)
+      const filled = Object.values(extracted).filter((v) => (Array.isArray(v) ? v.length : String(v).trim())).length
+      setStatus('done')
+      setMessage(`Profil pré-rempli depuis votre CV — ${filled} champ${filled > 1 ? 's' : ''} détecté${filled > 1 ? 's' : ''}. Vérifiez et ajustez ci-dessous.`)
+    } catch (e) {
+      setStatus('error')
+      setMessage(describeError(e))
+    }
+  }
+
+  const onFile = (file: File | undefined) => {
+    if (!file) return
+    if (file.size > 8 * 1024 * 1024) {
+      setStatus('error')
+      setMessage('Fichier trop volumineux (max 8 Mo).')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = String(reader.result)
+      const base64 = result.includes(',') ? result.split(',')[1] : result
+      run({ pdfBase64: base64 })
+    }
+    reader.readAsDataURL(file)
+  }
+
+  return (
+    <section className="animate-fade-up mt-6" style={{ animationDelay: '40ms' }}>
+      <div className="card overflow-hidden bg-gradient-to-br from-ink-900 to-brand-900 p-6 text-white">
+        <div className="flex items-start gap-3">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white/10 text-xl">📄</span>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-display text-lg font-bold">Pré-remplir depuis mon CV</h2>
+            <p className="mt-1 text-sm text-white/60">
+              Importez votre CV : Claude le lit et remplit votre profil en quelques secondes.
+            </p>
+
+            {!aiEnabled ? (
+              <button onClick={onOpenSettings} className="btn-primary mt-4 py-2.5 text-sm">
+                Connecter l'IA Claude pour activer l'import
+              </button>
+            ) : status === 'loading' ? (
+              <div className="mt-4 flex items-center gap-3 text-sm text-white/80">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                Claude lit votre CV…
+              </div>
+            ) : (
+              <>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="application/pdf"
+                    className="hidden"
+                    onChange={(e) => onFile(e.target.files?.[0])}
+                  />
+                  <button onClick={() => fileRef.current?.click()} className="btn-primary py-2.5 text-sm">
+                    📎 Choisir un PDF
+                  </button>
+                  <button
+                    onClick={() => setShowPaste((s) => !s)}
+                    className="rounded-2xl border border-white/20 px-4 py-2.5 text-sm font-semibold text-white/80 transition hover:bg-white/10"
+                  >
+                    ou coller le texte
+                  </button>
+                </div>
+
+                {showPaste && (
+                  <div className="mt-3">
+                    <textarea
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      placeholder="Collez ici le texte de votre CV ou de votre profil LinkedIn…"
+                      className="min-h-[100px] w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-white/40"
+                    />
+                    <button
+                      onClick={() => text.trim() && run({ text: text.trim() })}
+                      disabled={!text.trim()}
+                      className="btn-primary mt-2 py-2.5 text-sm disabled:opacity-40"
+                    >
+                      Analyser le texte
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {message && (
+              <p className={`mt-3 rounded-xl px-3 py-2 text-sm ${status === 'error' ? 'bg-rose-500/20 text-rose-100' : 'bg-emerald-500/20 text-emerald-100'}`}>
+                {status === 'error' ? '⚠️ ' : '✓ '}{message}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
   )
 }
 
