@@ -6,11 +6,12 @@ import { Dashboard } from './components/Dashboard'
 import { CompareView } from './components/CompareView'
 import { ApiKeyModal } from './components/ApiKeyModal'
 import { ProfileScreen } from './components/ProfileScreen'
+import { PricingScreen } from './components/PricingScreen'
 import { Logo } from './components/Logo'
 import { loadProfile, profileToContext } from './lib/profile'
 import { addBilan } from './lib/history'
 
-type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile'
+type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing'
 
 const ANALYSIS_STEPS = [
   'Identification du métier…',
@@ -123,6 +124,7 @@ export default function App() {
           aiEnabled={aiEnabled}
           onOpenSettings={() => setModalOpen(true)}
           onOpenProfile={() => setView('profile')}
+          onOpenPricing={() => setView('pricing')}
         />
       )}
 
@@ -134,6 +136,8 @@ export default function App() {
           onOpenSettings={() => setModalOpen(true)}
         />
       )}
+
+      {view === 'pricing' && <PricingScreen onBack={() => setView('landing')} />}
 
       {view === 'analyzing' && <AnalyzingScreen label={label} step={step} />}
 
