@@ -11,18 +11,18 @@ const FREE_FEATURES = [
   'Score de remplaçabilité par l\'IA',
   'Verdict + projection 2026 → 2040',
   '1 bilan complet à l\'inscription',
-  'Note de tendance de votre secteur (résumé)',
+  'Tendance de votre secteur, actualisée chaque semaine',
   'Profil carrière & jauge de complétude',
 ]
 
 const PREMIUM_FEATURES = [
   'Tout le gratuit, en illimité',
   'Suivi automatique : re-bilans réguliers',
-  'Tendances secteur complètes, mises à jour chaque semaine',
+  'Impact personnalisé des tendances sur VOTRE situation',
+  'Alertes quand votre secteur bouge',
   'Import de CV (pré-remplissage par Claude)',
   'Plan d\'action personnalisé & approfondi',
   'Comparateur de métiers illimité',
-  'Historique & alertes d\'évolution',
 ]
 
 export function PricingScreen({ onBack }: Props) {
