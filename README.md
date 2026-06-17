@@ -18,6 +18,8 @@ Prototype à visée pédagogique — interface moderne, expérience guidée.
 - **Verdict de l'IA** : une synthèse en une phrase, calibrée sur le niveau de risque.
 - **Projection 2026 → 2040** : graphique d'aire interactif, avec marqueur « Aujourd'hui ».
 - **Risque actualisé dans le temps** : la part « déjà automatisable » est recalculée à la date réelle et progresse au fil des mois (suivi vivant).
+- **Tendance de votre secteur** : Claude recherche l'actualité IA du secteur (recherche web) et en fait une note hebdomadaire, mise en cache 7 jours (mutualisable par secteur).
+- **Partage & invitation** : diffuser son résultat et inviter ses proches (opt-in, sans réseau social).
 - **Décomposition par tâche** : quelles activités sont menacées, lesquelles restent humaines.
 - **Profil d'atouts** : les dimensions humaines (créativité, empathie, jugement…) qui protègent.
 - **Plan anti-obsolescence** : recommandations personnalisées (augmentation, différenciation, évolution).

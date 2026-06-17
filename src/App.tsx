@@ -142,7 +142,13 @@ export default function App() {
       {view === 'analyzing' && <AnalyzingScreen label={label} step={step} />}
 
       {view === 'dashboard' && analysis && (
-        <Dashboard analysis={analysis} onReset={reset} onOpenProfile={() => setView('profile')} />
+        <Dashboard
+          analysis={analysis}
+          onReset={reset}
+          onOpenProfile={() => setView('profile')}
+          aiEnabled={aiEnabled}
+          onOpenSettings={() => setModalOpen(true)}
+        />
       )}
 
       {view === 'compare' && compareData && (

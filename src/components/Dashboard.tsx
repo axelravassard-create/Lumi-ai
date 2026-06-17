@@ -6,11 +6,14 @@ import { Logo } from './Logo'
 import { RadialGauge } from './RadialGauge'
 import { ProjectionChart } from './ProjectionChart'
 import { SharePanel } from './SharePanel'
+import { SectorTrendCard } from './SectorTrendCard'
 
 interface Props {
   analysis: Analysis
   onReset: () => void
   onOpenProfile: () => void
+  aiEnabled: boolean
+  onOpenSettings: () => void
 }
 
 const TAG_STYLES: Record<string, string> = {
@@ -27,7 +30,10 @@ function riskColor(r: number): string {
   return '#ef4444'
 }
 
-export function Dashboard({ analysis, onReset, onOpenProfile }: Props) {
+export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenSettings }: Props) {
+  const sector = analysis.profession.domain.startsWith('Profil')
+    ? analysis.profession.label
+    : analysis.profession.domain
   const theme = RISK_THEME[analysis.level]
   const resilience = useCountUp(analysis.resilience, 1300)
   const risk2040 = useCountUp(analysis.riskIn2040, 1300)
@@ -136,6 +142,11 @@ export function Dashboard({ analysis, onReset, onOpenProfile }: Props) {
               <ProjectionChart data={analysis.projection} level={analysis.level} markerYear={analysis.currentYear} markerValue={analysis.currentRisk} />
             </div>
           </div>
+        </section>
+
+        {/* Tendance du secteur (note hebdomadaire) */}
+        <section className="animate-fade-up mt-6" style={{ animationDelay: '200ms' }}>
+          <SectorTrendCard sector={sector} aiEnabled={aiEnabled} onOpenSettings={onOpenSettings} />
         </section>
 
         {/* Décomposition par tâche + profil de compétences */}

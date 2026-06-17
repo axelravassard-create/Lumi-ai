@@ -255,6 +255,56 @@ export async function extractProfileFromCV(input: { pdfBase64?: string; text?: s
   return parseJson<ExtractedProfile>(response)
 }
 
+// ── Note de tendance sectorielle (recherche web, mutualisable par secteur) ────
+export interface SectorTrend {
+  sector: string
+  headline: string
+  direction: 'hausse' | 'stable' | 'baisse'
+  summary: string
+  signals: string[]
+  updatedAt: string
+}
+
+// Recherche l'actualité récente du secteur et en tire une note de tendance.
+// (Dans le vrai produit : 1 exécution hebdomadaire par secteur, partagée entre
+//  tous les utilisateurs. Ici : appel à la demande, mis en cache 7 jours.)
+export async function generateSectorTrend(sector: string): Promise<SectorTrend> {
+  const c = client()
+  const tools: Anthropic.Messages.ToolUnion[] = [{ type: 'web_search_20260209', name: 'web_search' }]
+  const messages: Anthropic.MessageParam[] = [
+    {
+      role: 'user',
+      content: `Recherche les développements RÉCENTS (derniers mois) sur l'impact de l'intelligence artificielle sur le secteur « ${sector} ».
+Puis renvoie UNIQUEMENT un objet JSON valide (aucun texte autour, pas de balises markdown) :
+{
+  "headline": "accroche courte (max 90 caractères)",
+  "direction": "hausse | stable | baisse",
+  "summary": "2 à 3 phrases factuelles de synthèse",
+  "signals": ["3 à 4 développements récents et concrets"]
+}
+La "direction" décrit l'évolution de la pression de l'IA sur le secteur. Appuie-toi sur tes recherches, n'invente rien. Réponds en français.`,
+    },
+  ]
+
+  let resp = await c.messages.create({ model: MODEL, max_tokens: 1500, tools, messages })
+  // Les outils côté serveur peuvent renvoyer "pause_turn" : on relance pour continuer.
+  let guard = 0
+  while (resp.stop_reason === 'pause_turn' && guard++ < 4) {
+    messages.push({ role: 'assistant', content: resp.content })
+    resp = await c.messages.create({ model: MODEL, max_tokens: 1500, tools, messages })
+  }
+
+  const parsed = parseJsonLoose<Omit<SectorTrend, 'sector' | 'updatedAt'>>(resp)
+  return {
+    sector,
+    headline: parsed.headline,
+    direction: ['hausse', 'stable', 'baisse'].includes(parsed.direction) ? parsed.direction : 'stable',
+    summary: parsed.summary,
+    signals: Array.isArray(parsed.signals) ? parsed.signals.slice(0, 4) : [],
+    updatedAt: new Date().toISOString(),
+  }
+}
+
 // Extrait et parse le bloc texte JSON renvoyé par l'API.
 function parseJson<T>(response: Anthropic.Message): T {
   const text = response.content
@@ -262,6 +312,18 @@ function parseJson<T>(response: Anthropic.Message): T {
     .map((b) => b.text)
     .join('')
   return JSON.parse(text) as T
+}
+
+// Parse tolérant : extrait le premier objet JSON même entouré de texte/markdown.
+function parseJsonLoose<T>(response: Anthropic.Message): T {
+  const text = response.content
+    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+    .map((b) => b.text)
+    .join('')
+  const start = text.indexOf('{')
+  const end = text.lastIndexOf('}')
+  if (start === -1 || end === -1) throw new Error('Réponse IA illisible.')
+  return JSON.parse(text.slice(start, end + 1)) as T
 }
 
 // Traduit une erreur API en message lisible.
