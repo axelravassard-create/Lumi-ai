@@ -100,6 +100,11 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
                 </>
               )}
             </span>
+            {analysis.personalized && (
+              <span className="pill bg-violet-100 text-violet-700" title="Score ajusté selon votre profil (diplôme, école, expérience, maîtrise de l'IA)">
+                👤 Ajusté selon votre profil
+              </span>
+            )}
           </div>
 
           <div className="flex flex-col gap-6">

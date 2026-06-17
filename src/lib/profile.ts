@@ -13,12 +13,15 @@ export interface CareerProfile {
   level: string
   location: string
   status: string
+  educationLevel: string
+  schoolPrestige: string
   // Couche 2 — carburant de l'IA
   tasks: string[]
   hardSkills: string[]
   softSkills: string[]
   education: string
   pastRoles: string[]
+  aiSkill: string
   // Couche 3 — aspirations & contraintes
   goal: string
   aiAppetite: string
@@ -33,11 +36,14 @@ export function emptyProfile(): CareerProfile {
     level: '',
     location: '',
     status: '',
+    educationLevel: '',
+    schoolPrestige: '',
     tasks: [],
     hardSkills: [],
     softSkills: [],
     education: '',
     pastRoles: [],
+    aiSkill: '',
     goal: '',
     aiAppetite: '',
     constraints: '',
@@ -69,11 +75,14 @@ const WEIGHTS: Record<keyof CareerProfile, number> = {
   level: 1,
   location: 1,
   status: 1,
+  educationLevel: 1,
+  schoolPrestige: 1,
   tasks: 2,
   hardSkills: 2,
   softSkills: 1,
   education: 1,
   pastRoles: 1,
+  aiSkill: 1,
   goal: 1,
   aiAppetite: 1,
   constraints: 1,
@@ -106,11 +115,14 @@ export function profileToContext(p: CareerProfile): string {
   add('Niveau', p.level)
   add('Localisation', p.location)
   add('Statut', p.status)
+  add('Niveau de diplôme', p.educationLevel)
+  add('Sélectivité de la formation (école)', p.schoolPrestige)
   add('Tâches du quotidien', p.tasks)
   add('Compétences techniques', p.hardSkills)
   add('Compétences humaines', p.softSkills)
   add('Formation / diplômes', p.education)
   add('Postes précédents', p.pastRoles)
+  add('Maîtrise des outils d\'IA', p.aiSkill)
   add('Objectif de carrière', p.goal)
   add('Rapport à l\'IA / au changement', p.aiAppetite)
   add('Contraintes', p.constraints)
