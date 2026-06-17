@@ -1,5 +1,6 @@
 import { Analysis, BASE_YEAR, HORIZON_YEAR } from '../lib/engine'
 import { RISK_THEME, useCountUp } from '../lib/ui'
+import { REFERENCES } from '../lib/sources'
 import { Logo } from './Logo'
 import { RadialGauge } from './RadialGauge'
 import { ProjectionChart } from './ProjectionChart'
@@ -209,6 +210,39 @@ export function Dashboard({ analysis, onReset, onOpenProfile }: Props) {
             </div>
           </section>
         )}
+
+        {/* Méthodologie & sources */}
+        <section className="animate-fade-up mt-6" style={{ animationDelay: '380ms' }}>
+          <div className="card p-6 md:p-8">
+            <h2 className="flex items-center gap-2 font-display text-xl font-bold text-ink-900">📚 Méthodologie & sources</h2>
+            <p className="mt-2 text-sm leading-relaxed text-ink-600">
+              Le score {analysis.aiEnhanced ? 'est estimé par le modèle Claude Opus 4.8' : 'est calculé localement (mode démo)'}, selon
+              une méthode multi-facteurs (routine, créativité, relationnel, jugement, présence physique…) inspirée des
+              travaux de référence ci-dessous. C'est une <strong>estimation indicative</strong> destinée à éclairer la
+              réflexion — pas une prédiction certaine.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {REFERENCES.map((r) => (
+                <a
+                  key={r.name}
+                  href={r.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group rounded-2xl border border-ink-100 p-4 transition hover:border-brand-300 hover:shadow-card"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-sm font-semibold text-ink-900">{r.name}</span>
+                    <svg className="h-3.5 w-3.5 shrink-0 text-ink-300 transition group-hover:text-brand-500" viewBox="0 0 24 24" fill="none">
+                      <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                  <div className="mt-0.5 text-xs font-medium text-brand-700">{r.org}</div>
+                  <p className="mt-1.5 text-xs leading-relaxed text-ink-500">{r.detail}</p>
+                </a>
+              ))}
+            </div>
+          </div>
+        </section>
 
         {/* CTA bas de page */}
         <section className="animate-fade-up mt-10 text-center" style={{ animationDelay: '400ms' }}>
