@@ -1,28 +1,41 @@
 import { useState } from 'react'
 import { Logo } from './Logo'
+import { AiStatusButton } from './AiStatusButton'
 import { SUGGESTIONS } from '../lib/engine'
+
+type Mode = 'single' | 'compare'
 
 interface Props {
   onAnalyze: (profession: string) => void
+  onCompare: (a: string, b: string) => void
+  aiEnabled: boolean
+  onOpenSettings: () => void
 }
 
-export function LandingPage({ onAnalyze }: Props) {
+export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings }: Props) {
+  const [mode, setMode] = useState<Mode>('single')
   const [value, setValue] = useState('')
+  const [valueB, setValueB] = useState('')
 
-  const submit = (v: string) => {
-    const profession = v.trim()
-    if (profession) onAnalyze(profession)
+  const submit = () => {
+    if (mode === 'single') {
+      if (value.trim()) onAnalyze(value.trim())
+    } else {
+      if (value.trim() && valueB.trim()) onCompare(value.trim(), valueB.trim())
+    }
   }
+
+  const canSubmit = mode === 'single' ? !!value.trim() : !!value.trim() && !!valueB.trim()
 
   return (
     <div className="min-h-screen">
       {/* Barre de navigation */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <Logo />
-        <nav className="hidden items-center gap-8 text-sm font-medium text-ink-600 md:flex">
-          <a href="#how" className="transition hover:text-brand-700">Comment ça marche</a>
-          <a href="#features" className="transition hover:text-brand-700">Fonctionnalités</a>
-          <span className="pill bg-brand-50 text-brand-700">Prototype</span>
+        <nav className="flex items-center gap-3 text-sm font-medium text-ink-600 md:gap-6">
+          <a href="#how" className="hidden transition hover:text-brand-700 md:inline">Comment ça marche</a>
+          <a href="#features" className="hidden transition hover:text-brand-700 md:inline">Fonctionnalités</a>
+          <AiStatusButton enabled={aiEnabled} onClick={onOpenSettings} />
         </nav>
       </header>
 
@@ -34,7 +47,7 @@ export function LandingPage({ onAnalyze }: Props) {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-500"></span>
             </span>
-            Analyse propulsée par l'IA
+            {aiEnabled ? 'Analyse propulsée par Claude' : 'Analyse propulsée par l\'IA'}
           </span>
         </div>
 
@@ -49,53 +62,71 @@ export function LandingPage({ onAnalyze }: Props) {
           sa progression jusqu'en 2040, et vous donne un plan concret pour garder une longueur d'avance.
         </p>
 
-        {/* Champ de recherche */}
-        <form
-          className="animate-fade-up mx-auto mt-10 max-w-xl"
-          style={{ animationDelay: '180ms' }}
-          onSubmit={(e) => {
-            e.preventDefault()
-            submit(value)
-          }}
-        >
-          <div className="group flex items-center gap-2 rounded-2xl border border-ink-200 bg-white p-2 shadow-card transition focus-within:border-brand-300 focus-within:shadow-glow">
-            <svg className="ml-3 h-5 w-5 shrink-0 text-ink-400" viewBox="0 0 24 24" fill="none">
-              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
-              <path d="m20 20-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            <input
-              autoFocus
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder="Ex : développeur, comptable, infirmière…"
-              className="w-full bg-transparent px-1 py-2 text-base text-ink-900 outline-none placeholder:text-ink-400"
-            />
-            <button type="submit" className="btn-primary shrink-0 px-5 py-3" disabled={!value.trim()}>
-              Analyser
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Suggestions */}
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-            <span className="text-sm text-ink-400">Essayez :</span>
-            {SUGGESTIONS.map((s) => (
+        {/* Sélecteur de mode */}
+        <div className="animate-fade-up mt-9 flex justify-center" style={{ animationDelay: '160ms' }}>
+          <div className="inline-flex rounded-2xl border border-ink-200 bg-white p-1 shadow-sm">
+            {([
+              ['single', '🎯 Analyser un métier'],
+              ['compare', '⚔️ Comparer deux métiers'],
+            ] as const).map(([m, label]) => (
               <button
-                key={s}
-                type="button"
-                onClick={() => submit(s)}
-                className="rounded-full border border-ink-200 bg-white px-3 py-1 text-sm text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
+                key={m}
+                onClick={() => setMode(m)}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  mode === m ? 'bg-brand-600 text-white shadow' : 'text-ink-600 hover:text-brand-700'
+                }`}
               >
-                {s}
+                {label}
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Champ(s) de recherche */}
+        <form
+          className="animate-fade-up mx-auto mt-6 max-w-xl"
+          style={{ animationDelay: '200ms' }}
+          onSubmit={(e) => {
+            e.preventDefault()
+            submit()
+          }}
+        >
+          {mode === 'single' ? (
+            <SearchInput value={value} setValue={setValue} placeholder="Ex : développeur, comptable, infirmière…" autoFocus />
+          ) : (
+            <div className="space-y-3">
+              <SearchInput value={value} setValue={setValue} placeholder="Premier métier (ex : graphiste)" autoFocus prefix="A" />
+              <SearchInput value={valueB} setValue={setValueB} placeholder="Second métier (ex : développeur)" prefix="B" />
+            </div>
+          )}
+
+          <button type="submit" className="btn-primary mt-4 w-full py-3.5" disabled={!canSubmit}>
+            {mode === 'single' ? 'Analyser mon métier' : 'Comparer les deux métiers'}
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
+              <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+
+          {/* Suggestions */}
+          {mode === 'single' && (
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+              <span className="text-sm text-ink-400">Essayez :</span>
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => onAnalyze(s)}
+                  className="rounded-full border border-ink-200 bg-white px-3 py-1 text-sm text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          )}
         </form>
 
         {/* Mini-stats de réassurance */}
-        <div className="animate-fade-up mx-auto mt-14 grid max-w-2xl grid-cols-3 gap-4" style={{ animationDelay: '240ms' }}>
+        <div className="animate-fade-up mx-auto mt-14 grid max-w-2xl grid-cols-3 gap-4" style={{ animationDelay: '260ms' }}>
           {[
             { n: '35+', l: 'métiers analysés' },
             { n: '7', l: 'facteurs d\'exposition' },
@@ -135,7 +166,7 @@ export function LandingPage({ onAnalyze }: Props) {
             {[
               { e: '🎯', t: 'Score de remplaçabilité', d: 'Un pourcentage clair, calibré sur la nature réelle de vos tâches.' },
               { e: '📈', t: 'Projection 2026 → 2040', d: 'La trajectoire d\'automatisation année par année.' },
-              { e: '🧩', t: 'Décomposition par tâche', d: 'Quelles activités sont menacées, lesquelles restent humaines.' },
+              { e: '⚔️', t: 'Comparateur de métiers', d: 'Mettez deux professions face à face pour orienter un choix.' },
               { e: '🛡️', t: 'Plan anti-obsolescence', d: 'Compétences d\'avenir et pistes de reconversion concrètes.' },
             ].map((f) => (
               <div key={f.t} className="flex gap-4">
@@ -156,6 +187,42 @@ export function LandingPage({ onAnalyze }: Props) {
           Prototype à visée pédagogique — les estimations sont indicatives et ne constituent pas un conseil professionnel.
         </p>
       </footer>
+    </div>
+  )
+}
+
+function SearchInput({
+  value,
+  setValue,
+  placeholder,
+  autoFocus,
+  prefix,
+}: {
+  value: string
+  setValue: (v: string) => void
+  placeholder: string
+  autoFocus?: boolean
+  prefix?: string
+}) {
+  return (
+    <div className="group flex items-center gap-2 rounded-2xl border border-ink-200 bg-white p-2 shadow-card transition focus-within:border-brand-300 focus-within:shadow-glow">
+      {prefix ? (
+        <span className="ml-2 grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-brand-50 text-sm font-bold text-brand-700">
+          {prefix}
+        </span>
+      ) : (
+        <svg className="ml-3 h-5 w-5 shrink-0 text-ink-400" viewBox="0 0 24 24" fill="none">
+          <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+          <path d="m20 20-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      )}
+      <input
+        autoFocus={autoFocus}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={placeholder}
+        className="w-full bg-transparent px-1 py-2 text-base text-ink-900 outline-none placeholder:text-ink-400"
+      />
     </div>
   )
 }

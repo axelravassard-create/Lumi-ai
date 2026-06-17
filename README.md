@@ -22,12 +22,26 @@ Prototype à visée pédagogique — interface moderne, expérience guidée.
 - **Plan anti-obsolescence** : recommandations personnalisées (augmentation, différenciation, évolution).
 - **Compétences d'avenir** : les compétences à développer en priorité.
 - **Pistes de reconversion** : des métiers plus résilients à explorer.
+- **Comparateur de métiers** : deux professions face à face (jauges, trajectoires superposées, verdict).
+- **IA Claude (optionnelle)** : verdict, recommandations et comparaison rédigés en direct par **Claude Opus 4.8**.
+
+## 🤖 Intégration Claude (optionnelle)
+
+Par défaut, l'application tourne en **mode démo** : tout est calculé localement, sans
+clé API. En connectant une clé API Anthropic (bouton « Mode démo / IA Claude » en haut
+à droite), le discours rédactionnel — verdict, recommandations, compétences, comparaison —
+est généré par **Claude Opus 4.8** via des **sorties structurées** (`output_config.format`),
+ancrées sur les chiffres du moteur (usage *grounded* : l'IA ne fabrique pas les données).
+
+> ⚠️ **Prototype uniquement** : la clé est stockée dans le navigateur (`localStorage`) et
+> appelle `api.anthropic.com` directement (`dangerouslyAllowBrowser`). En production, les
+> appels LLM doivent transiter par un backend pour ne jamais exposer la clé côté client.
 
 ## 🧠 Le moteur d'analyse
 
-Aucune clé API n'est requise : l'analyse repose sur un **modèle heuristique**
-embarqué, inspiré des travaux sur la susceptibilité à l'automatisation
-(type Frey & Osborne / OCDE).
+Aucune clé API n'est requise pour les **chiffres** : le score, la projection et les
+facteurs reposent sur un **modèle heuristique** déterministe embarqué, inspiré des
+travaux sur la susceptibilité à l'automatisation (type Frey & Osborne / OCDE).
 
 Chaque métier est décrit par **7 facteurs** (0–100) :
 
@@ -68,10 +82,14 @@ src/
   lib/
     professions.ts        # base de connaissances métiers (facteurs)
     engine.ts             # moteur : matching, score, projection, conseils
+    llm.ts                # intégration Claude (narratif + comparaison)
     ui.ts                 # thème par risque + hook d'animation
   components/
-    LandingPage.tsx       # page d'accueil
+    LandingPage.tsx       # page d'accueil (analyse + comparaison)
     Dashboard.tsx         # tableau de bord des résultats
+    CompareView.tsx       # vue de comparaison de deux métiers
+    ApiKeyModal.tsx       # configuration de la clé API Claude
+    AiStatusButton.tsx    # pastille d'état IA / mode démo
     RadialGauge.tsx       # jauge circulaire
     ProjectionChart.tsx   # graphique de projection
     Logo.tsx

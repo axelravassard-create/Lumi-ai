@@ -288,6 +288,7 @@ export interface Analysis {
   recommendations: Recommendation[]
   pivots: Pivot[]
   verdict: string
+  aiEnhanced?: boolean
 }
 
 function verdictText(level: RiskLevel, label: string): string {

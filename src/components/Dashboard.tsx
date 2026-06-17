@@ -76,7 +76,12 @@ export function Dashboard({ analysis, onReset }: Props) {
               <div className="flex items-start gap-3">
                 <span className="text-2xl">🤖</span>
                 <div>
-                  <h2 className="font-display text-sm font-bold uppercase tracking-wide text-ink-500">Verdict de l'IA</h2>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-display text-sm font-bold uppercase tracking-wide text-ink-500">Verdict de l'IA</h2>
+                    {analysis.aiEnhanced && (
+                      <span className="pill bg-emerald-100 text-emerald-700">✦ rédigé par Claude</span>
+                    )}
+                  </div>
                   <p className="mt-1 text-lg font-medium leading-snug text-ink-900">{analysis.verdict}</p>
                 </div>
               </div>
