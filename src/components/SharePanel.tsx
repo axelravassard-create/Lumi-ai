@@ -82,13 +82,17 @@ export function SharePanel({ role, score, level, onClose }: Props) {
           <p className="mt-2 text-sm leading-relaxed text-ink-600">{text}</p>
         </div>
 
-        {/* Visuel à poster */}
+        {/* Visuel à poster (Snapchat, Instagram, stories…) */}
         <button onClick={downloadVisual} disabled={card === 'busy'} className="btn-primary mt-4 w-full justify-center py-2.5 text-sm">
-          {card === 'busy' ? 'Génération…' : '🖼️ Télécharger le visuel à poster'}
+          {card === 'busy' ? 'Génération…' : '📸 Partager le visuel (Snapchat, Insta…)'}
         </button>
+        <p className="mt-1.5 text-xs text-ink-400">
+          Snapchat & Instagram n'acceptent pas les liens : sur mobile, choisissez l'app dans le menu de partage ;
+          sur ordinateur, l'image est enregistrée — publiez-la ensuite depuis l'app.
+        </p>
 
         {/* Partage natif + copie */}
-        <div className="mt-2 flex gap-2">
+        <div className="mt-3 flex gap-2">
           <button onClick={nativeShare} className="btn-ghost flex-1 justify-center py-2.5 text-sm">
             Partager le lien
           </button>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Analytics } from '@vercel/analytics/react'
 import { analyze, withScore, applyProfileAdjustment, personalAssets, Analysis } from './lib/engine'
 import { describeError, generateComparison, generateNarrative, hasApiKey, ComparisonResult } from './lib/llm'
 import { LandingPage } from './components/LandingPage'
@@ -149,6 +150,7 @@ export default function App() {
 
   return (
     <>
+      <Analytics />
       {view === 'landing' && (
         <LandingPage
           onAnalyze={(p) => handleAnalyze(p)}
