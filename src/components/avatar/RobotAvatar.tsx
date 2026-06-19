@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { ContactShadows, Environment, Lightformer, RoundedBox } from '@react-three/drei'
+import { Environment, Lightformer } from '@react-three/drei'
 import { Bloom, EffectComposer } from '@react-three/postprocessing'
 import * as THREE from 'three'
 
@@ -10,8 +10,8 @@ interface Props {
   state: AvatarState
 }
 
-// Pointeur global normalisé (-1..1). Le robot suit le curseur où qu'il soit sur la
-// page : c'est ce qui le rend « vivant » — il vous regarde vraiment.
+// Pointeur global normalisé (-1..1). Le visage suit le curseur partout sur la
+// page : c'est ce qui crée le contact visuel et rend le personnage vivant.
 const pointer = { x: 0, y: 0, active: false }
 
 function usePointerTracking() {
@@ -38,224 +38,254 @@ const reducedMotion =
   window.matchMedia &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-// Couleurs des yeux : indigo calme au repos, cyan électrique en réflexion.
-const EYE_IDLE = new THREE.Color('#6d7bff')
-const EYE_THINK = new THREE.Color('#33e1ff')
+// Iris : indigo calme au repos, cyan électrique en réflexion.
+const IRIS_IDLE = new THREE.Color('#5566ff')
+const IRIS_THINK = new THREE.Color('#27e2ff')
+const SKIN = '#eef1fa' // blanc nacré, presque lumière
 
-// Un œil = lentille à diaphragme. Plusieurs anneaux concentriques émissifs qui
-// donnent l'impression d'un objectif qui fait la mise au point.
-function Eye({ matRef, coreRef }: { matRef: React.MutableRefObject<THREE.MeshStandardMaterial | null>; coreRef: React.MutableRefObject<THREE.Mesh | null> }) {
+// Un œil réaliste : globe blanc + iris lumineux + pupille + reflet de vie
+// (« catchlight »). Le globe pivote pour fixer le curseur, les paupières clignent.
+function Eye({
+  side,
+  eyeball,
+  irisMat,
+  upperLid,
+  lowerLid,
+}: {
+  side: number
+  eyeball: React.MutableRefObject<THREE.Group | null>
+  irisMat: React.MutableRefObject<THREE.MeshStandardMaterial | null>
+  upperLid: React.MutableRefObject<THREE.Mesh | null>
+  lowerLid: React.MutableRefObject<THREE.Mesh | null>
+}) {
   return (
-    <group>
-      {/* Logement sombre de l'œil (enfoncé dans la visière) */}
-      <mesh position={[0, 0, 0.005]}>
-        <circleGeometry args={[0.135, 48]} />
-        <meshStandardMaterial color="#05060f" roughness={0.4} metalness={0.5} />
+    <group position={[side * 0.35, 0.07, 0.72]}>
+      {/* Globe oculaire (pivote pour le regard) — grand, c'est l'acteur principal */}
+      <group ref={eyeball}>
+        {/* Sclère (blanc de l'œil) — mate pour éviter de griller en blanc */}
+        <mesh>
+          <sphereGeometry args={[0.2, 44, 44]} />
+          <meshStandardMaterial color="#dee3f0" roughness={0.55} metalness={0} />
+        </mesh>
+        {/* Anneau limbique sombre autour de l'iris (réalisme) */}
+        <mesh position={[0, 0, 0.182]}>
+          <circleGeometry args={[0.132, 44]} />
+          <meshStandardMaterial color="#161e42" roughness={0.5} />
+        </mesh>
+        {/* Iris lumineux — grand et coloré, il « illumine » et fixe l'utilisateur */}
+        <mesh position={[0, 0, 0.186]}>
+          <circleGeometry args={[0.12, 44]} />
+          <meshStandardMaterial
+            ref={irisMat}
+            color="#000"
+            emissive={IRIS_IDLE}
+            emissiveIntensity={2.4}
+            toneMapped={false}
+          />
+        </mesh>
+        {/* Pupille bien marquée */}
+        <mesh position={[0, 0, 0.193]}>
+          <circleGeometry args={[0.052, 32]} />
+          <meshStandardMaterial color="#03040c" roughness={0.2} />
+        </mesh>
+        {/* Reflet de vie (catchlight) — le petit éclat qui rend l'œil vivant */}
+        <mesh position={[0.05, 0.07, 0.205]}>
+          <circleGeometry args={[0.016, 16]} />
+          <meshStandardMaterial color="#fff" emissive="#fff" emissiveIntensity={3} toneMapped={false} />
+        </mesh>
+      </group>
+
+      {/* Paupière supérieure (pivote pour cligner) — calotte fine, yeux bien ouverts */}
+      <mesh ref={upperLid}>
+        <sphereGeometry args={[0.216, 36, 20, 0, Math.PI * 2, 0, Math.PI * 0.32]} />
+        <meshStandardMaterial color={SKIN} roughness={0.5} metalness={0.05} side={THREE.DoubleSide} />
       </mesh>
-      {/* Halo extérieur du diaphragme */}
-      <mesh position={[0, 0, 0.012]}>
-        <ringGeometry args={[0.092, 0.118, 48]} />
-        <meshStandardMaterial
-          ref={matRef}
-          color="#000"
-          emissive={EYE_IDLE}
-          emissiveIntensity={2.4}
-          toneMapped={false}
-        />
-      </mesh>
-      {/* Iris lumineux */}
-      <mesh position={[0, 0, 0.016]}>
-        <circleGeometry args={[0.08, 48]} />
-        <meshStandardMaterial color="#000" emissive={EYE_IDLE} emissiveIntensity={1.6} toneMapped={false} />
-      </mesh>
-      {/* Pupille / cœur très brillant */}
-      <mesh ref={coreRef} position={[0, 0, 0.02]}>
-        <circleGeometry args={[0.032, 32]} />
-        <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={3.2} toneMapped={false} />
+      {/* Paupière inférieure */}
+      <mesh ref={lowerLid}>
+        <sphereGeometry args={[0.216, 36, 20, 0, Math.PI * 2, Math.PI * 0.72, Math.PI * 0.28]} />
+        <meshStandardMaterial color={SKIN} roughness={0.5} metalness={0.05} side={THREE.DoubleSide} />
       </mesh>
     </group>
   )
 }
 
-function Robot({ state }: Props) {
+function Face({ state }: Props) {
   const group = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
-  const eyes = useRef<THREE.Group>(null)
+  const lEye = useRef<THREE.Group | null>(null)
+  const rEye = useRef<THREE.Group | null>(null)
+  const lIris = useRef<THREE.MeshStandardMaterial | null>(null)
+  const rIris = useRef<THREE.MeshStandardMaterial | null>(null)
+  const lUp = useRef<THREE.Mesh | null>(null)
+  const rUp = useRef<THREE.Mesh | null>(null)
+  const lLow = useRef<THREE.Mesh | null>(null)
+  const rLow = useRef<THREE.Mesh | null>(null)
   const halo = useRef<THREE.Group>(null)
-  const leftMat = useRef<THREE.MeshStandardMaterial | null>(null)
-  const rightMat = useRef<THREE.MeshStandardMaterial | null>(null)
-  const leftCore = useRef<THREE.Mesh | null>(null)
-  const rightCore = useRef<THREE.Mesh | null>(null)
   const rimLight = useRef<THREE.PointLight>(null)
 
-  // Niveau de « réflexion » lissé (0 = repos, 1 = pleine concentration).
   const think = useRef(0)
-  const blink = useRef({ next: 2, closing: 0 })
+  const blink = useRef({ next: 2.5, t: 0 })
+  const saccade = useRef({ next: 1.5, x: 0, y: 0 })
 
-  // Particules orbitales (le « flux de pensée » autour de la tête).
+  // Particules orbitales (flux de pensée) autour de la tête.
   const particles = useMemo(() => {
-    const count = 38
+    const count = 40
     const arr = new Float32Array(count * 3)
     for (let i = 0; i < count; i++) {
       const a = (i / count) * Math.PI * 2
-      const r = 1.35 + Math.random() * 0.25
+      const r = 1.55 + Math.random() * 0.3
       arr[i * 3] = Math.cos(a) * r
-      arr[i * 3 + 1] = (Math.random() - 0.5) * 0.5
+      arr[i * 3 + 1] = (Math.random() - 0.5) * 0.6
       arr[i * 3 + 2] = Math.sin(a) * r
     }
     return arr
   }, [])
 
-  useFrame((stateThree, delta) => {
-    const t = stateThree.clock.elapsedTime
+  useFrame((three, delta) => {
+    const t = three.clock.elapsedTime
     const d = Math.min(delta, 0.05)
 
-    // Cible de réflexion lissée
     const target = state === 'thinking' ? 1 : 0
     think.current += (target - think.current) * Math.min(1, d * 4)
     const k = think.current
 
-    // Direction du regard : vers le curseur (avec retour au centre si inactif)
-    const gx = pointer.active ? THREE.MathUtils.clamp(pointer.x, -1, 1) : Math.sin(t * 0.5) * 0.3
-    const gy = pointer.active ? THREE.MathUtils.clamp(pointer.y, -1, 1) : Math.cos(t * 0.4) * 0.2
+    // Direction du regard : curseur, sinon balayage doux + micro-saccades.
+    saccade.current.next -= d
+    if (saccade.current.next <= 0) {
+      saccade.current.next = 0.8 + Math.random() * 2.5
+      saccade.current.x = (Math.random() - 0.5) * 0.5
+      saccade.current.y = (Math.random() - 0.5) * 0.3
+    }
+    const gx = pointer.active ? THREE.MathUtils.clamp(pointer.x, -1, 1) : Math.sin(t * 0.4) * 0.4 + saccade.current.x
+    const gy = pointer.active ? THREE.MathUtils.clamp(pointer.y, -1, 1) : saccade.current.y
 
-    // La tête s'oriente subtilement vers le curseur, et penche en concentration.
+    // La tête s'oriente légèrement vers le curseur (et penche en réflexion).
     if (head.current) {
-      const swayX = reducedMotion ? 0 : Math.sin(t * 0.7) * 0.02
-      head.current.rotation.y += (gx * 0.32 + swayX - head.current.rotation.y) * Math.min(1, d * 3)
-      head.current.rotation.x += (gy * 0.22 + k * 0.12 - head.current.rotation.x) * Math.min(1, d * 3)
+      const sway = reducedMotion ? 0 : Math.sin(t * 0.6) * 0.015
+      head.current.rotation.y += (gx * 0.18 + sway - head.current.rotation.y) * Math.min(1, d * 3)
+      head.current.rotation.x += (gy * 0.12 + k * 0.06 - head.current.rotation.x) * Math.min(1, d * 3)
     }
 
-    // Les yeux se déplacent dans la visière pour fixer le curseur.
-    if (eyes.current) {
-      const ex = gx * 0.05
-      const ey = -gy * 0.04
-      eyes.current.position.x += (ex - eyes.current.position.x) * Math.min(1, d * 6)
-      eyes.current.position.y += (1.02 + ey - eyes.current.position.y) * Math.min(1, d * 6)
-
-      // Clignement périodique : on écrase brièvement les yeux en hauteur.
-      blink.current.next -= d
-      if (blink.current.next <= 0 && blink.current.closing <= 0) {
-        blink.current.closing = 0.16
-        blink.current.next = 2.4 + Math.random() * 3.5
-      }
-      let blinkScale = 1
-      if (blink.current.closing > 0 && !reducedMotion) {
-        blink.current.closing -= d
-        const p = 1 - blink.current.closing / 0.16
-        blinkScale = Math.abs(Math.cos(p * Math.PI)) * 0.9 + 0.1
-      }
-      eyes.current.scale.y += (blinkScale - eyes.current.scale.y) * Math.min(1, d * 14)
+    // Les globes oculaires pivotent pour fixer le curseur (acteur principal).
+    const eyeRotY = gx * 0.42
+    const eyeRotX = gy * 0.32
+    for (const e of [lEye.current, rEye.current]) {
+      if (!e) continue
+      e.rotation.y += (eyeRotY - e.rotation.y) * Math.min(1, d * 7)
+      e.rotation.x += (eyeRotX - e.rotation.x) * Math.min(1, d * 7)
     }
 
-    // Couleur + intensité des yeux selon la réflexion, avec une pulsation vivante.
-    const pulse = 1 + Math.sin(t * (3 + k * 6)) * (0.18 + k * 0.5)
-    const col = EYE_IDLE.clone().lerp(EYE_THINK, k)
-    for (const m of [leftMat.current, rightMat.current]) {
+    // Clignement : les paupières se referment brièvement.
+    blink.current.next -= d
+    if (blink.current.next <= 0 && blink.current.t <= 0) {
+      blink.current.t = 0.15
+      blink.current.next = 2.2 + Math.random() * 3.5
+    }
+    let close = 0
+    if (blink.current.t > 0 && !reducedMotion) {
+      blink.current.t -= d
+      const p = 1 - blink.current.t / 0.15
+      close = Math.sin(p * Math.PI) // 0→1→0
+    }
+    const upTarget = -0.04 + close * 1.15
+    const lowTarget = 0.04 - close * 0.5
+    for (const l of [lUp.current, rUp.current]) if (l) l.rotation.x += (upTarget - l.rotation.x) * Math.min(1, d * 18)
+    for (const l of [lLow.current, rLow.current]) if (l) l.rotation.x += (lowTarget - l.rotation.x) * Math.min(1, d * 18)
+
+    // Iris : couleur + éclat selon la réflexion, avec une pulsation vivante.
+    const pulse = 1 + Math.sin(t * (2.5 + k * 6)) * (0.12 + k * 0.45)
+    const col = IRIS_IDLE.clone().lerp(IRIS_THINK, k)
+    for (const m of [lIris.current, rIris.current]) {
       if (!m) continue
       m.emissive.copy(col)
-      m.emissiveIntensity = (2.2 + k * 3.2) * pulse
+      m.emissiveIntensity = (1.3 + k * 3.4) * pulse
     }
-    // Le cœur de la pupille se contracte légèrement quand il « focalise ».
-    const coreScale = 1 - k * 0.25 + Math.sin(t * 4) * 0.04
-    leftCore.current?.scale.setScalar(coreScale)
-    rightCore.current?.scale.setScalar(coreScale)
 
-    // Respiration + légère lévitation de tout le buste.
+    // Respiration / lévitation : un être de lumière qui flotte.
     if (group.current && !reducedMotion) {
-      group.current.position.y = Math.sin(t * 1.1) * 0.04
-      const breathe = 1 + Math.sin(t * 1.6) * 0.012
-      group.current.scale.y = breathe
+      group.current.position.y = -0.02 + Math.sin(t * 1.1) * 0.03
+      group.current.rotation.z = Math.sin(t * 0.5) * 0.01
     }
 
-    // Halo orbital : tourne en continu, accélère et s'incline en réflexion.
+    // Halo orbital.
     if (halo.current) {
-      halo.current.rotation.y += d * (0.4 + k * 1.6)
-      halo.current.rotation.x = 0.5 + k * 0.25
+      halo.current.rotation.y += d * (0.3 + k * 1.5)
+      halo.current.rotation.x = 0.5 + k * 0.2
     }
 
-    // Lumière d'accent qui s'intensifie et vire au cyan en réflexion.
     if (rimLight.current) {
-      rimLight.current.intensity = 6 + k * 14 + Math.sin(t * 3) * k * 4
+      rimLight.current.intensity = 4 + k * 12 + Math.sin(t * 3) * k * 3
       rimLight.current.color.copy(col)
     }
   })
 
   return (
-    <group ref={group} position={[0, -0.15, 0]}>
-      {/* ---- Tête ---- */}
-      <group ref={head} position={[0, 1.02, 0]}>
-        {/* Coque de la tête, blanc nacré */}
-        <RoundedBox args={[1.18, 1.12, 1.04]} radius={0.34} smoothness={6} castShadow>
-          <meshStandardMaterial color="#f3f5ff" metalness={0.55} roughness={0.28} />
-        </RoundedBox>
-        {/* Visière : verre noir incurvé où brillent les yeux */}
-        <mesh position={[0, 0.02, 0.46]}>
-          <sphereGeometry args={[0.66, 48, 48, Math.PI * 0.18, Math.PI * 0.64, Math.PI * 0.22, Math.PI * 0.5]} />
-          <meshStandardMaterial color="#070912" metalness={0.9} roughness={0.12} side={THREE.DoubleSide} />
+    <group ref={group}>
+      <group ref={head}>
+        {/* Crâne ovale d'un seul tenant (sans couture), légèrement aminci vers
+            le menton pour une silhouette humaine. */}
+        <mesh scale={[0.92, 1.12, 0.96]} position={[0, 0.02, 0]}>
+          <sphereGeometry args={[1, 64, 64]} />
+          <meshStandardMaterial color={SKIN} roughness={0.5} metalness={0.05} />
         </mesh>
-        {/* Yeux posés sur la visière */}
-        <group ref={eyes} position={[0, 1.02, 0]}>
-          <group position={[-0.27, 0, 0.62]}>
-            <Eye matRef={leftMat} coreRef={leftCore} />
-          </group>
-          <group position={[0.27, 0, 0.62]}>
-            <Eye matRef={rightMat} coreRef={rightCore} />
-          </group>
-        </group>
-        {/* Oreillettes / capteurs latéraux */}
+        {/* Menton : petit volume fondu dans le bas du visage */}
+        <mesh scale={[0.5, 0.42, 0.55]} position={[0, -0.92, 0.18]}>
+          <sphereGeometry args={[1, 48, 48]} />
+          <meshStandardMaterial color={SKIN} roughness={0.5} metalness={0.05} />
+        </mesh>
+        {/* Arcades sourcilières */}
         {[-1, 1].map((s) => (
-          <mesh key={s} position={[s * 0.62, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.12, 0.12, 0.12, 24]} />
-            <meshStandardMaterial color="#c9d0f5" metalness={0.8} roughness={0.3} />
+          <mesh key={s} position={[s * 0.33, 0.29, 0.82]} rotation={[0.2, 0, s * -0.12]} scale={[1.3, 0.45, 0.5]}>
+            <sphereGeometry args={[0.13, 24, 16]} />
+            <meshStandardMaterial color={SKIN} roughness={0.5} metalness={0.05} />
           </mesh>
         ))}
-        {/* Antenne avec bille lumineuse */}
-        <mesh position={[0, 0.66, 0]}>
-          <cylinderGeometry args={[0.018, 0.018, 0.22, 12]} />
-          <meshStandardMaterial color="#aab2e0" metalness={0.8} roughness={0.3} />
+        {/* Nez : arête + pointe, en relief sur le visage */}
+        <mesh position={[0, -0.04, 0.9]} rotation={[0.34, 0, 0]} scale={[0.4, 1.25, 0.62]}>
+          <sphereGeometry args={[0.13, 24, 24]} />
+          <meshStandardMaterial color={SKIN} roughness={0.5} metalness={0.05} />
         </mesh>
-        <mesh position={[0, 0.82, 0]}>
-          <sphereGeometry args={[0.055, 24, 24]} />
-          <meshStandardMaterial color="#000" emissive={EYE_THINK} emissiveIntensity={3} toneMapped={false} />
+        {/* Lèvres / bouche neutre, un peu plus large */}
+        <mesh position={[0, -0.43, 0.86]} scale={[1, 0.5, 0.5]} rotation={[Math.PI / 2, 0, 0]}>
+          <capsuleGeometry args={[0.05, 0.34, 6, 16]} />
+          <meshStandardMaterial color="#cda4b1" roughness={0.45} metalness={0.05} />
         </mesh>
+
+        {/* Yeux — acteurs principaux de l'interaction */}
+        <Eye side={-1} eyeball={lEye} irisMat={lIris} upperLid={lUp} lowerLid={lLow} />
+        <Eye side={1} eyeball={rEye} irisMat={rIris} upperLid={rUp} lowerLid={rLow} />
+
+        {/* Oreilles */}
+        {[-1, 1].map((s) => (
+          <mesh key={s} position={[s * 0.9, -0.02, 0.02]} scale={[0.4, 0.9, 0.7]}>
+            <sphereGeometry args={[0.18, 24, 24]} />
+            <meshStandardMaterial color={SKIN} roughness={0.5} metalness={0.05} />
+          </mesh>
+        ))}
       </group>
 
-      {/* ---- Cou ---- */}
-      <mesh position={[0, 0.42, 0]}>
-        <cylinderGeometry args={[0.2, 0.26, 0.34, 24]} />
-        <meshStandardMaterial color="#d4daf6" metalness={0.7} roughness={0.35} />
+      {/* Cou (sort du cadre vers le bas) */}
+      <mesh position={[0, -1.5, 0]}>
+        <cylinderGeometry args={[0.4, 0.5, 1.2, 32]} />
+        <meshStandardMaterial color={SKIN} roughness={0.5} metalness={0.05} />
       </mesh>
 
-      {/* ---- Buste / épaules ---- */}
-      <RoundedBox args={[1.5, 0.78, 0.86]} radius={0.3} smoothness={6} position={[0, -0.12, 0]} castShadow>
-        <meshStandardMaterial color="#eef1ff" metalness={0.5} roughness={0.32} />
-      </RoundedBox>
-      {/* Plastron lumineux (cœur d'énergie) */}
-      <mesh position={[0, -0.05, 0.44]}>
-        <circleGeometry args={[0.16, 32]} />
-        <meshStandardMaterial color="#000" emissive={EYE_THINK} emissiveIntensity={1.6} toneMapped={false} />
-      </mesh>
-
-      {/* ---- Halo orbital de particules (le flux de pensée) ---- */}
-      <group ref={halo} position={[0, 1.02, 0]} rotation={[0.5, 0, 0]}>
+      {/* Halo orbital de particules (flux de pensée) */}
+      <group ref={halo} rotation={[0.5, 0, 0]}>
         <points>
           <bufferGeometry>
             <bufferAttribute attach="attributes-position" args={[particles, 3]} />
           </bufferGeometry>
-          <pointsMaterial size={0.045} color={EYE_THINK} transparent opacity={0.9} sizeAttenuation toneMapped={false} />
+          <pointsMaterial size={0.04} color={IRIS_THINK} transparent opacity={0.85} sizeAttenuation toneMapped={false} />
         </points>
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[1.4, 0.008, 8, 80]} />
-          <meshStandardMaterial color="#000" emissive={EYE_IDLE} emissiveIntensity={1.2} toneMapped={false} />
-        </mesh>
       </group>
 
-      {/* ---- Éclairage ---- */}
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[3, 5, 4]} intensity={2.2} castShadow />
-      <pointLight position={[-3, 1, 2]} intensity={3} color="#7c84ff" />
-      <pointLight ref={rimLight} position={[0, 1.2, -2.2]} intensity={6} color={EYE_IDLE} />
+      {/* Éclairage : ambiance « tout en lumière », mais avec un modelé doux pour
+          que le visage blanc garde son relief sur fond blanc. */}
+      <ambientLight intensity={0.45} />
+      <directionalLight position={[2.5, 4, 5]} intensity={1.5} />
+      <directionalLight position={[-4, 1, 2]} intensity={0.6} color="#cfd6ff" />
+      <pointLight ref={rimLight} position={[0, 0.5, -2.5]} intensity={3} color={IRIS_IDLE} />
     </group>
   )
 }
@@ -266,21 +296,19 @@ export default function RobotAvatar({ state }: Props) {
     <Canvas
       dpr={[1, 2]}
       gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
-      camera={{ position: [0, 1.05, 4.2], fov: 38 }}
+      camera={{ position: [0, 0.02, 4.9], fov: 30 }}
       style={{ background: 'transparent' }}
     >
-      <Robot state={state} />
-      <ContactShadows position={[0, -1.05, 0]} opacity={0.35} scale={5} blur={2.6} far={3} color="#1a1c3a" />
-      {/* Environnement de studio généré localement (aucun téléchargement réseau)
-          pour des reflets propres sur les surfaces métalliques. */}
+      <Face state={state} />
+      {/* Environnement studio généré localement (aucun téléchargement réseau). */}
       <Environment resolution={128}>
-        <Lightformer intensity={2.4} position={[0, 2, 3]} scale={[6, 4, 1]} color="#ffffff" />
-        <Lightformer intensity={1.6} position={[-3, 1, 2]} scale={[3, 4, 1]} color="#9aa4ff" />
-        <Lightformer intensity={1.4} position={[3, 0, -2]} scale={[3, 4, 1]} color="#5b63d6" />
-        <Lightformer intensity={1} position={[0, -2, 1]} scale={[6, 3, 1]} color="#2a2d52" />
+        <Lightformer intensity={0.8} position={[0, 1, 4]} scale={[10, 8, 1]} color="#ffffff" />
+        <Lightformer intensity={0.6} position={[-4, 2, 2]} scale={[5, 6, 1]} color="#e6e9ff" />
+        <Lightformer intensity={0.5} position={[4, -1, 1]} scale={[5, 6, 1]} color="#dfe3ff" />
       </Environment>
       <EffectComposer>
-        <Bloom intensity={1.15} luminanceThreshold={0.25} luminanceSmoothing={0.5} mipmapBlur radius={0.7} />
+        {/* Seuil élevé : seuls les yeux lumineux (HDR) « bloomment », le visage reste net. */}
+        <Bloom intensity={0.9} luminanceThreshold={1.0} luminanceSmoothing={0.3} mipmapBlur radius={0.6} />
       </EffectComposer>
     </Canvas>
   )
