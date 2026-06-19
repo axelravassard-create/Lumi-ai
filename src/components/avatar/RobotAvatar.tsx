@@ -8,6 +8,8 @@ export type AvatarState = 'idle' | 'thinking'
 
 interface Props {
   state: AvatarState
+  /** Quand false, la boucle de rendu est mise en pause (économie GPU hors écran). */
+  active?: boolean
 }
 
 // Pointeur global normalisé (-1..1). Le visage suit le curseur partout sur la
@@ -290,10 +292,12 @@ function Face({ state }: Props) {
   )
 }
 
-export default function RobotAvatar({ state }: Props) {
+export default function RobotAvatar({ state, active = true }: Props) {
   usePointerTracking()
   return (
     <Canvas
+      // 'never' suspend la boucle de rendu quand l'avatar est hors écran.
+      frameloop={active ? 'always' : 'never'}
       dpr={[1, 2]}
       gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
       camera={{ position: [0, 0.02, 4.9], fov: 30 }}

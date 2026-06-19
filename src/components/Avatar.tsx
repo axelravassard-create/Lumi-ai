@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import type { AvatarState } from './avatar/RobotAvatar'
 
 // Le moteur 3D (three.js + R3F) est lourd : on le charge à la demande pour ne
@@ -44,12 +44,27 @@ function Fallback({ state }: { state: AvatarState }) {
 
 export function Avatar({ state = 'idle', className = '', forceFallback = false }: Props) {
   const canRender3D = useMemo(() => !forceFallback && supportsWebGL(), [forceFallback])
+  const ref = useRef<HTMLDivElement>(null)
+  // Visible à l'écran ? On met la 3D en pause quand l'avatar sort du viewport
+  // (économie GPU/batterie sur les pages longues comme le tableau de bord).
+  const [visible, setVisible] = useState(true)
+
+  useEffect(() => {
+    if (!canRender3D || !ref.current || typeof IntersectionObserver === 'undefined') return
+    const el = ref.current
+    const obs = new IntersectionObserver(
+      ([entry]) => setVisible(entry.isIntersecting),
+      { rootMargin: '120px' },
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [canRender3D])
 
   return (
-    <div className={`relative select-none ${className}`}>
+    <div ref={ref} className={`relative select-none ${className}`}>
       {canRender3D ? (
         <Suspense fallback={<Fallback state={state} />}>
-          <RobotAvatar state={state} />
+          <RobotAvatar state={state} active={visible} />
         </Suspense>
       ) : (
         <Fallback state={state} />

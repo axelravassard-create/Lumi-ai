@@ -7,6 +7,7 @@ import { RadialGauge } from './RadialGauge'
 import { ProjectionChart } from './ProjectionChart'
 import { SharePanel } from './SharePanel'
 import { SectorTrendCard } from './SectorTrendCard'
+import { Avatar } from './Avatar'
 
 interface Props {
   analysis: Analysis
@@ -94,8 +95,26 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
           </div>
         </section>
 
-        {/* Bloc principal : jauge + verdict + métriques */}
-        <section className="animate-fade-up mt-6 grid gap-6 lg:grid-cols-[320px_1fr]" style={{ animationDelay: '80ms' }}>
+        {/* Le personnage présente votre analyse (acteur de tous les bilans) */}
+        <section className="animate-fade-up mt-6" style={{ animationDelay: '60ms' }}>
+          <div className="card flex flex-col items-center gap-5 p-5 sm:flex-row sm:gap-6 sm:p-6">
+            <div className="relative h-36 w-36 shrink-0 overflow-hidden rounded-3xl bg-gradient-to-b from-ink-50 to-white sm:h-44 sm:w-44">
+              <Avatar state="idle" className="h-full w-full" />
+            </div>
+            <div className={`relative flex-1 self-stretch rounded-2xl border-l-4 p-5 ${theme.bg}`} style={{ borderColor: theme.hex }}>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="font-display text-sm font-bold uppercase tracking-wide text-ink-500">Verdict de l'IA</h2>
+                {analysis.aiEnhanced && (
+                  <span className="pill bg-emerald-100 text-emerald-700">✦ rédigé par Claude</span>
+                )}
+              </div>
+              <p className="mt-1.5 text-lg font-medium leading-snug text-ink-900">{analysis.verdict}</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Bloc principal : jauge + métriques */}
+        <section className="animate-fade-up mt-6 grid gap-6 lg:grid-cols-[320px_1fr]" style={{ animationDelay: '120ms' }}>
           <div className="card flex flex-col items-center justify-center gap-2 p-8">
             <span className="text-sm font-medium text-ink-500">Risque de remplacement par l'IA</span>
             <RadialGauge score={analysis.score} level={analysis.level} />
@@ -119,27 +138,10 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
             )}
           </div>
 
-          <div className="flex flex-col gap-6">
-            <div className={`card border-l-4 p-6 ${theme.bg}`} style={{ borderColor: theme.hex }}>
-              <div className="flex items-start gap-3">
-                <span className="text-2xl">🤖</span>
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="font-display text-sm font-bold uppercase tracking-wide text-ink-500">Verdict de l'IA</h2>
-                    {analysis.aiEnhanced && (
-                      <span className="pill bg-emerald-100 text-emerald-700">✦ rédigé par Claude</span>
-                    )}
-                  </div>
-                  <p className="mt-1 text-lg font-medium leading-snug text-ink-900">{analysis.verdict}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <MetricCard label="Déjà automatisable" value={`${Math.round(current)}%`} hint="à date · en hausse ↑" accent={theme.hex} />
-              <MetricCard label={`Projection ${HORIZON_YEAR}`} value={`${Math.round(risk2040)}%`} hint="potentiel à terme" accent={theme.hex} />
-              <MetricCard label="Résilience humaine" value={`${Math.round(resilience)}%`} hint="part difficile à automatiser" accent="#10b981" />
-            </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <MetricCard label="Déjà automatisable" value={`${Math.round(current)}%`} hint="à date · en hausse ↑" accent={theme.hex} />
+            <MetricCard label={`Projection ${HORIZON_YEAR}`} value={`${Math.round(risk2040)}%`} hint="potentiel à terme" accent={theme.hex} />
+            <MetricCard label="Résilience humaine" value={`${Math.round(resilience)}%`} hint="part difficile à automatiser" accent="#10b981" />
           </div>
         </section>
 
