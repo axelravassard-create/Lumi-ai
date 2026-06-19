@@ -188,39 +188,98 @@ export interface ChatMsg {
   content: string
 }
 
-const LUMINATOR_SYSTEM = `Tu es Luminator, le compagnon de carrière des utilisateurs de l'application Lumi.
+const LUMINATOR_SYSTEM = `Tu es Luminator, le coach de carrière personnel de l'utilisateur dans l'application Lumi.
 
-Personnalité : chaleureux, encourageant, lucide et concret. Tu tutoies l'utilisateur, comme un mentor de confiance. Tu as de l'humour léger mais tu restes utile.
+Personnalité : chaleureux, encourageant, lucide et concret. Tu tutoies l'utilisateur, comme un mentor de confiance. Humour léger, jamais creux.
 
-Ta mission : aider l'utilisateur à anticiper l'impact de l'IA sur sa carrière — comprendre son exposition, développer les bonnes compétences, se reconvertir, négocier, évoluer, ou se lancer.
+Ta mission : coacher l'utilisateur sur SA carrière face à l'IA, à partir de SON métier et de son parcours — comprendre son exposition, développer les bonnes compétences, se reconvertir, négocier, évoluer ou se lancer. Personnalise toujours : pars de ce que tu sais de lui (profil + ce qu'il dit) plutôt que de donner des généralités.
 
-Règles :
-- Réponses COURTES et lisibles (2 à 4 phrases en général, ou une liste brève si pertinent). On est dans un chat, pas un rapport.
-- Concret et actionnable : des pistes, des exemples, des prochaines étapes.
+Mémoire :
+- Tu disposes d'un outil "update_career_profile". Dès que l'utilisateur révèle une information STABLE et utile sur son parcours (métier, secteur, expérience, niveau, compétences, formation, postes passés, objectif, contraintes, rapport à l'IA…), appelle cet outil pour la noter sur son profil.
+- Ainsi tu t'en souviens durablement et tu évites de reposer les mêmes questions. N'invente jamais d'information : ne note que ce que l'utilisateur a réellement dit.
+- N'annonce pas mécaniquement « j'ai noté » à chaque fois ; reste naturel.
+
+Règles de réponse :
+- COURT et lisible (2 à 4 phrases en général, ou une courte liste). On est dans un chat, pas un rapport.
+- Concret et actionnable : des pistes, des exemples, une prochaine étape.
 - Honnête et nuancé, jamais alarmiste ni faussement rassurant.
-- Si on te demande quelque chose hors sujet (loin de la carrière / du travail / de l'IA), réponds brièvement puis ramène gentiment vers ta mission.
-- Pas de markdown lourd : du texte clair, éventuellement des tirets pour une courte liste.`
+- Si tu manques d'une info clé pour bien conseiller, pose UNE question ciblée.
+- Hors sujet (loin de la carrière / du travail / de l'IA) : réponds brièvement puis ramène vers ta mission.
+- Pas de markdown lourd : du texte clair, éventuellement des tirets.`
+
+// Outil de mémoire : Luminator écrit les infos de parcours sur le profil.
+const PROFILE_TOOL: Anthropic.Tool = {
+  name: 'update_career_profile',
+  description:
+    "Enregistre durablement sur le profil de l'utilisateur les informations de carrière qu'il vient de partager. N'envoie que des champs réellement mentionnés ; laisse les autres vides.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      role: { type: 'string', description: 'Intitulé du métier actuel.' },
+      sector: { type: 'string', description: "Secteur d'activité." },
+      experience: { type: 'string', description: "Ancienneté (ex: '3–7 ans')." },
+      level: { type: 'string', description: 'Niveau (ex: Débutant, Senior, Manager).' },
+      location: { type: 'string', description: 'Localisation.' },
+      status: { type: 'string', description: 'Statut (salarié, indépendant, en recherche…).' },
+      education: { type: 'string', description: 'Formation / diplômes.' },
+      goal: { type: 'string', description: 'Objectif de carrière.' },
+      aiAppetite: { type: 'string', description: "Rapport à l'IA / au changement." },
+      constraints: { type: 'string', description: 'Contraintes (mobilité, temps, salaire…).' },
+      tasks: { type: 'array', items: { type: 'string' }, description: 'Tâches du quotidien.' },
+      hardSkills: { type: 'array', items: { type: 'string' }, description: 'Compétences techniques.' },
+      softSkills: { type: 'array', items: { type: 'string' }, description: 'Compétences humaines.' },
+      pastRoles: { type: 'array', items: { type: 'string' }, description: 'Postes précédents.' },
+    },
+  },
+}
+
+interface ChatOptions {
+  onDelta: (text: string) => void
+  /** Appelé quand Luminator note des infos de parcours ; renvoie un message de confirmation pour l'IA. */
+  onProfileUpdate?: (patch: Record<string, unknown>) => string
+  extraContext?: string
+}
 
 // Chat en streaming avec Luminator : les tokens arrivent au fil de l'eau (onDelta)
-// pour pouvoir animer la bouche du personnage pendant qu'il « parle ».
-export async function streamLuminatorChat(
-  history: ChatMsg[],
-  onDelta: (text: string) => void,
-  extraContext?: string,
-): Promise<string> {
-  const system = LUMINATOR_SYSTEM + (extraContext ? `\n\n--- Contexte sur l'utilisateur ---\n${extraContext}` : '')
-  const stream = client().messages.stream({
-    model: MODEL,
-    max_tokens: 1024,
-    system,
-    messages: history.map((m) => ({ role: m.role, content: m.content })),
-  })
-  stream.on('text', (t) => onDelta(t))
-  const final = await stream.finalMessage()
-  return final.content
-    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-    .map((b) => b.text)
-    .join('')
+// pour animer la bouche du personnage. Gère l'outil de mémoire (boucle tool_use).
+export async function streamLuminatorChat(history: ChatMsg[], opts: ChatOptions): Promise<string> {
+  const c = client()
+  const system =
+    LUMINATOR_SYSTEM + (opts.extraContext ? `\n\n--- Ce que tu sais déjà de l'utilisateur ---\n${opts.extraContext}` : '')
+  const messages: Anthropic.MessageParam[] = history.map((m) => ({ role: m.role, content: m.content }))
+  let full = ''
+
+  // Boucle d'agent : on relance tant que Luminator appelle l'outil de mémoire.
+  for (let guard = 0; guard < 5; guard++) {
+    const stream = c.messages.stream({
+      model: MODEL,
+      max_tokens: 1024,
+      system,
+      tools: [PROFILE_TOOL],
+      messages,
+    })
+    stream.on('text', (t) => {
+      full += t
+      opts.onDelta(t)
+    })
+    const msg = await stream.finalMessage()
+    messages.push({ role: 'assistant', content: msg.content })
+
+    if (msg.stop_reason !== 'tool_use') break
+
+    const results: Anthropic.ToolResultBlockParam[] = []
+    for (const block of msg.content) {
+      if (block.type === 'tool_use' && block.name === 'update_career_profile') {
+        const note = opts.onProfileUpdate
+          ? opts.onProfileUpdate(block.input as Record<string, unknown>)
+          : 'ok'
+        results.push({ type: 'tool_result', tool_use_id: block.id, content: note })
+      }
+    }
+    messages.push({ role: 'user', content: results })
+  }
+
+  return full
 }
 
 // ── Extraction de profil depuis un CV ────────────────────────────────────────

@@ -132,3 +132,61 @@ export function profileToContext(p: CareerProfile): string {
 export function hasProfile(p: CareerProfile): boolean {
   return completeness(p) > 0
 }
+
+// Champs que Luminator peut renseigner depuis la conversation.
+const STRING_FIELDS: { key: keyof CareerProfile; label: string }[] = [
+  { key: 'role', label: 'métier' },
+  { key: 'sector', label: 'secteur' },
+  { key: 'experience', label: 'expérience' },
+  { key: 'level', label: 'niveau' },
+  { key: 'location', label: 'localisation' },
+  { key: 'status', label: 'statut' },
+  { key: 'education', label: 'formation' },
+  { key: 'aiSkill', label: 'maîtrise de l\'IA' },
+  { key: 'goal', label: 'objectif' },
+  { key: 'aiAppetite', label: 'rapport à l\'IA' },
+  { key: 'constraints', label: 'contraintes' },
+]
+const ARRAY_FIELDS: { key: keyof CareerProfile; label: string }[] = [
+  { key: 'tasks', label: 'tâches' },
+  { key: 'hardSkills', label: 'compétences techniques' },
+  { key: 'softSkills', label: 'compétences humaines' },
+  { key: 'pastRoles', label: 'postes précédents' },
+]
+
+// Fusionne dans le profil les infos de carrière repérées par Luminator pendant
+// la conversation (les chaînes écrasent, les listes s'ajoutent sans doublon),
+// puis sauvegarde. Renvoie la liste des champs réellement modifiés.
+export function applyProfilePatch(patch: Record<string, unknown>): string[] {
+  const p = loadProfile()
+  const changed: string[] = []
+
+  for (const { key, label } of STRING_FIELDS) {
+    const v = patch[key]
+    if (typeof v === 'string' && v.trim() && p[key] !== v.trim()) {
+      ;(p[key] as string) = v.trim()
+      changed.push(label)
+    }
+  }
+  for (const { key, label } of ARRAY_FIELDS) {
+    const v = patch[key]
+    if (Array.isArray(v)) {
+      const set = new Set(p[key] as string[])
+      let added = false
+      for (const item of v) {
+        if (typeof item === 'string' && item.trim() && !set.has(item.trim())) {
+          set.add(item.trim())
+          added = true
+        }
+      }
+      if (added) {
+        ;(p[key] as string[]) = [...set]
+        changed.push(label)
+      }
+    }
+  }
+
+  if (changed.length) saveProfile(p)
+  return changed
+}
+

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Avatar } from './Avatar'
 import { streamLuminatorChat, describeError, type ChatMsg } from '../lib/llm'
+import { applyProfilePatch } from '../lib/profile'
 
 interface Props {
   onClose: () => void
@@ -11,7 +12,7 @@ interface Props {
 }
 
 const GREETING =
-  "Hey 👋 Je suis Luminator. Dis-moi où tu en es — ton métier, une inquiétude, une envie d'évoluer — et on regarde ça ensemble."
+  "Hey 👋 Je suis Luminator, ton coach de carrière. Dis-moi ton métier (ou ce qui t'occupe en ce moment) et on construit ta trajectoire face à l'IA, étape par étape."
 
 const STARTERS = [
   'Mon métier est-il menacé ?',
@@ -19,16 +20,55 @@ const STARTERS = [
   'Comment me reconvertir ?',
 ]
 
+// Mémoire de la conversation : conservée d'une session à l'autre.
+const STORAGE_KEY = 'lumi.luminator.chat'
+
+function loadChat(): ChatMsg[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) return JSON.parse(raw) as ChatMsg[]
+  } catch {
+    /* ignore */
+  }
+  return []
+}
+
+function saveChat(messages: ChatMsg[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages))
+  } catch {
+    /* ignore */
+  }
+}
+
 export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext }: Props) {
-  const [messages, setMessages] = useState<ChatMsg[]>([])
+  const [messages, setMessages] = useState<ChatMsg[]>(() => loadChat())
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
+  const [noted, setNoted] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Persiste la conversation (mémoire) à chaque évolution.
+  useEffect(() => {
+    saveChat(messages)
+  }, [messages])
 
   // Auto-défilement vers le bas à chaque nouveau contenu.
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [messages, streaming])
+
+  // Indicateur « noté sur ton profil » qui s'efface tout seul.
+  useEffect(() => {
+    if (!noted) return
+    const t = setTimeout(() => setNoted(false), 4000)
+    return () => clearTimeout(t)
+  }, [noted])
+
+  const newChat = () => {
+    setMessages([])
+    setInput('')
+  }
 
   const send = async (text: string) => {
     const trimmed = text.trim()
@@ -43,9 +83,8 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
     setInput('')
     setStreaming(true)
     try {
-      await streamLuminatorChat(
-        history,
-        (delta) => {
+      await streamLuminatorChat(history, {
+        onDelta: (delta) => {
           setMessages((m) => {
             const copy = m.slice()
             const last = copy[copy.length - 1]
@@ -53,8 +92,17 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
             return copy
           })
         },
+        onProfileUpdate: (patch) => {
+          // Luminator note le parcours sur le profil → mémoire durable, sans
+          // refaire travailler l'API plus tard.
+          const changed = applyProfilePatch(patch)
+          if (changed.length) setNoted(true)
+          return changed.length
+            ? `Profil mis à jour : ${changed.join(', ')}.`
+            : 'Déjà connu, rien à ajouter.'
+        },
         extraContext,
-      )
+      })
     } catch (e) {
       setMessages((m) => {
         const copy = m.slice()
@@ -72,13 +120,28 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
         {/* En-tête : le personnage, bien visible, qui bouge la bouche pendant
             qu'il répond — pour qu'on voie clairement qu'on discute avec lui. */}
         <header className="relative border-b border-ink-100 px-4 pb-3 pt-4">
-          <button
-            onClick={onClose}
-            aria-label="Fermer le chat"
-            className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full text-ink-400 transition hover:bg-ink-50 hover:text-ink-700"
-          >
-            ✕
-          </button>
+          <div className="absolute right-3 top-3 flex items-center gap-1">
+            {messages.length > 0 && (
+              <button
+                onClick={newChat}
+                title="Nouvelle conversation"
+                aria-label="Nouvelle conversation"
+                className="grid h-9 w-9 place-items-center rounded-full text-ink-400 transition hover:bg-ink-50 hover:text-ink-700"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 4v6h6M20 20v-6h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M20 10a8 8 0 0 0-14.3-3.7L4 8m0 8a8 8 0 0 0 14.3 3.7L20 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              aria-label="Fermer le chat"
+              className="grid h-9 w-9 place-items-center rounded-full text-ink-400 transition hover:bg-ink-50 hover:text-ink-700"
+            >
+              ✕
+            </button>
+          </div>
           <div className="flex flex-col items-center">
             <div
               className={`h-24 w-24 overflow-hidden rounded-3xl bg-gradient-to-b from-ink-50 to-white transition ${
@@ -90,9 +153,14 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
             <div className="mt-1.5 font-display text-base font-bold text-ink-900">Luminator</div>
             <div className="flex items-center gap-1.5 text-xs text-ink-500">
               <span className={`h-1.5 w-1.5 rounded-full ${streaming ? 'animate-pulse bg-brand-500' : 'bg-emerald-500'}`} />
-              {streaming ? 'parle…' : 'en ligne'}
+              {streaming ? 'parle…' : 'ton coach de carrière'}
             </div>
           </div>
+          {noted && (
+            <div className="absolute left-1/2 top-2 -translate-x-1/2 animate-fade-in rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
+              🧠 noté sur ton profil
+            </div>
+          )}
         </header>
 
         {/* Fil de discussion */}

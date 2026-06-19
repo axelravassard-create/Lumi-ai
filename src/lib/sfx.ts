@@ -10,8 +10,6 @@ function audioCtx(): AudioContext | null {
     (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
   if (!AC) return null
   if (!ctx) ctx = new AC()
-  // Les navigateurs suspendent le contexte tant qu'il n'y a pas eu d'interaction.
-  if (ctx.state === 'suspended') ctx.resume().catch(() => {})
   return ctx
 }
 
@@ -21,7 +19,8 @@ function audioCtx(): AudioContext | null {
 export function installAudioUnlock() {
   if (typeof window === 'undefined') return
   const unlock = () => {
-    audioCtx()
+    const ac = audioCtx()
+    ac?.resume().catch(() => {})
     window.removeEventListener('pointerdown', unlock)
     window.removeEventListener('keydown', unlock)
     window.removeEventListener('touchstart', unlock)
@@ -31,12 +30,11 @@ export function installAudioUnlock() {
   window.addEventListener('touchstart', unlock)
 }
 
-// Bruitage joué quand on tapote la tête de Lumi : un contact mat très court
-// suivi d'un petit « couic » de jouet, pour quelque chose de bref et réaliste.
-export function playPat() {
-  const ac = audioCtx()
-  if (!ac) return
-  const now = ac.currentTime
+// Construit et joue le bruitage sur un contexte GARANTI actif. On lit
+// `ac.currentTime` ici (pas avant le resume) pour ne jamais planifier un son
+// dans le passé — c'était la cause des bruitages muets.
+function schedulePat(ac: AudioContext) {
+  const now = ac.currentTime + 0.02
   const out = ac.destination
 
   // 1) Contact : une brève bouffée de bruit filtrée en bas, façon « toc » mou.
@@ -52,7 +50,7 @@ export function playPat() {
   lp.type = 'lowpass'
   lp.frequency.value = 420
   const tapGain = ac.createGain()
-  tapGain.gain.setValueAtTime(0.32, now)
+  tapGain.gain.setValueAtTime(0.35, now)
   tapGain.gain.exponentialRampToValueAtTime(0.0001, now + tapDur)
   noise.connect(lp).connect(tapGain).connect(out)
   noise.start(now)
@@ -60,21 +58,33 @@ export function playPat() {
 
   // 2) « Couic » de jouet : la hauteur monte vite puis redescend, filtrée en
   //    bande étroite pour le côté caoutchouc.
-  const dur = 0.17
+  const dur = 0.18
   const osc = ac.createOscillator()
   osc.type = 'sawtooth'
-  osc.frequency.setValueAtTime(540, now + 0.01)
+  osc.frequency.setValueAtTime(540, now)
   osc.frequency.exponentialRampToValueAtTime(1200, now + 0.07)
-  osc.frequency.exponentialRampToValueAtTime(840, now + dur)
+  osc.frequency.exponentialRampToValueAtTime(860, now + dur)
   const band = ac.createBiquadFilter()
   band.type = 'bandpass'
   band.frequency.value = 1000
   band.Q.value = 5
   const squeak = ac.createGain()
-  squeak.gain.setValueAtTime(0.0001, now + 0.01)
-  squeak.gain.exponentialRampToValueAtTime(0.42, now + 0.03)
+  squeak.gain.setValueAtTime(0.0001, now)
+  squeak.gain.exponentialRampToValueAtTime(0.5, now + 0.03)
   squeak.gain.exponentialRampToValueAtTime(0.0001, now + dur)
   osc.connect(band).connect(squeak).connect(out)
-  osc.start(now + 0.01)
+  osc.start(now)
   osc.stop(now + dur + 0.02)
+}
+
+// Bruitage joué quand on tapote la tête de Lumi : contact mat + petit « couic ».
+// On s'assure que le contexte est bien « running » AVANT de planifier le son.
+export function playPat() {
+  const ac = audioCtx()
+  if (!ac) return
+  if (ac.state === 'suspended') {
+    ac.resume().then(() => schedulePat(ac)).catch(() => schedulePat(ac))
+  } else {
+    schedulePat(ac)
+  }
 }
