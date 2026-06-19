@@ -204,4 +204,39 @@ export const PROFESSIONS: Profession[] = [
   { id: 'comms-manager', label: 'Chargé·e de communication', domain: 'Médias & Communication', emoji: '📢', keywords: ['charge de communication', 'communication', 'responsable communication', 'comm'], factors: f(46, 70, 64, 48, 12, 56, 72) },
   { id: 'web-writer', label: 'Rédacteur·rice web / Content manager', domain: 'Médias & Communication', emoji: '🖊️', keywords: ['redacteur web', 'content manager', 'content', 'redaction web'], factors: f(50, 82, 70, 32, 8, 50, 46) },
   { id: 'presenter', label: 'Présentateur·rice / Animateur·rice', domain: 'Médias & Communication', emoji: '🎙️', keywords: ['presentateur', 'animateur', 'journaliste tv', 'podcasteur', 'youtubeur', 'createur de contenu'], factors: f(40, 56, 76, 56, 30, 52, 78) },
+
+  // ══ Ingénierie & Sciences ══════════════════════════════════════════════════
+  { id: 'civil-engineer', label: 'Ingénieur·e génie civil', domain: 'Ingénierie & Sciences', emoji: '🏗️', keywords: ['ingenieur civil', 'genie civil', 'ingenieur structure', 'btp ingenieur'], factors: f(44, 70, 56, 20, 40, 80, 54) },
+  { id: 'mechanical-engineer', label: 'Ingénieur·e mécanique', domain: 'Ingénierie & Sciences', emoji: '⚙️', keywords: ['ingenieur mecanique', 'mecanique', 'conception mecanique'], factors: f(46, 76, 60, 18, 36, 76, 48) },
+  { id: 'electrical-engineer', label: 'Ingénieur·e électronique / électrique', domain: 'Ingénierie & Sciences', emoji: '🔋', keywords: ['ingenieur electronique', 'ingenieur electrique', 'electronique'], factors: f(46, 78, 56, 18, 38, 76, 46) },
+  { id: 'chemist', label: 'Chimiste', domain: 'Ingénierie & Sciences', emoji: '🧪', keywords: ['chimiste', 'chimie', 'ingenieur chimiste'], factors: f(50, 72, 58, 16, 44, 76, 40) },
+  { id: 'biologist', label: 'Biologiste', domain: 'Ingénierie & Sciences', emoji: '🧬', keywords: ['biologiste', 'biologie', 'microbiologiste'], factors: f(44, 70, 64, 20, 40, 80, 42) },
+  { id: 'env-engineer', label: 'Ingénieur·e environnement', domain: 'Ingénierie & Sciences', emoji: '🌱', keywords: ['ingenieur environnement', 'environnement', 'developpement durable'], factors: f(42, 68, 58, 30, 40, 80, 56) },
+  { id: 'statistician', label: 'Statisticien·ne', domain: 'Ingénierie & Sciences', emoji: '📐', keywords: ['statisticien', 'statistiques', 'biostatisticien'], factors: f(56, 92, 40, 14, 6, 72, 36) },
+  { id: 'economist', label: 'Économiste', domain: 'Ingénierie & Sciences', emoji: '📈', keywords: ['economiste', 'economie', 'analyste economique'], factors: f(40, 82, 58, 22, 6, 82, 52) },
+  { id: 'surveyor', label: 'Géomètre-topographe', domain: 'Ingénierie & Sciences', emoji: '📏', keywords: ['geometre', 'topographe', 'topographie'], factors: f(58, 64, 30, 20, 60, 58, 40) },
+  { id: 'urban-planner', label: 'Urbaniste', domain: 'Ingénierie & Sciences', emoji: '🏙️', keywords: ['urbaniste', 'urbanisme', 'amenagement du territoire'], factors: f(38, 62, 66, 40, 24, 80, 64) },
+  { id: 'lab-technician', label: 'Technicien·ne de laboratoire', domain: 'Ingénierie & Sciences', emoji: '🔬', keywords: ['technicien laboratoire', 'laborantin', 'technicien labo'], factors: f(74, 58, 22, 16, 56, 40, 30) },
+  { id: 'meteorologist', label: 'Météorologue', domain: 'Ingénierie & Sciences', emoji: '🌦️', keywords: ['meteorologue', 'meteorologie', 'previsionniste'], factors: f(52, 84, 34, 18, 20, 70, 40) },
+  { id: 'dpo', label: 'Délégué·e à la protection des données (DPO)', domain: 'Ingénierie & Sciences', emoji: '🔐', keywords: ['dpo', 'protection des donnees', 'rgpd', 'data privacy'], factors: f(52, 78, 38, 30, 8, 82, 56) },
+
+  // ══ Arts & Spectacle ═══════════════════════════════════════════════════════
+  { id: 'actor', label: 'Comédien·ne / Acteur·rice', domain: 'Arts & Spectacle', emoji: '🎭', keywords: ['comedien', 'acteur', 'actrice', 'theatre'], factors: f(26, 30, 90, 58, 72, 46, 66) },
+  { id: 'dancer', label: 'Danseur·se', domain: 'Arts & Spectacle', emoji: '💃', keywords: ['danseur', 'danseuse', 'danse', 'choregraphe'], factors: f(30, 18, 86, 46, 92, 40, 56) },
+  { id: 'sound-engineer', label: 'Ingénieur·e du son', domain: 'Arts & Spectacle', emoji: '🎚️', keywords: ['ingenieur du son', 'sound designer', 'mixage', 'technicien son'], factors: f(44, 66, 72, 24, 46, 54, 40) },
+  { id: 'film-director', label: 'Réalisateur·rice / Producteur·rice', domain: 'Arts & Spectacle', emoji: '🎥', keywords: ['realisateur', 'realisatrice', 'producteur', 'cineaste'], factors: f(24, 58, 92, 46, 40, 74, 74) },
+  { id: 'event-manager', label: 'Chef·fe de projet événementiel', domain: 'Arts & Spectacle', emoji: '🎪', keywords: ['evenementiel', 'event manager', 'wedding planner', 'organisateur evenement'], factors: f(40, 52, 58, 52, 38, 64, 82) },
+  { id: 'makeup-artist', label: 'Maquilleur·se professionnel·le', domain: 'Arts & Spectacle', emoji: '💄', keywords: ['maquilleur', 'maquilleuse', 'maquillage', 'make up artist'], factors: f(44, 18, 72, 58, 80, 38, 58) },
+
+  // ══ Services & Public (suite) ══════════════════════════════════════════════
+  { id: 'bus-driver', label: 'Conducteur·rice de bus', domain: 'Services & Public', emoji: '🚌', keywords: ['conducteur de bus', 'chauffeur de bus', 'transport en commun'], factors: f(76, 28, 8, 34, 76, 38, 34) },
+  { id: 'postal-worker', label: 'Facteur·rice', domain: 'Services & Public', emoji: '📮', keywords: ['facteur', 'factrice', 'la poste', 'distribution courrier'], factors: f(80, 30, 8, 34, 72, 26, 34) },
+  { id: 'waste-collector', label: 'Éboueur·se / Agent·e de collecte', domain: 'Services & Public', emoji: '🗑️', keywords: ['eboueur', 'collecte dechets', 'ripeur', 'proprete urbaine'], factors: f(86, 14, 6, 16, 82, 18, 24) },
+  { id: 'travel-agent', label: 'Agent·e de voyage', domain: 'Services & Public', emoji: '🧳', keywords: ['agent de voyage', 'agence de voyage', 'conseiller voyage'], factors: f(66, 64, 26, 48, 12, 40, 62) },
+  { id: 'florist', label: 'Fleuriste', domain: 'Services & Public', emoji: '💐', keywords: ['fleuriste', 'fleurs', 'art floral'], factors: f(52, 22, 66, 46, 76, 40, 54) },
+  { id: 'watchmaker', label: 'Horloger·ère', domain: 'Services & Public', emoji: '⌚', keywords: ['horloger', 'horlogerie', 'reparation montre'], factors: f(60, 24, 52, 18, 88, 48, 28) },
+  { id: 'locksmith', label: 'Serrurier·ère', domain: 'Services & Public', emoji: '🔑', keywords: ['serrurier', 'serrurerie', 'depannage serrure'], factors: f(52, 22, 34, 34, 86, 50, 42) },
+  { id: 'mover', label: 'Déménageur·se', domain: 'Services & Public', emoji: '📦', keywords: ['demenageur', 'demenagement', 'manutention demenagement'], factors: f(80, 10, 8, 24, 90, 24, 34) },
+  { id: 'fishmonger', label: 'Poissonnier·ère', domain: 'Services & Public', emoji: '🐟', keywords: ['poissonnier', 'poissonnerie', 'maree'], factors: f(66, 10, 30, 34, 86, 38, 46) },
+  { id: 'scrum-master', label: 'Scrum Master / Agile Coach', domain: 'Direction & Management', emoji: '🔄', keywords: ['scrum master', 'agile coach', 'agilite', 'coach agile'], factors: f(36, 58, 46, 56, 8, 70, 84) },
 ]

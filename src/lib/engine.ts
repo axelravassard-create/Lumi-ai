@@ -307,6 +307,7 @@ export interface Analysis {
   aiEnhanced?: boolean
   personalized?: boolean
   adjustment?: number
+  personalAssets?: { label: string; value: number }[]
 }
 
 function verdictText(level: RiskLevel, label: string): string {
@@ -389,10 +390,63 @@ export function personalAdjustment(p: CareerProfile): number {
   return Math.max(-22, Math.min(14, delta))
 }
 
-// Renvoie une analyse dont le score est ajusté selon le profil de l'utilisateur.
+// Valeurs (0–100) associées à chaque réponse du profil, pour afficher des
+// « atouts personnels » et nourrir le discours.
+const EDU_VAL: Record<string, number> = { 'Sans diplôme / CAP / BEP': 25, 'Bac': 40, 'Bac+2 / Bac+3': 60, 'Bac+5 (Master)': 80, 'Doctorat / Grande école': 95 }
+const PRESTIGE_VAL: Record<string, number> = { 'Établissement très sélectif (top)': 95, 'Établissement reconnu': 70, 'Établissement standard': 45, 'Formation courte / autodidacte': 30 }
+const AISKILL_VAL: Record<string, number> = { 'Avancée — au quotidien': 90, 'Intermédiaire': 60, 'Débutante': 35, 'Aucune': 10 }
+const EXP_VAL: Record<string, number> = { "Moins d'1 an": 20, '1–3 ans': 40, '3–7 ans': 60, '7–15 ans': 80, 'Plus de 15 ans': 92 }
+const LEVEL_VAL: Record<string, number> = { 'Débutant·e': 30, 'Confirmé·e': 55, 'Senior': 80, 'Manager / Direction': 92 }
+
+export function personalAssets(p: CareerProfile): { label: string; value: number }[] {
+  const out: { label: string; value: number }[] = []
+  if (p.educationLevel) out.push({ label: '🎓 Niveau de formation', value: EDU_VAL[p.educationLevel] ?? 50 })
+  if (p.schoolPrestige) out.push({ label: '🏛️ Sélectivité de l\'école', value: PRESTIGE_VAL[p.schoolPrestige] ?? 50 })
+  if (p.aiSkill) out.push({ label: '🤖 Maîtrise de l\'IA', value: AISKILL_VAL[p.aiSkill] ?? 50 })
+  if (p.experience) out.push({ label: '⏳ Expérience', value: EXP_VAL[p.experience] ?? 50 })
+  if (p.level) out.push({ label: '📈 Séniorité', value: LEVEL_VAL[p.level] ?? 50 })
+  return out
+}
+
+// Recommandations spécifiques au profil de la personne (mode démo).
+function personalRecommendations(p: CareerProfile): Recommendation[] {
+  const recs: Recommendation[] = []
+  if (p.aiSkill === 'Aucune' || p.aiSkill === 'Débutante') {
+    recs.push({ tag: 'Augmentation', title: 'Montez vite en compétence sur l\'IA', detail: 'Maîtriser les outils d\'IA est votre levier n°1 : passez du côté de ceux qui dirigent l\'IA plutôt que de ceux qu\'elle remplace.' })
+  }
+  if (p.level === 'Débutant·e' || p.experience === "Moins d'1 an" || p.experience === '1–3 ans') {
+    recs.push({ tag: 'Évolution', title: 'Accélérez votre montée en expertise', detail: 'Les profils juniors sont les plus exposés : visez une spécialisation et des responsabilités pour devenir difficilement remplaçable.' })
+  }
+  if (p.schoolPrestige === 'Formation courte / autodidacte' || p.schoolPrestige === 'Établissement standard' || p.educationLevel === 'Sans diplôme / CAP / BEP' || p.educationLevel === 'Bac') {
+    recs.push({ tag: 'Différenciation', title: 'Faites reconnaître vos compétences', detail: 'Certifications, portfolio, réalisations concrètes : prouvez votre valeur indépendamment du diplôme initial.' })
+  }
+  if (p.goal === 'Me reconvertir') {
+    recs.push({ tag: 'Évolution', title: 'Préparez votre reconversion', detail: 'Capitalisez sur vos compétences transférables vers un métier plus résilient face à l\'IA.' })
+  }
+  return recs
+}
+
+function profileVerdictSuffix(delta: number): string {
+  if (delta <= -4) return 'Bonne nouvelle : votre profil (formation, expérience, maîtrise de l\'IA) vous rend nettement plus résilient que la moyenne de votre métier.'
+  if (delta >= 4) return 'Attention : en l\'état, votre profil vous expose un peu plus que la moyenne — les recommandations ci-dessous peuvent inverser la tendance.'
+  return 'Votre profil est dans la moyenne de votre métier ; les leviers ci-dessous feront la différence.'
+}
+
+// Renvoie une analyse entièrement personnalisée selon le profil (mode démo) :
+// score ajusté, verdict, recommandations et atouts personnels.
 export function applyProfileAdjustment(a: Analysis, p: CareerProfile): Analysis {
   const delta = personalAdjustment(p)
-  return { ...withScore(a, a.score + delta), personalized: true, adjustment: delta }
+  const scored = withScore(a, a.score + delta)
+  const recommendations = [...personalRecommendations(p), ...scored.recommendations].slice(0, 5)
+  const verdict = `${scored.verdict} ${profileVerdictSuffix(delta)}`
+  return {
+    ...scored,
+    recommendations,
+    verdict,
+    personalized: true,
+    adjustment: delta,
+    personalAssets: personalAssets(p),
+  }
 }
 
 // Quelques suggestions affichées sur la page d'accueil.
