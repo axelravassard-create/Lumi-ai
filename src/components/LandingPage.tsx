@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Logo } from './Logo'
 import { AiStatusButton } from './AiStatusButton'
+import { Avatar } from './Avatar'
 import { SUGGESTIONS } from '../lib/engine'
 
 type Mode = 'single' | 'compare'
@@ -44,7 +45,12 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
       </header>
 
       {/* Hero */}
-      <section className="relative mx-auto max-w-4xl px-6 pt-12 pb-16 text-center md:pt-20">
+      <section className="relative mx-auto max-w-4xl px-6 pt-8 pb-16 text-center md:pt-12">
+        {/* Avatar 3D : il vous suit du regard. La première chose qu'on voit. */}
+        <div className="animate-fade-in mx-auto h-60 w-full max-w-sm md:h-72">
+          <Avatar state="idle" className="h-full w-full" />
+        </div>
+
         <div className="animate-fade-up">
           <span className="pill mx-auto mb-6 border border-brand-100 bg-white text-brand-700 shadow-sm">
             <span className="relative flex h-2 w-2">
