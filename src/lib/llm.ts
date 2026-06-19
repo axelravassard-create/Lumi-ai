@@ -45,7 +45,7 @@ function client(): Anthropic {
   return new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
 }
 
-const SYSTEM_PROMPT = `Tu es l'analyste IA de "YourCareer", une application qui évalue l'exposition des métiers à l'automatisation par l'IA.
+const SYSTEM_PROMPT = `Tu es Lumi, l'analyste IA de l'application "Lumi" qui évalue l'exposition des métiers à l'automatisation par l'IA.
 
 Ton rôle : transformer des données chiffrées (déjà calculées par l'application) en un discours clair, nuancé et actionnable, en français.
 

@@ -2,7 +2,7 @@ import { Factors, Profession, PROFESSIONS } from './professions'
 import type { CareerProfile } from './profile'
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  YourCareer — Moteur d'analyse de l'exposition à l'IA
+//  Lumi — Moteur d'analyse de l'exposition à l'IA
 //
 //  Modèle heuristique inspiré des travaux sur la susceptibilité à
 //  l'automatisation (type Frey & Osborne / OCDE) : un métier est d'autant plus

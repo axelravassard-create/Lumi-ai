@@ -1,8 +1,8 @@
-# YourCareer 🧭
+# Lumi 🧭
 
 > Votre métier survivra-t-il à l'intelligence artificielle ?
 
-**YourCareer** est une application web qui estime le **risque de remplacement
+**Lumi** est une application web qui estime le **risque de remplacement
 par l'IA** d'un métier, projette sa progression jusqu'en **2040**, et propose un
 **plan d'action concret** pour rester employable.
 

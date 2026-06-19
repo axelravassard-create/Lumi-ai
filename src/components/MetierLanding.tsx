@@ -26,7 +26,7 @@ export function MetierLanding({ professionId, onBack, onOpenDirectory, onAnalyze
   const a = useMemo(() => analyze(profession.label), [profession.label])
 
   useSeo(
-    `L'IA va-t-elle remplacer le métier de ${profession.label} ? | YourCareer`,
+    `L'IA va-t-elle remplacer le métier de ${profession.label} ? | Lumi`,
     `Risque d'automatisation du métier de ${profession.label} estimé à ${a.score}%. Tâches exposées, projection jusqu'en 2040 et conseils pour rester employable face à l'IA.`,
   )
 

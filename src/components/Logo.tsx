@@ -18,7 +18,7 @@ export function Logo({ className = '', onClick }: { className?: string; onClick?
         </svg>
       </div>
       <span className="font-display text-lg font-extrabold tracking-tight text-ink-900">
-        Your<span className="text-brand-600">Career</span>
+        Lum<span className="text-brand-600">i</span>
       </span>
     </div>
   )

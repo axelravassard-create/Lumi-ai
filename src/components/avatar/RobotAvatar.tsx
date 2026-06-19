@@ -3,6 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { Environment, Lightformer } from '@react-three/drei'
 import { Bloom, EffectComposer } from '@react-three/postprocessing'
 import * as THREE from 'three'
+import { playPat } from '../../lib/sfx'
 
 export type AvatarState = 'idle' | 'thinking'
 export type AvatarMood = 'neutral' | 'calm' | 'concerned'
@@ -13,6 +14,8 @@ interface Props {
   mood?: AvatarMood
   /** Quand false, la boucle de rendu est mise en pause (économie GPU hors écran). */
   active?: boolean
+  /** Ajoute des lunettes de vue rondes (variante « Luminator »). */
+  glasses?: boolean
 }
 
 // Pointeur global normalisé (-1..1). Le visage suit le curseur partout sur la
@@ -126,7 +129,7 @@ function Eye({
   )
 }
 
-function Face({ state, mood = 'neutral' }: Props) {
+function Face({ state, mood = 'neutral', glasses = false }: Props) {
   const group = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
   const lEye = useRef<THREE.Group | null>(null)
@@ -155,6 +158,7 @@ function Face({ state, mood = 'neutral' }: Props) {
   // Déclenche la réaction mignonne quand on clique sur Lumi.
   const onPat = (e: { stopPropagation: () => void }) => {
     e.stopPropagation()
+    playPat() // petit « couic » réaliste au contact
     pat.current = PAT_DUR
     sparkleData.current.forEach((s, i) => {
       s.active = true
@@ -379,6 +383,43 @@ function Face({ state, mood = 'neutral' }: Props) {
         <Eye side={-1} eyeball={lEye} irisMat={lIris} upperLid={lUp} lowerLid={lLow} />
         <Eye side={1} eyeball={rEye} irisMat={rIris} upperLid={rUp} lowerLid={rLow} />
 
+        {/* Lunettes de vue rondes (variante « Luminator ») */}
+        {glasses && (
+          <group position={[0, 0.07, 0.78]}>
+            {[-1, 1].map((s) => (
+              <group key={s}>
+                {/* Cerclage rond */}
+                <mesh position={[s * 0.35, 0, 0.14]}>
+                  <torusGeometry args={[0.24, 0.022, 16, 44]} />
+                  <meshStandardMaterial color="#23283c" roughness={0.3} metalness={0.5} />
+                </mesh>
+                {/* Verre légèrement teinté */}
+                <mesh position={[s * 0.35, 0, 0.13]}>
+                  <circleGeometry args={[0.235, 40]} />
+                  <meshStandardMaterial
+                    color="#cdd6ff"
+                    transparent
+                    opacity={0.18}
+                    roughness={0.05}
+                    metalness={0.2}
+                    side={THREE.DoubleSide}
+                  />
+                </mesh>
+                {/* Branche vers l'oreille (couchée le long de l'axe avant-arrière) */}
+                <mesh position={[s * 0.58, 0.03, -0.04]} rotation={[Math.PI / 2, s * 0.32, 0]}>
+                  <cylinderGeometry args={[0.016, 0.016, 0.5, 10]} />
+                  <meshStandardMaterial color="#23283c" roughness={0.3} metalness={0.5} />
+                </mesh>
+              </group>
+            ))}
+            {/* Pont entre les deux verres */}
+            <mesh position={[0, 0.04, 0.14]} rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.016, 0.016, 0.18, 10]} />
+              <meshStandardMaterial color="#23283c" roughness={0.3} metalness={0.5} />
+            </mesh>
+          </group>
+        )}
+
         {/* Oreilles */}
         {[-1, 1].map((s) => (
           <mesh key={s} position={[s * 0.9, -0.02, 0.02]} scale={[0.4, 0.9, 0.7]}>
@@ -422,7 +463,7 @@ function Face({ state, mood = 'neutral' }: Props) {
   )
 }
 
-export default function RobotAvatar({ state, mood = 'neutral', active = true }: Props) {
+export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false }: Props) {
   usePointerTracking()
   return (
     <Canvas
@@ -433,7 +474,7 @@ export default function RobotAvatar({ state, mood = 'neutral', active = true }: 
       camera={{ position: [0, 0.02, 4.9], fov: 30 }}
       style={{ background: 'transparent' }}
     >
-      <Face state={state} mood={mood} />
+      <Face state={state} mood={mood} glasses={glasses} />
       {/* Environnement studio généré localement (aucun téléchargement réseau). */}
       <Environment resolution={128}>
         <Lightformer intensity={0.8} position={[0, 1, 4]} scale={[10, 8, 1]} color="#ffffff" />

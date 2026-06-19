@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "YourCareer — Anticipez l'impact de l'IA sur votre métier",
+  "description": "Lumi — Anticipez l'impact de l'IA sur votre métier",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

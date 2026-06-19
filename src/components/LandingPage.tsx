@@ -76,7 +76,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         </h1>
 
         <p className="animate-fade-up mx-auto mt-6 max-w-2xl text-lg text-ink-500" style={{ animationDelay: '120ms' }}>
-          Entrez votre profession. YourCareer estime votre risque de remplacement par l'IA,
+          Entrez votre profession. Lumi estime votre risque de remplacement par l'IA,
           sa progression jusqu'en 2040, et vous donne un plan concret pour garder une longueur d'avance.
         </p>
 

@@ -113,10 +113,9 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
                   <span className="pill bg-emerald-100 text-emerald-700">✦ rédigé par Claude</span>
                 )}
               </div>
-              {/* Lumi réagit à voix « parlée » selon le score */}
+              {/* Lumi réagit selon le score, en s'écrivant à l'écran */}
               <LumiSpeech
                 text={lumiReaction(analysis.score)}
-                speakText={`${lumiReaction(analysis.score)} ${analysis.verdict}`}
                 className="mt-1.5 block font-display text-base font-bold text-ink-800"
               />
               <p className="mt-1.5 text-lg font-medium leading-snug text-ink-900">{analysis.verdict}</p>

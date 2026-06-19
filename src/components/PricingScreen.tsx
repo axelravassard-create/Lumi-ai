@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Logo } from './Logo'
+import { Avatar } from './Avatar'
 
 interface Props {
   onBack: () => void
@@ -74,9 +75,10 @@ export function PricingScreen({ onBack }: Props) {
 
         {/* Cartes */}
         <section className="animate-fade-up mt-10 grid gap-6 md:grid-cols-2" style={{ animationDelay: '80ms' }}>
-          {/* Gratuit */}
+          {/* Lumi (gratuit) */}
           <div className="card flex flex-col p-7">
-            <h2 className="font-display text-xl font-bold text-ink-900">Gratuit</h2>
+            <Avatar className="mx-auto h-28 w-28" mood="calm" />
+            <h2 className="mt-2 font-display text-xl font-bold text-ink-900">Lumi</h2>
             <p className="mt-1 text-sm text-ink-500">Pour évaluer son métier face à l'IA.</p>
             <div className="mt-5 font-display text-4xl font-extrabold text-ink-900">0 €</div>
             <ul className="mt-6 flex-1 space-y-3 text-sm">
@@ -89,12 +91,13 @@ export function PricingScreen({ onBack }: Props) {
             </button>
           </div>
 
-          {/* Premium */}
+          {/* Luminator (premium) */}
           <div className="card relative flex flex-col border-2 border-brand-300 p-7 shadow-glow">
             <span className="absolute -top-3 left-1/2 -translate-x-1/2 pill bg-brand-600 text-white shadow">
               ⭐ Le plus populaire
             </span>
-            <h2 className="font-display text-xl font-bold text-brand-700">Premium</h2>
+            <Avatar className="mx-auto h-28 w-28" mood="neutral" glasses />
+            <h2 className="mt-2 font-display text-xl font-bold text-brand-700">Luminator</h2>
             <p className="mt-1 text-sm text-ink-500">Votre compagnon de carrière, dans la durée.</p>
             <div className="mt-5 flex items-end gap-1">
               <span className="font-display text-4xl font-extrabold text-ink-900">{price}</span>

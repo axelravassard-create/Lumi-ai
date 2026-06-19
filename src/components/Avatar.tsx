@@ -11,6 +11,8 @@ interface Props {
   className?: string
   /** Désactive l'avatar 3D et affiche le repli léger (ex. mobile bas de gamme). */
   forceFallback?: boolean
+  /** Ajoute des lunettes de vue rondes (variante « Luminator »). */
+  glasses?: boolean
 }
 
 // Détection WebGL : si le navigateur ne sait pas faire de 3D, on retombe
@@ -43,7 +45,7 @@ function Fallback({ state }: { state: AvatarState }) {
   )
 }
 
-export function Avatar({ state = 'idle', mood = 'neutral', className = '', forceFallback = false }: Props) {
+export function Avatar({ state = 'idle', mood = 'neutral', className = '', forceFallback = false, glasses = false }: Props) {
   const canRender3D = useMemo(() => !forceFallback && supportsWebGL(), [forceFallback])
   const ref = useRef<HTMLDivElement>(null)
   // Visible à l'écran ? On met la 3D en pause quand l'avatar sort du viewport
@@ -65,7 +67,7 @@ export function Avatar({ state = 'idle', mood = 'neutral', className = '', force
     <div ref={ref} className={`relative select-none ${className}`}>
       {canRender3D ? (
         <Suspense fallback={<Fallback state={state} />}>
-          <RobotAvatar state={state} mood={mood} active={visible} />
+          <RobotAvatar state={state} mood={mood} active={visible} glasses={glasses} />
         </Suspense>
       ) : (
         <Fallback state={state} />

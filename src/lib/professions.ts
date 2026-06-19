@@ -1,4 +1,4 @@
-// Base de connaissances métiers de YourCareer.
+// Base de connaissances métiers de Lumi.
 //
 // Chaque métier est décrit par 7 facteurs (0 = absent, 100 = très présent) qui
 // caractérisent la nature du travail. Le moteur d'analyse combine ces facteurs

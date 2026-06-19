@@ -15,15 +15,15 @@ interface Props {
 export function SharePanel({ role, score, level, onClose }: Props) {
   const [copied, setCopied] = useState(false)
   const [card, setCard] = useState<'idle' | 'busy'>('idle')
-  const url = typeof window !== 'undefined' ? window.location.origin : 'https://yourcareer.app'
-  const text = `J'ai évalué l'exposition de mon métier (${role}) à l'intelligence artificielle sur YourCareer : ${score}%. Et le tien, où en est-il ? Teste gratuitement 👇`
+  const url = typeof window !== 'undefined' ? window.location.origin : 'https://lumi.app'
+  const text = `J'ai évalué l'exposition de mon métier (${role}) à l'intelligence artificielle sur Lumi : ${score}%. Et le tien, où en est-il ? Teste gratuitement 👇`
   const full = `${text} ${url}`
   const enc = encodeURIComponent
 
   const nativeShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'YourCareer', text, url })
+        await navigator.share({ title: 'Lumi', text, url })
       } catch {
         /* partage annulé */
       }

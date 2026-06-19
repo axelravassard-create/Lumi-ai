@@ -62,7 +62,7 @@ export async function createShareCard(role: string, score: number, level: RiskLe
   ctx.textBaseline = 'middle'
   ctx.textAlign = 'left'
   ctx.font = '700 46px "Plus Jakarta Sans", Inter, sans-serif'
-  ctx.fillText('YourCareer', bx + bs + 22, by + bs / 2 + 2)
+  ctx.fillText('Lumi', bx + bs + 22, by + bs / 2 + 2)
 
   // Bloc central
   ctx.textAlign = 'center'
@@ -97,18 +97,18 @@ export async function createShareCard(role: string, score: number, level: RiskLe
   ctx.fillText('Et toi, à combien est ton métier ?', W / 2, 952)
   ctx.fillStyle = 'rgba(255,255,255,0.6)'
   ctx.font = '500 32px Inter, sans-serif'
-  ctx.fillText('Teste gratuitement sur YourCareer', W / 2, 1006)
+  ctx.fillText('Teste gratuitement sur Lumi', W / 2, 1006)
 
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b!), 'image/png'))
 }
 
 // Partage natif avec l'image si possible, sinon téléchargement.
 export async function shareOrDownloadCard(blob: Blob, text: string) {
-  const file = new File([blob], 'yourcareer.png', { type: 'image/png' })
+  const file = new File([blob], 'lumi.png', { type: 'image/png' })
   const nav = navigator as Navigator & { canShare?: (d: unknown) => boolean }
   if (nav.canShare?.({ files: [file] }) && navigator.share) {
     try {
-      await navigator.share({ files: [file], text, title: 'YourCareer' })
+      await navigator.share({ files: [file], text, title: 'Lumi' })
       return
     } catch {
       /* annulé → on retombe sur le téléchargement */
@@ -117,7 +117,7 @@ export async function shareOrDownloadCard(blob: Blob, text: string) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = 'yourcareer.png'
+  a.download = 'lumi.png'
   a.click()
   URL.revokeObjectURL(url)
 }
