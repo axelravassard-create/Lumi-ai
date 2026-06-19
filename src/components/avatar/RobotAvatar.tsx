@@ -79,7 +79,7 @@ function Eye({
   lowerLid: React.MutableRefObject<THREE.Mesh | null>
 }) {
   return (
-    <group position={[side * 0.35, 0.07, 0.72]}>
+    <group position={[side * 0.35, 0.07, 0.78]}>
       {/* Globe oculaire (pivote pour le regard) — grand, c'est l'acteur principal */}
       <group ref={eyeball}>
         {/* Sclère (blanc de l'œil) — mate pour éviter de griller en blanc */}
@@ -385,7 +385,7 @@ function Face({ state, mood = 'neutral', glasses = false }: Props) {
 
         {/* Lunettes de vue rondes (variante « Luminator ») */}
         {glasses && (
-          <group position={[0, 0.07, 0.78]}>
+          <group position={[0, 0.07, 0.86]}>
             {[-1, 1].map((s) => (
               <group key={s}>
                 {/* Cerclage rond */}
@@ -405,8 +405,8 @@ function Face({ state, mood = 'neutral', glasses = false }: Props) {
                     side={THREE.DoubleSide}
                   />
                 </mesh>
-                {/* Branche vers l'oreille (couchée le long de l'axe avant-arrière) */}
-                <mesh position={[s * 0.58, 0.03, -0.04]} rotation={[Math.PI / 2, s * 0.32, 0]}>
+                {/* Branche vers l'oreille (part de la charnière et file vers l'arrière) */}
+                <mesh position={[s * 0.58, 0.03, -0.2]} rotation={[Math.PI / 2, s * 0.32, 0]}>
                   <cylinderGeometry args={[0.016, 0.016, 0.5, 10]} />
                   <meshStandardMaterial color="#23283c" roughness={0.3} metalness={0.5} />
                 </mesh>
