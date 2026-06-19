@@ -160,12 +160,14 @@ const ARRAY_FIELDS: { key: keyof CareerProfile; label: string }[] = [
 export function applyProfilePatch(patch: Record<string, unknown>): string[] {
   const p = loadProfile()
   const changed: string[] = []
+  const keys: (keyof CareerProfile)[] = []
 
   for (const { key, label } of STRING_FIELDS) {
     const v = patch[key]
     if (typeof v === 'string' && v.trim() && p[key] !== v.trim()) {
       ;(p[key] as string) = v.trim()
       changed.push(label)
+      keys.push(key)
     }
   }
   for (const { key, label } of ARRAY_FIELDS) {
@@ -182,11 +184,50 @@ export function applyProfilePatch(patch: Record<string, unknown>): string[] {
       if (added) {
         ;(p[key] as string[]) = [...set]
         changed.push(label)
+        keys.push(key)
       }
     }
   }
 
-  if (changed.length) saveProfile(p)
+  if (changed.length) {
+    saveProfile(p)
+    recordLuminatorFields(keys)
+  }
   return changed
+}
+
+// ── Provenance : champs renseignés par Luminator pendant le chat ─────────────
+const LUMINATOR_FIELDS_KEY = 'lumi.profile.luminator_fields'
+
+export function luminatorFields(): Set<string> {
+  try {
+    const raw = localStorage.getItem(LUMINATOR_FIELDS_KEY)
+    if (raw) return new Set(JSON.parse(raw) as string[])
+  } catch {
+    /* ignore */
+  }
+  return new Set()
+}
+
+function recordLuminatorFields(keys: (keyof CareerProfile)[]) {
+  const set = luminatorFields()
+  keys.forEach((k) => set.add(k))
+  try {
+    localStorage.setItem(LUMINATOR_FIELDS_KEY, JSON.stringify([...set]))
+  } catch {
+    /* ignore */
+  }
+}
+
+// Libellés des champs effectivement renseignés par Luminator et encore remplis.
+export function luminatorFilledLabels(p: CareerProfile): string[] {
+  const set = luminatorFields()
+  return [...STRING_FIELDS, ...ARRAY_FIELDS]
+    .filter(({ key }) => {
+      if (!set.has(key)) return false
+      const v = p[key]
+      return Array.isArray(v) ? v.length > 0 : String(v).trim().length > 0
+    })
+    .map((f) => f.label)
 }
 

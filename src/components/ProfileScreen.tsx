@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useRef, useState } from 'react'
-import { CareerProfile, completeness, loadProfile, saveProfile } from '../lib/profile'
+import { CareerProfile, completeness, loadProfile, saveProfile, luminatorFields, luminatorFilledLabels } from '../lib/profile'
 import { BilanRecord, clearHistory, loadHistory } from '../lib/history'
 import { describeError, extractProfileFromCV } from '../lib/llm'
 import { Logo } from './Logo'
@@ -48,6 +48,15 @@ export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: 
   const set = <K extends keyof CareerProfile>(key: K, value: CareerProfile[K]) =>
     setProfile((p) => ({ ...p, [key]: value }))
 
+  // Champs renseignés par Luminator pendant le chat (provenance).
+  const [lumiFields] = useState(() => luminatorFields())
+  const byLumi = (key: keyof CareerProfile) => {
+    if (!lumiFields.has(key)) return false
+    const v = profile[key]
+    return Array.isArray(v) ? v.length > 0 : String(v).trim().length > 0
+  }
+  const lumiLabels = luminatorFilledLabels(profile)
+
   return (
     <div className="min-h-screen pb-20">
       <header className="sticky top-0 z-20 border-b border-ink-100 bg-white/80 backdrop-blur-xl">
@@ -90,6 +99,21 @@ export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: 
                   : 'Profil au top — l\'IA dispose de tout pour vous accompagner finement. 🎯'}
             </p>
           </div>
+
+          {/* Ce que Luminator a complété pendant vos échanges */}
+          {lumiLabels.length > 0 && (
+            <div className="mt-4 flex items-start gap-3 rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-lg shadow-sm">🤓</span>
+              <div className="text-sm">
+                <p className="font-semibold text-brand-800">
+                  Complété par Luminator pendant vos échanges
+                </p>
+                <p className="mt-0.5 text-ink-600">
+                  {lumiLabels.join(', ')}. Vérifiez et ajustez si besoin — c'est votre profil.
+                </p>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Import de CV */}
@@ -100,21 +124,21 @@ export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: 
 
         {/* Couche 1 — base */}
         <Section title="L'essentiel" emoji="🪪" delay={80}>
-          <Field label="Métier actuel" hint="indispensable">
+          <Field label="Métier actuel" hint="indispensable" mark={byLumi('role')}>
             <input className="inp" value={profile.role} onChange={(e) => set('role', e.target.value)} placeholder="Ex : développeur web" />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Secteur d'activité">
+            <Field label="Secteur d'activité" mark={byLumi('sector')}>
               <input className="inp" value={profile.sector} onChange={(e) => set('sector', e.target.value)} placeholder="Ex : banque, santé…" />
             </Field>
-            <Field label="Localisation">
+            <Field label="Localisation" mark={byLumi('location')}>
               <input className="inp" value={profile.location} onChange={(e) => set('location', e.target.value)} placeholder="Ex : Lyon, France" />
             </Field>
-            <Select label="Expérience" value={profile.experience} onChange={(v) => set('experience', v)}
+            <Select label="Expérience" value={profile.experience} onChange={(v) => set('experience', v)} mark={byLumi('experience')}
               options={['Moins d\'1 an', '1–3 ans', '3–7 ans', '7–15 ans', 'Plus de 15 ans']} />
-            <Select label="Niveau" value={profile.level} onChange={(v) => set('level', v)}
+            <Select label="Niveau" value={profile.level} onChange={(v) => set('level', v)} mark={byLumi('level')}
               options={['Débutant·e', 'Confirmé·e', 'Senior', 'Manager / Direction']} />
-            <Select label="Statut" value={profile.status} onChange={(v) => set('status', v)}
+            <Select label="Statut" value={profile.status} onChange={(v) => set('status', v)} mark={byLumi('status')}
               options={['Salarié·e', 'Indépendant·e', 'En recherche', 'Étudiant·e', 'En reconversion']} />
             <Select label="Niveau de diplôme" value={profile.educationLevel} onChange={(v) => set('educationLevel', v)}
               options={['Sans diplôme / CAP / BEP', 'Bac', 'Bac+2 / Bac+3', 'Bac+5 (Master)', 'Doctorat / Grande école']} />
@@ -126,31 +150,31 @@ export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: 
 
         {/* Couche 2 — carburant de l'IA */}
         <Section title="Ce que vous faites vraiment" emoji="⚙️" delay={140}>
-          <TagField label="Tâches du quotidien" hint="le plus important" value={profile.tasks} onChange={(v) => set('tasks', v)}
+          <TagField label="Tâches du quotidien" hint="le plus important" mark={byLumi('tasks')} value={profile.tasks} onChange={(v) => set('tasks', v)}
             placeholder="Ex : revue de code, support client… (Entrée pour ajouter)" />
-          <TagField label="Compétences techniques" value={profile.hardSkills} onChange={(v) => set('hardSkills', v)}
+          <TagField label="Compétences techniques" mark={byLumi('hardSkills')} value={profile.hardSkills} onChange={(v) => set('hardSkills', v)}
             placeholder="Ex : Python, Excel, Photoshop…" />
-          <TagField label="Compétences humaines" value={profile.softSkills} onChange={(v) => set('softSkills', v)}
+          <TagField label="Compétences humaines" mark={byLumi('softSkills')} value={profile.softSkills} onChange={(v) => set('softSkills', v)}
             placeholder="Ex : pédagogie, négociation…" />
-          <Field label="Formation & diplômes">
+          <Field label="Formation & diplômes" mark={byLumi('education')}>
             <textarea className="inp min-h-[64px]" value={profile.education} onChange={(e) => set('education', e.target.value)}
               placeholder="Diplômes, certifications, formations suivies…" />
           </Field>
-          <TagField label="Postes précédents" value={profile.pastRoles} onChange={(v) => set('pastRoles', v)}
+          <TagField label="Postes précédents" mark={byLumi('pastRoles')} value={profile.pastRoles} onChange={(v) => set('pastRoles', v)}
             placeholder="Ex : technicien support, chef de projet junior…" />
-          <Select label="Maîtrise des outils d'IA" value={profile.aiSkill} onChange={(v) => set('aiSkill', v)}
+          <Select label="Maîtrise des outils d'IA" value={profile.aiSkill} onChange={(v) => set('aiSkill', v)} mark={byLumi('aiSkill')}
             options={['Avancée — au quotidien', 'Intermédiaire', 'Débutante', 'Aucune']} />
         </Section>
 
         {/* Couche 3 — aspirations & contraintes */}
         <Section title="Vos aspirations" emoji="🧭" delay={200}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Select label="Objectif de carrière" value={profile.goal} onChange={(v) => set('goal', v)}
+            <Select label="Objectif de carrière" value={profile.goal} onChange={(v) => set('goal', v)} mark={byLumi('goal')}
               options={['Évoluer dans mon métier', 'Me reconvertir', 'Sécuriser mon poste', 'Entreprendre']} />
-            <Select label="Rapport à l'IA et au changement" value={profile.aiAppetite} onChange={(v) => set('aiAppetite', v)}
+            <Select label="Rapport à l'IA et au changement" value={profile.aiAppetite} onChange={(v) => set('aiAppetite', v)} mark={byLumi('aiAppetite')}
               options={['Curieux·se / enthousiaste', 'Neutre', 'Plutôt réticent·e']} />
           </div>
-          <Field label="Contraintes">
+          <Field label="Contraintes" mark={byLumi('constraints')}>
             <textarea className="inp min-h-[64px]" value={profile.constraints} onChange={(e) => set('constraints', e.target.value)}
               placeholder="Ex : peu mobile géographiquement, peu de temps pour me former, salaire à préserver…" />
           </Field>
@@ -400,21 +424,22 @@ function Section({ title, emoji, delay, children }: { title: string; emoji: stri
   )
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+function Field({ label, hint, mark, children }: { label: string; hint?: string; mark?: boolean; children: ReactNode }) {
   return (
     <div>
       <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-ink-700">
         {label}
         {hint && <span className="pill bg-brand-50 px-2 py-0.5 text-[10px] text-brand-700">{hint}</span>}
+        {mark && <span className="pill bg-violet-100 px-2 py-0.5 text-[10px] text-violet-700">🤓 Luminator</span>}
       </label>
       {children}
     </div>
   )
 }
 
-function Select({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
+function Select({ label, value, onChange, options, mark }: { label: string; value: string; onChange: (v: string) => void; options: string[]; mark?: boolean }) {
   return (
-    <Field label={label}>
+    <Field label={label} mark={mark}>
       <select className="inp" value={value} onChange={(e) => onChange(e.target.value)}>
         <option value="">— Choisir —</option>
         {options.map((o) => (
@@ -425,7 +450,7 @@ function Select({ label, value, onChange, options }: { label: string; value: str
   )
 }
 
-function TagField({ label, hint, value, onChange, placeholder }: { label: string; hint?: string; value: string[]; onChange: (v: string[]) => void; placeholder: string }) {
+function TagField({ label, hint, mark, value, onChange, placeholder }: { label: string; hint?: string; mark?: boolean; value: string[]; onChange: (v: string[]) => void; placeholder: string }) {
   const [draft, setDraft] = useState('')
   const add = () => {
     const t = draft.trim()
@@ -433,7 +458,7 @@ function TagField({ label, hint, value, onChange, placeholder }: { label: string
     setDraft('')
   }
   return (
-    <Field label={label} hint={hint}>
+    <Field label={label} hint={hint} mark={mark}>
       <div className="flex flex-wrap gap-2">
         {value.map((tag) => (
           <span key={tag} className="pill bg-brand-100 text-brand-700">
