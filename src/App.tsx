@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { analyze, withScore, applyProfileAdjustment, Analysis } from './lib/engine'
+import { analyze, withScore, applyProfileAdjustment, personalAssets, Analysis } from './lib/engine'
 import { describeError, generateComparison, generateNarrative, hasApiKey, ComparisonResult } from './lib/llm'
 import { LandingPage } from './components/LandingPage'
 import { Dashboard } from './components/Dashboard'
@@ -86,7 +86,7 @@ export default function App() {
           { ...base, verdict: n.verdict, recommendations: n.recommendations, skills: n.skills, aiEnhanced: true },
           n.score,
         )
-        if (withProfile) result = { ...result, personalized: true }
+        if (withProfile) result = { ...result, personalized: true, personalAssets: personalAssets(loadProfile()) }
       } catch (e) {
         note = describeError(e)
       }

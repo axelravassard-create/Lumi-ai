@@ -56,8 +56,20 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
       </header>
 
       <main className="mx-auto max-w-6xl px-6">
+        {/* Bandeau source de l'estimation */}
+        <section className="animate-fade-up pt-6">
+          <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${analysis.aiEnhanced ? 'border-brand-200 bg-brand-50 text-brand-800' : 'border-ink-200 bg-white text-ink-600'}`}>
+            <span className="text-lg">{analysis.aiEnhanced ? '✦' : 'ℹ️'}</span>
+            <span>
+              {analysis.aiEnhanced
+                ? 'Résultats estimés par Claude (Opus 4.8), d\'après votre profil et l\'actualité de votre secteur.'
+                : 'Résultats en mode démo (estimation locale). Connectez Claude pour une estimation par l\'IA.'}
+            </span>
+          </div>
+        </section>
+
         {/* En-tête de résultat */}
-        <section className="animate-fade-up pt-10">
+        <section className="animate-fade-up pt-5">
           <div className="flex flex-wrap items-center gap-3">
             <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-2xl shadow-card">
               {analysis.profession.emoji}
@@ -176,6 +188,17 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
               <FactorRow label="🤝 Relationnel & influence" value={analysis.profession.factors.social} />
               <FactorRow label="🔧 Présence physique & terrain" value={analysis.profession.factors.physical} />
             </div>
+
+            {analysis.personalAssets && analysis.personalAssets.length > 0 && (
+              <div className="mt-6 border-t border-ink-100 pt-5">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-violet-700">👤 Vos atouts personnels</h3>
+                <div className="mt-3 space-y-4">
+                  {analysis.personalAssets.map((a) => (
+                    <FactorRow key={a.label} label={a.label} value={a.value} />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
