@@ -46,6 +46,10 @@ const IRIS_THINK = new THREE.Color('#27e2ff')
 const SKIN = '#eef1fa' // blanc nacré, presque lumière
 // Couleurs des étincelles de joie quand on tapote la tête de Lumi.
 const SPARKLE_COLORS = ['#ff7eb6', '#ffd166', '#33e1ff', '#a5b4fc', '#ff7eb6', '#ffd166', '#9bffce']
+// Durée de la réaction « tapote » (étonnement → joie).
+const PAT_DUR = 0.9
+const BROW_Y = 0.29 // hauteur de repos des sourcils
+const MOUTH_SCALE: [number, number, number] = [1, 0.5, 0.5] // échelle de repos de la bouche
 
 // Un œil réaliste : globe blanc + iris lumineux + pupille + reflet de vie
 // (« catchlight »). Le globe pivote pour fixer le curseur, les paupières clignent.
@@ -126,6 +130,8 @@ function Face({ state }: Props) {
   const rLow = useRef<THREE.Mesh | null>(null)
   const halo = useRef<THREE.Group>(null)
   const rimLight = useRef<THREE.PointLight>(null)
+  const browRefs = useRef<(THREE.Mesh | null)[]>([])
+  const mouthRef = useRef<THREE.Mesh | null>(null)
 
   const think = useRef(0)
   const blink = useRef({ next: 2.5, t: 0 })
@@ -140,7 +146,7 @@ function Face({ state }: Props) {
   // Déclenche la réaction mignonne quand on clique sur Lumi.
   const onPat = (e: { stopPropagation: () => void }) => {
     e.stopPropagation()
-    pat.current = 0.7
+    pat.current = PAT_DUR
     sparkleData.current.forEach((s, i) => {
       s.active = true
       s.age = 0
@@ -191,19 +197,28 @@ function Face({ state }: Props) {
     const gx = pointer.active ? THREE.MathUtils.clamp(pointer.x, -1, 1) : Math.sin(t * 0.4) * 0.4 + saccade.current.x
     const gy = pointer.active ? THREE.MathUtils.clamp(pointer.y, -1, 1) : saccade.current.y
 
-    // Réaction « tapote » : rebond élastique de la tête + plissement joyeux.
-    let patClose = 0
+    // Réaction « tapote » : étonnement (yeux écarquillés, sourcils levés,
+    // bouche ouverte, recul) PUIS joie (plissement + étincelles).
     let patBob = 0
     let patSquash = 1
     let patJoy = 0
+    let patLid = 0 // <0 = yeux écarquillés (surprise) ; >0 = plissés (joie)
+    let browLift = 0
+    let mouthOpen = 0
+    let recoilZ = 0
     if (pat.current > 0) {
       pat.current = Math.max(0, pat.current - d)
-      const p = 1 - pat.current / 0.7 // 0 → 1
+      const p = 1 - pat.current / PAT_DUR // 0 → 1
+      const surprise = p < 0.3 ? Math.sin((p / 0.3) * Math.PI) : 0 // pic d'étonnement
+      const delight = p >= 0.24 ? Math.sin(((p - 0.24) / 0.76) * Math.PI) : 0 // joie ensuite
       const bounce = Math.sin(p * Math.PI * 3) * Math.exp(-p * 3.2)
-      patBob = bounce * 0.13
-      patSquash = 1 - bounce * 0.06
-      patClose = Math.sin(Math.min(1, p * 1.5) * Math.PI) * 0.85 // yeux plissés de joie
-      patJoy = pat.current / 0.7
+      patBob = bounce * 0.1
+      patSquash = 1 - bounce * 0.05
+      patLid = delight * 0.85 - surprise * 0.75
+      browLift = surprise * 0.13
+      mouthOpen = surprise
+      recoilZ = -surprise * 0.14
+      patJoy = pat.current / PAT_DUR + surprise * 1.4
     }
 
     // La tête s'oriente légèrement vers le curseur (et penche en réflexion).
@@ -212,7 +227,18 @@ function Face({ state }: Props) {
       head.current.rotation.y += (gx * 0.18 + sway - head.current.rotation.y) * Math.min(1, d * 3)
       head.current.rotation.x += (gy * 0.12 + k * 0.06 - head.current.rotation.x) * Math.min(1, d * 3)
       head.current.position.y = patBob
+      head.current.position.z = recoilZ
       head.current.scale.set(1 + (1 - patSquash), patSquash, 1 + (1 - patSquash))
+    }
+
+    // Sourcils levés + bouche ouverte pendant l'étonnement.
+    for (const b of browRefs.current) if (b) b.position.y = BROW_Y + browLift
+    if (mouthRef.current) {
+      mouthRef.current.scale.set(
+        MOUTH_SCALE[0] * (1 + mouthOpen * 0.35),
+        MOUTH_SCALE[1] * (1 + mouthOpen * 1.4),
+        MOUTH_SCALE[2],
+      )
     }
 
     // Les globes oculaires pivotent pour fixer le curseur (acteur principal).
@@ -236,9 +262,11 @@ function Face({ state }: Props) {
       const p = 1 - blink.current.t / 0.15
       close = Math.sin(p * Math.PI) // 0→1→0
     }
-    close = Math.max(close, patClose) // plissement de joie quand on le tapote
-    const upTarget = -0.04 + close * 1.15
-    const lowTarget = 0.04 - close * 0.5
+    // Pendant la réaction « tapote », l'ouverture des yeux est pilotée par
+    // patLid (négatif = écarquillés de surprise, positif = plissés de joie).
+    const lidClose = pat.current > 0 ? patLid : close
+    const upTarget = -0.04 + lidClose * 1.15
+    const lowTarget = 0.04 - lidClose * 0.5
     for (const l of [lUp.current, rUp.current]) if (l) l.rotation.x += (upTarget - l.rotation.x) * Math.min(1, d * 18)
     for (const l of [lLow.current, rLow.current]) if (l) l.rotation.x += (lowTarget - l.rotation.x) * Math.min(1, d * 18)
 
@@ -315,8 +343,14 @@ function Face({ state }: Props) {
           <meshStandardMaterial color={SKIN} roughness={0.5} metalness={0.05} />
         </mesh>
         {/* Arcades sourcilières */}
-        {[-1, 1].map((s) => (
-          <mesh key={s} position={[s * 0.33, 0.29, 0.82]} rotation={[0.2, 0, s * -0.12]} scale={[1.3, 0.45, 0.5]}>
+        {[-1, 1].map((s, i) => (
+          <mesh
+            key={s}
+            ref={(el) => (browRefs.current[i] = el)}
+            position={[s * 0.33, BROW_Y, 0.82]}
+            rotation={[0.2, 0, s * -0.12]}
+            scale={[1.3, 0.45, 0.5]}
+          >
             <sphereGeometry args={[0.13, 24, 16]} />
             <meshStandardMaterial color={SKIN} roughness={0.5} metalness={0.05} />
           </mesh>
@@ -326,8 +360,8 @@ function Face({ state }: Props) {
           <sphereGeometry args={[0.13, 24, 24]} />
           <meshStandardMaterial color={SKIN} roughness={0.5} metalness={0.05} />
         </mesh>
-        {/* Lèvres / bouche neutre, un peu plus large */}
-        <mesh position={[0, -0.43, 0.86]} scale={[1, 0.5, 0.5]} rotation={[Math.PI / 2, 0, 0]}>
+        {/* Lèvres / bouche (s'ouvre lors de l'étonnement) */}
+        <mesh ref={mouthRef} position={[0, -0.43, 0.86]} scale={MOUTH_SCALE} rotation={[Math.PI / 2, 0, 0]}>
           <capsuleGeometry args={[0.05, 0.34, 6, 16]} />
           <meshStandardMaterial color="#cda4b1" roughness={0.45} metalness={0.05} />
         </mesh>
