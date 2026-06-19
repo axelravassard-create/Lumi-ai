@@ -98,12 +98,15 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
         {/* Le personnage présente votre analyse (acteur de tous les bilans) */}
         <section className="animate-fade-up mt-6" style={{ animationDelay: '60ms' }}>
           <div className="card flex flex-col items-center gap-5 p-5 sm:flex-row sm:gap-6 sm:p-6">
-            <div className="relative h-36 w-36 shrink-0 overflow-hidden rounded-3xl bg-gradient-to-b from-ink-50 to-white sm:h-44 sm:w-44">
-              <Avatar state="idle" className="h-full w-full" />
+            <div className="flex shrink-0 flex-col items-center gap-2">
+              <div className="relative h-36 w-36 overflow-hidden rounded-3xl bg-gradient-to-b from-ink-50 to-white sm:h-44 sm:w-44">
+                <Avatar state="idle" className="h-full w-full" />
+              </div>
+              <span className="pill bg-brand-50 font-bold text-brand-700">Lumi</span>
             </div>
             <div className={`relative flex-1 self-stretch rounded-2xl border-l-4 p-5 ${theme.bg}`} style={{ borderColor: theme.hex }}>
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="font-display text-sm font-bold uppercase tracking-wide text-ink-500">Verdict de l'IA</h2>
+                <h2 className="font-display text-sm font-bold uppercase tracking-wide text-ink-500">Le verdict de Lumi</h2>
                 {analysis.aiEnhanced && (
                   <span className="pill bg-emerald-100 text-emerald-700">✦ rédigé par Claude</span>
                 )}

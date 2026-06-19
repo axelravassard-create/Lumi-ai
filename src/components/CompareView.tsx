@@ -68,12 +68,15 @@ export function CompareView({ a, b, comparison, onReset }: Props) {
         {/* Verdict comparatif — présenté par le personnage */}
         <section className="animate-fade-up mt-6" style={{ animationDelay: '160ms' }}>
           <div className="card flex flex-col items-center gap-5 border-l-4 border-brand-500 bg-brand-50/40 p-5 sm:flex-row sm:gap-6 sm:p-6">
-            <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-3xl bg-gradient-to-b from-ink-50 to-white sm:h-40 sm:w-40">
-              <Avatar state="idle" className="h-full w-full" />
+            <div className="flex shrink-0 flex-col items-center gap-2">
+              <div className="relative h-32 w-32 overflow-hidden rounded-3xl bg-gradient-to-b from-ink-50 to-white sm:h-40 sm:w-40">
+                <Avatar state="idle" className="h-full w-full" />
+              </div>
+              <span className="pill bg-brand-50 font-bold text-brand-700">Lumi</span>
             </div>
             <div className="flex-1">
               <h2 className="font-display text-sm font-bold uppercase tracking-wide text-ink-500">
-                {comparison ? 'Analyse comparative de Claude' : 'Analyse comparative'}
+                {comparison ? 'La comparaison de Lumi' : 'Analyse comparative'}
               </h2>
               <p className="mt-1 text-lg font-medium leading-snug text-ink-900">{result.summary}</p>
               <div className="mt-3 pill bg-emerald-100 text-emerald-700">

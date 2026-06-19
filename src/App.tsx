@@ -229,7 +229,7 @@ function AnalyzingScreen({ label, step }: { label: string; step: number }) {
         <div className="relative mx-auto mb-2 h-56 w-full">
           <Avatar state="thinking" className="h-full w-full" />
         </div>
-        <h2 className="font-display text-xl font-bold text-ink-900">Analyse de « {label} »</h2>
+        <h2 className="font-display text-xl font-bold text-ink-900">Lumi analyse « {label} »</h2>
         <div className="mt-6 space-y-2 text-left">
           {ANALYSIS_STEPS.map((s, i) => (
             <div

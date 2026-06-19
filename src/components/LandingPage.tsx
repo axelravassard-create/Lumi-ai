@@ -50,6 +50,9 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         <div className="animate-fade-in mx-auto h-60 w-full max-w-sm md:h-72">
           <Avatar state="idle" className="h-full w-full" />
         </div>
+        <p className="animate-fade-in -mt-1 text-sm text-ink-500">
+          Voici <span className="font-bold text-brand-700">Lumi</span>, votre guide face à l'IA
+        </p>
 
         <div className="animate-fade-up">
           <span className="pill mx-auto mb-6 border border-brand-100 bg-white text-brand-700 shadow-sm">
@@ -165,7 +168,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         <div className="mt-10 grid gap-6 md:grid-cols-3">
           {[
             { i: '①', t: 'Décrivez votre métier', d: 'Saisissez simplement votre profession, telle que vous la nommeriez.' },
-            { i: '②', t: "L'IA évalue l'exposition", d: 'Notre moteur croise 7 facteurs : routine, créativité, relationnel, jugement…' },
+            { i: '②', t: 'Lumi évalue l\'exposition', d: 'Lumi croise 7 facteurs : routine, créativité, relationnel, jugement…' },
             { i: '③', t: 'Recevez votre plan', d: 'Score, projection 2026-2040, compétences clés et pistes de reconversion.' },
           ].map((s) => (
             <div key={s.t} className="card p-6">
