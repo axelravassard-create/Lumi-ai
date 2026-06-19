@@ -50,9 +50,13 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         <div className="animate-fade-in mx-auto h-60 w-full max-w-sm md:h-72">
           <Avatar state="idle" className="h-full w-full" />
         </div>
-        <p className="animate-fade-in -mt-1 text-sm text-ink-500">
-          Voici <span className="font-bold text-brand-700">Lumi</span>, votre guide face à l'IA
-        </p>
+        <div className="animate-fade-in -mt-3 flex justify-center">
+          <div className="relative max-w-xs rounded-2xl border border-ink-100 bg-white px-4 py-2.5 text-sm text-ink-700 shadow-card">
+            <span className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-ink-100 bg-white" />
+            👋 Salut, moi c'est <span className="font-bold text-brand-700">Lumi</span> — ton guide face à l'IA.
+            <span className="block text-xs text-ink-400">(tapote-moi sur la tête 👆)</span>
+          </div>
+        </div>
 
         <div className="animate-fade-up">
           <span className="pill mx-auto mb-6 border border-brand-100 bg-white text-brand-700 shadow-sm">

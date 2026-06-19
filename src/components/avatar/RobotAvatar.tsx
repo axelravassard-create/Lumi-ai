@@ -44,6 +44,8 @@ const reducedMotion =
 const IRIS_IDLE = new THREE.Color('#5566ff')
 const IRIS_THINK = new THREE.Color('#27e2ff')
 const SKIN = '#eef1fa' // blanc nacré, presque lumière
+// Couleurs des étincelles de joie quand on tapote la tête de Lumi.
+const SPARKLE_COLORS = ['#ff7eb6', '#ffd166', '#33e1ff', '#a5b4fc', '#ff7eb6', '#ffd166', '#9bffce']
 
 // Un œil réaliste : globe blanc + iris lumineux + pupille + reflet de vie
 // (« catchlight »). Le globe pivote pour fixer le curseur, les paupières clignent.
@@ -128,6 +130,34 @@ function Face({ state }: Props) {
   const think = useRef(0)
   const blink = useRef({ next: 2.5, t: 0 })
   const saccade = useRef({ next: 1.5, x: 0, y: 0 })
+  // Réaction « tapote sur la tête » : minuteur + étincelles de joie.
+  const pat = useRef(0)
+  const sparkleRefs = useRef<(THREE.Mesh | null)[]>([])
+  const sparkleData = useRef(
+    SPARKLE_COLORS.map(() => ({ active: false, age: 0, life: 1, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0 })),
+  )
+
+  // Déclenche la réaction mignonne quand on clique sur Lumi.
+  const onPat = (e: { stopPropagation: () => void }) => {
+    e.stopPropagation()
+    pat.current = 0.7
+    sparkleData.current.forEach((s, i) => {
+      s.active = true
+      s.age = 0
+      s.life = 0.8 + Math.random() * 0.5
+      // Réparties en éventail autour du haut de la tête, bien dans le cadre.
+      const ang = (i / sparkleData.current.length) * Math.PI * 2
+      s.x = Math.cos(ang) * 0.6
+      s.y = 0.8 + Math.random() * 0.35
+      s.z = 0.4 + Math.random() * 0.45
+      s.vx = Math.cos(ang) * 1.1 + (Math.random() - 0.5) * 0.3
+      s.vy = 0.7 + Math.random() * 0.6
+      s.vz = (Math.random() - 0.5) * 0.4
+    })
+  }
+  const setCursor = (c: string) => {
+    if (typeof document !== 'undefined') document.body.style.cursor = c
+  }
 
   // Particules orbitales (flux de pensée) autour de la tête.
   const particles = useMemo(() => {
@@ -161,11 +191,28 @@ function Face({ state }: Props) {
     const gx = pointer.active ? THREE.MathUtils.clamp(pointer.x, -1, 1) : Math.sin(t * 0.4) * 0.4 + saccade.current.x
     const gy = pointer.active ? THREE.MathUtils.clamp(pointer.y, -1, 1) : saccade.current.y
 
+    // Réaction « tapote » : rebond élastique de la tête + plissement joyeux.
+    let patClose = 0
+    let patBob = 0
+    let patSquash = 1
+    let patJoy = 0
+    if (pat.current > 0) {
+      pat.current = Math.max(0, pat.current - d)
+      const p = 1 - pat.current / 0.7 // 0 → 1
+      const bounce = Math.sin(p * Math.PI * 3) * Math.exp(-p * 3.2)
+      patBob = bounce * 0.13
+      patSquash = 1 - bounce * 0.06
+      patClose = Math.sin(Math.min(1, p * 1.5) * Math.PI) * 0.85 // yeux plissés de joie
+      patJoy = pat.current / 0.7
+    }
+
     // La tête s'oriente légèrement vers le curseur (et penche en réflexion).
     if (head.current) {
       const sway = reducedMotion ? 0 : Math.sin(t * 0.6) * 0.015
       head.current.rotation.y += (gx * 0.18 + sway - head.current.rotation.y) * Math.min(1, d * 3)
       head.current.rotation.x += (gy * 0.12 + k * 0.06 - head.current.rotation.x) * Math.min(1, d * 3)
+      head.current.position.y = patBob
+      head.current.scale.set(1 + (1 - patSquash), patSquash, 1 + (1 - patSquash))
     }
 
     // Les globes oculaires pivotent pour fixer le curseur (acteur principal).
@@ -189,6 +236,7 @@ function Face({ state }: Props) {
       const p = 1 - blink.current.t / 0.15
       close = Math.sin(p * Math.PI) // 0→1→0
     }
+    close = Math.max(close, patClose) // plissement de joie quand on le tapote
     const upTarget = -0.04 + close * 1.15
     const lowTarget = 0.04 - close * 0.5
     for (const l of [lUp.current, rUp.current]) if (l) l.rotation.x += (upTarget - l.rotation.x) * Math.min(1, d * 18)
@@ -200,7 +248,33 @@ function Face({ state }: Props) {
     for (const m of [lIris.current, rIris.current]) {
       if (!m) continue
       m.emissive.copy(col)
-      m.emissiveIntensity = (1.3 + k * 3.4) * pulse
+      m.emissiveIntensity = (1.3 + k * 3.4) * pulse + patJoy * 2.5
+    }
+
+    // Étincelles de joie : elles jaillissent puis retombent en s'effaçant.
+    for (let i = 0; i < sparkleData.current.length; i++) {
+      const s = sparkleData.current[i]
+      const m = sparkleRefs.current[i]
+      if (!m) continue
+      if (!s.active) {
+        m.scale.setScalar(0)
+        continue
+      }
+      s.age += d
+      s.vy -= d * 1.5
+      s.x += s.vx * d
+      s.y += s.vy * d
+      s.z += s.vz * d
+      m.position.set(s.x, s.y, s.z)
+      const t01 = s.age / s.life
+      const pop = Math.sin(Math.min(1, t01) * Math.PI)
+      m.scale.setScalar(0.12 * pop + 0.02)
+      const mat = m.material as THREE.MeshStandardMaterial
+      mat.opacity = Math.max(0, 1 - t01)
+      if (t01 >= 1) {
+        s.active = false
+        m.scale.setScalar(0)
+      }
     }
 
     // Respiration / lévitation : un être de lumière qui flotte.
@@ -223,7 +297,12 @@ function Face({ state }: Props) {
 
   return (
     <group ref={group}>
-      <group ref={head}>
+      <group
+        ref={head}
+        onClick={onPat}
+        onPointerOver={() => setCursor('pointer')}
+        onPointerOut={() => setCursor('auto')}
+      >
         {/* Crâne ovale d'un seul tenant (sans couture), légèrement aminci vers
             le menton pour une silhouette humaine. */}
         <mesh scale={[0.92, 1.12, 0.96]} position={[0, 0.02, 0]}>
@@ -281,6 +360,14 @@ function Face({ state }: Props) {
           <pointsMaterial size={0.04} color={IRIS_THINK} transparent opacity={0.85} sizeAttenuation toneMapped={false} />
         </points>
       </group>
+
+      {/* Étincelles de joie (réaction au « tapote ») */}
+      {SPARKLE_COLORS.map((c, i) => (
+        <mesh key={i} ref={(el) => (sparkleRefs.current[i] = el)} scale={0}>
+          <sphereGeometry args={[1, 10, 10]} />
+          <meshStandardMaterial color="#000" emissive={c} emissiveIntensity={3} transparent toneMapped={false} />
+        </mesh>
+      ))}
 
       {/* Éclairage : ambiance « tout en lumière », mais avec un modelé doux pour
           que le visage blanc garde son relief sur fond blanc. */}
