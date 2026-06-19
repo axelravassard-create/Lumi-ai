@@ -11,6 +11,7 @@ import { PricingScreen } from './components/PricingScreen'
 import { MetiersDirectory } from './components/MetiersDirectory'
 import { MetierLanding } from './components/MetierLanding'
 import { Logo } from './components/Logo'
+import { Avatar } from './components/Avatar'
 import { loadProfile, profileToContext } from './lib/profile'
 import { addBilan } from './lib/history'
 
@@ -224,12 +225,9 @@ function AnalyzingScreen({ label, step }: { label: string; step: number }) {
   return (
     <div className="grid min-h-screen place-items-center px-6">
       <div className="w-full max-w-md text-center">
-        <Logo className="mb-10 justify-center" />
-        <div className="relative mx-auto mb-8 h-20 w-20">
-          <div className="absolute inset-0 animate-ping rounded-full bg-brand-200 opacity-60" />
-          <div className="absolute inset-0 grid place-items-center rounded-full bg-gradient-to-br from-brand-400 to-brand-700 text-3xl shadow-glow">
-            🤖
-          </div>
+        <Logo className="mb-6 justify-center" />
+        <div className="relative mx-auto mb-2 h-56 w-full">
+          <Avatar state="thinking" className="h-full w-full" />
         </div>
         <h2 className="font-display text-xl font-bold text-ink-900">Analyse de « {label} »</h2>
         <div className="mt-6 space-y-2 text-left">
