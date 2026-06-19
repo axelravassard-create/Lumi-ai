@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import type { AvatarState } from './avatar/RobotAvatar'
+import type { AvatarState, AvatarMood } from './avatar/RobotAvatar'
 
 // Le moteur 3D (three.js + R3F) est lourd : on le charge à la demande pour ne
 // jamais ralentir le premier affichage de la page.
@@ -7,6 +7,7 @@ const RobotAvatar = lazy(() => import('./avatar/RobotAvatar'))
 
 interface Props {
   state?: AvatarState
+  mood?: AvatarMood
   className?: string
   /** Désactive l'avatar 3D et affiche le repli léger (ex. mobile bas de gamme). */
   forceFallback?: boolean
@@ -42,7 +43,7 @@ function Fallback({ state }: { state: AvatarState }) {
   )
 }
 
-export function Avatar({ state = 'idle', className = '', forceFallback = false }: Props) {
+export function Avatar({ state = 'idle', mood = 'neutral', className = '', forceFallback = false }: Props) {
   const canRender3D = useMemo(() => !forceFallback && supportsWebGL(), [forceFallback])
   const ref = useRef<HTMLDivElement>(null)
   // Visible à l'écran ? On met la 3D en pause quand l'avatar sort du viewport
@@ -64,7 +65,7 @@ export function Avatar({ state = 'idle', className = '', forceFallback = false }
     <div ref={ref} className={`relative select-none ${className}`}>
       {canRender3D ? (
         <Suspense fallback={<Fallback state={state} />}>
-          <RobotAvatar state={state} active={visible} />
+          <RobotAvatar state={state} mood={mood} active={visible} />
         </Suspense>
       ) : (
         <Fallback state={state} />

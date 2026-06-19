@@ -5,9 +5,12 @@ import { Bloom, EffectComposer } from '@react-three/postprocessing'
 import * as THREE from 'three'
 
 export type AvatarState = 'idle' | 'thinking'
+export type AvatarMood = 'neutral' | 'calm' | 'concerned'
 
 interface Props {
   state: AvatarState
+  /** Humeur de Lumi : colore son regard selon le résultat (vert/calme, ambre/inquiet). */
+  mood?: AvatarMood
   /** Quand false, la boucle de rendu est mise en pause (économie GPU hors écran). */
   active?: boolean
 }
@@ -43,6 +46,12 @@ const reducedMotion =
 // Iris : indigo calme au repos, cyan électrique en réflexion.
 const IRIS_IDLE = new THREE.Color('#5566ff')
 const IRIS_THINK = new THREE.Color('#27e2ff')
+// Couleur du regard selon l'humeur (réaction au score).
+const MOOD_COLOR: Record<AvatarMood, THREE.Color> = {
+  neutral: new THREE.Color('#5566ff'),
+  calm: new THREE.Color('#2fd98e'),
+  concerned: new THREE.Color('#ff7a4d'),
+}
 const SKIN = '#eef1fa' // blanc nacré, presque lumière
 // Couleurs des étincelles de joie quand on tapote la tête de Lumi.
 const SPARKLE_COLORS = ['#ff7eb6', '#ffd166', '#33e1ff', '#a5b4fc', '#ff7eb6', '#ffd166', '#9bffce']
@@ -117,7 +126,7 @@ function Eye({
   )
 }
 
-function Face({ state }: Props) {
+function Face({ state, mood = 'neutral' }: Props) {
   const group = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
   const lEye = useRef<THREE.Group | null>(null)
@@ -270,9 +279,9 @@ function Face({ state }: Props) {
     for (const l of [lUp.current, rUp.current]) if (l) l.rotation.x += (upTarget - l.rotation.x) * Math.min(1, d * 18)
     for (const l of [lLow.current, rLow.current]) if (l) l.rotation.x += (lowTarget - l.rotation.x) * Math.min(1, d * 18)
 
-    // Iris : couleur + éclat selon la réflexion, avec une pulsation vivante.
+    // Iris : couleur (humeur) + éclat selon la réflexion, avec pulsation vivante.
     const pulse = 1 + Math.sin(t * (2.5 + k * 6)) * (0.12 + k * 0.45)
-    const col = IRIS_IDLE.clone().lerp(IRIS_THINK, k)
+    const col = MOOD_COLOR[mood].clone().lerp(IRIS_THINK, k)
     for (const m of [lIris.current, rIris.current]) {
       if (!m) continue
       m.emissive.copy(col)
@@ -413,7 +422,7 @@ function Face({ state }: Props) {
   )
 }
 
-export default function RobotAvatar({ state, active = true }: Props) {
+export default function RobotAvatar({ state, mood = 'neutral', active = true }: Props) {
   usePointerTracking()
   return (
     <Canvas
@@ -424,7 +433,7 @@ export default function RobotAvatar({ state, active = true }: Props) {
       camera={{ position: [0, 0.02, 4.9], fov: 30 }}
       style={{ background: 'transparent' }}
     >
-      <Face state={state} />
+      <Face state={state} mood={mood} />
       {/* Environnement studio généré localement (aucun téléchargement réseau). */}
       <Environment resolution={128}>
         <Lightformer intensity={0.8} position={[0, 1, 4]} scale={[10, 8, 1]} color="#ffffff" />

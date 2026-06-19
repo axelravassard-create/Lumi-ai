@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Logo } from './Logo'
 import { AiStatusButton } from './AiStatusButton'
 import { Avatar } from './Avatar'
+import { LumiSpeech } from './LumiSpeech'
 import { SUGGESTIONS } from '../lib/engine'
 
 type Mode = 'single' | 'compare'
@@ -51,9 +52,9 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
           <Avatar state="idle" className="h-full w-full" />
         </div>
         <div className="animate-fade-in -mt-3 flex justify-center">
-          <div className="relative max-w-xs rounded-2xl border border-ink-100 bg-white px-4 py-2.5 text-sm text-ink-700 shadow-card">
+          <div className="relative max-w-sm rounded-2xl border border-ink-100 bg-white px-4 py-2.5 text-sm text-ink-700 shadow-card">
             <span className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-ink-100 bg-white" />
-            👋 Salut, moi c'est <span className="font-bold text-brand-700">Lumi</span> — ton guide face à l'IA.
+            <LumiSpeech text="👋 Salut, moi c'est Lumi — ton guide face à l'IA." />
             <span className="block text-xs text-ink-400">(tapote-moi sur la tête 👆)</span>
           </div>
         </div>

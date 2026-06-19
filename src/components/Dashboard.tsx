@@ -8,6 +8,8 @@ import { ProjectionChart } from './ProjectionChart'
 import { SharePanel } from './SharePanel'
 import { SectorTrendCard } from './SectorTrendCard'
 import { Avatar } from './Avatar'
+import { LumiSpeech } from './LumiSpeech'
+import { moodFromScore, lumiReaction } from '../lib/lumi'
 
 interface Props {
   analysis: Analysis
@@ -100,7 +102,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
           <div className="card flex flex-col items-center gap-5 p-5 sm:flex-row sm:gap-6 sm:p-6">
             <div className="flex shrink-0 flex-col items-center gap-2">
               <div className="relative h-36 w-36 overflow-hidden rounded-3xl bg-gradient-to-b from-ink-50 to-white sm:h-44 sm:w-44">
-                <Avatar state="idle" className="h-full w-full" />
+                <Avatar state="idle" mood={moodFromScore(analysis.score)} className="h-full w-full" />
               </div>
               <span className="pill bg-brand-50 font-bold text-brand-700">Lumi</span>
             </div>
@@ -111,6 +113,12 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
                   <span className="pill bg-emerald-100 text-emerald-700">✦ rédigé par Claude</span>
                 )}
               </div>
+              {/* Lumi réagit à voix « parlée » selon le score */}
+              <LumiSpeech
+                text={lumiReaction(analysis.score)}
+                speakText={`${lumiReaction(analysis.score)} ${analysis.verdict}`}
+                className="mt-1.5 block font-display text-base font-bold text-ink-800"
+              />
               <p className="mt-1.5 text-lg font-medium leading-snug text-ink-900">{analysis.verdict}</p>
             </div>
           </div>
