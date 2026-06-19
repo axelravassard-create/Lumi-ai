@@ -12,8 +12,11 @@ import { MetiersDirectory } from './components/MetiersDirectory'
 import { MetierLanding } from './components/MetierLanding'
 import { Logo } from './components/Logo'
 import { Avatar } from './components/Avatar'
+import { LuminatorChat } from './components/LuminatorChat'
 import { loadProfile, profileToContext } from './lib/profile'
 import { addBilan } from './lib/history'
+import { useLuminator } from './lib/entitlement'
+import { installAudioUnlock } from './lib/sfx'
 
 type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier'
 
@@ -27,6 +30,19 @@ const ANALYSIS_STEPS = [
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
+// Contexte injecté dans le chat avec Luminator : profil + dernier bilan.
+function chatContext(analysis: Analysis | null): string | undefined {
+  const parts: string[] = []
+  const profile = profileToContext(loadProfile())
+  if (profile) parts.push(profile)
+  if (analysis) {
+    parts.push(
+      `Dernier bilan réalisé : « ${analysis.profession.label} » — exposition à l'IA ${analysis.currentRisk}% aujourd'hui, ${analysis.riskIn2040}% projetée en 2040, résilience humaine ${analysis.resilience}/100.`,
+    )
+  }
+  return parts.length ? parts.join('\n\n') : undefined
+}
+
 export default function App() {
   const [view, setView] = useState<View>('landing')
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
@@ -37,6 +53,13 @@ export default function App() {
   const [modalOpen, setModalOpen] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [seoId, setSeoId] = useState('')
+  const [chatOpen, setChatOpen] = useState(false)
+  const ownsLuminator = useLuminator()
+
+  // Débloque l'audio (bruitage) dès la première interaction de l'utilisateur.
+  useEffect(() => {
+    installAudioUnlock()
+  }, [])
 
   // Routage léger par hash pour les pages SEO (#/metiers, #/metier/<id>).
   useEffect(() => {
@@ -186,7 +209,9 @@ export default function App() {
         />
       )}
 
-      {view === 'pricing' && <PricingScreen onBack={() => setView('landing')} />}
+      {view === 'pricing' && (
+        <PricingScreen onBack={() => setView('landing')} onOpenChat={() => setChatOpen(true)} />
+      )}
 
       {view === 'analyzing' && <AnalyzingScreen label={label} step={step} />}
 
@@ -206,6 +231,29 @@ export default function App() {
 
       {modalOpen && (
         <ApiKeyModal onClose={() => setModalOpen(false)} onChange={() => setAiEnabled(hasApiKey())} />
+      )}
+
+      {/* Bouton flottant : discuter avec Luminator (une fois l'offre acquise). */}
+      {ownsLuminator && !chatOpen && view !== 'analyzing' && (
+        <button
+          onClick={() => setChatOpen(true)}
+          aria-label="Discuter avec Luminator"
+          className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-brand-600 py-3 pl-3 pr-4 text-sm font-semibold text-white shadow-glow transition hover:bg-brand-700"
+        >
+          <span className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-white/15">
+            <Avatar glasses className="h-full w-full" forceFallback />
+          </span>
+          Luminator
+        </button>
+      )}
+
+      {chatOpen && (
+        <LuminatorChat
+          onClose={() => setChatOpen(false)}
+          aiEnabled={aiEnabled}
+          onOpenSettings={() => setModalOpen(true)}
+          extraContext={chatContext(analysis)}
+        />
       )}
 
       {notice && (

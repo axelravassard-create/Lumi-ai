@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import type { AvatarState, AvatarMood } from './avatar/RobotAvatar'
+import { useLuminator } from '../lib/entitlement'
 
 // Le moteur 3D (three.js + R3F) est lourd : on le charge à la demande pour ne
 // jamais ralentir le premier affichage de la page.
@@ -11,8 +12,10 @@ interface Props {
   className?: string
   /** Désactive l'avatar 3D et affiche le repli léger (ex. mobile bas de gamme). */
   forceFallback?: boolean
-  /** Ajoute des lunettes de vue rondes (variante « Luminator »). */
+  /** Lunettes rondes (variante « Luminator »). Si non précisé : selon la possession. */
   glasses?: boolean
+  /** Anime la bouche comme s'il parlait. */
+  speaking?: boolean
 }
 
 // Détection WebGL : si le navigateur ne sait pas faire de 3D, on retombe
@@ -28,7 +31,7 @@ function supportsWebGL(): boolean {
 }
 
 // Repli : pastille animée avec le robot emoji. Léger, sans dépendance 3D.
-function Fallback({ state }: { state: AvatarState }) {
+function Fallback({ state, glasses }: { state: AvatarState; glasses: boolean }) {
   return (
     <div className="relative grid h-full w-full place-items-center">
       <div className="absolute inset-0 grid place-items-center">
@@ -39,13 +42,16 @@ function Fallback({ state }: { state: AvatarState }) {
         />
       </div>
       <div className="relative grid h-1/2 w-1/2 max-h-28 max-w-28 place-items-center rounded-[2rem] bg-gradient-to-br from-brand-400 to-brand-700 text-5xl shadow-glow">
-        🤖
+        {glasses ? '🤓' : '🤖'}
       </div>
     </div>
   )
 }
 
-export function Avatar({ state = 'idle', mood = 'neutral', className = '', forceFallback = false, glasses = false }: Props) {
+export function Avatar({ state = 'idle', mood = 'neutral', className = '', forceFallback = false, glasses, speaking = false }: Props) {
+  const owns = useLuminator()
+  // Si `glasses` n'est pas imposé, on suit la possession de Luminator.
+  const showGlasses = glasses ?? owns
   const canRender3D = useMemo(() => !forceFallback && supportsWebGL(), [forceFallback])
   const ref = useRef<HTMLDivElement>(null)
   // Visible à l'écran ? On met la 3D en pause quand l'avatar sort du viewport
@@ -66,11 +72,11 @@ export function Avatar({ state = 'idle', mood = 'neutral', className = '', force
   return (
     <div ref={ref} className={`relative select-none ${className}`}>
       {canRender3D ? (
-        <Suspense fallback={<Fallback state={state} />}>
-          <RobotAvatar state={state} mood={mood} active={visible} glasses={glasses} />
+        <Suspense fallback={<Fallback state={state} glasses={showGlasses} />}>
+          <RobotAvatar state={state} mood={mood} active={visible} glasses={showGlasses} speaking={speaking} />
         </Suspense>
       ) : (
-        <Fallback state={state} />
+        <Fallback state={state} glasses={showGlasses} />
       )}
     </div>
   )

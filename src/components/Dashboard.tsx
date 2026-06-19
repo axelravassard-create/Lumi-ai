@@ -10,6 +10,7 @@ import { SectorTrendCard } from './SectorTrendCard'
 import { Avatar } from './Avatar'
 import { LumiSpeech } from './LumiSpeech'
 import { moodFromScore, lumiReaction } from '../lib/lumi'
+import { useBrand } from '../lib/entitlement'
 
 interface Props {
   analysis: Analysis
@@ -42,6 +43,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
   const risk2040 = useCountUp(analysis.riskIn2040, 1300)
   const current = useCountUp(analysis.currentRisk, 1300)
   const [showShare, setShowShare] = useState(false)
+  const { name } = useBrand()
 
   return (
     <div className="min-h-screen pb-20">
@@ -104,11 +106,11 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
               <div className="relative h-36 w-36 overflow-hidden rounded-3xl bg-gradient-to-b from-ink-50 to-white sm:h-44 sm:w-44">
                 <Avatar state="idle" mood={moodFromScore(analysis.score)} className="h-full w-full" />
               </div>
-              <span className="pill bg-brand-50 font-bold text-brand-700">Lumi</span>
+              <span className="pill bg-brand-50 font-bold text-brand-700">{name}</span>
             </div>
             <div className={`relative flex-1 self-stretch rounded-2xl border-l-4 p-5 ${theme.bg}`} style={{ borderColor: theme.hex }}>
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="font-display text-sm font-bold uppercase tracking-wide text-ink-500">Le verdict de Lumi</h2>
+                <h2 className="font-display text-sm font-bold uppercase tracking-wide text-ink-500">Le verdict de {name}</h2>
                 {analysis.aiEnhanced && (
                   <span className="pill bg-emerald-100 text-emerald-700">✦ rédigé par Claude</span>
                 )}

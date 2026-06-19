@@ -4,6 +4,8 @@ import { AiStatusButton } from './AiStatusButton'
 import { Avatar } from './Avatar'
 import { LumiSpeech } from './LumiSpeech'
 import { SUGGESTIONS } from '../lib/engine'
+import { PROFESSIONS } from '../lib/professions'
+import { useBrand } from '../lib/entitlement'
 
 type Mode = 'single' | 'compare'
 
@@ -21,6 +23,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
   const [mode, setMode] = useState<Mode>('single')
   const [value, setValue] = useState('')
   const [valueB, setValueB] = useState('')
+  const { name } = useBrand()
 
   const submit = () => {
     if (mode === 'single') {
@@ -54,7 +57,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         <div className="animate-fade-in -mt-3 flex justify-center">
           <div className="relative max-w-sm rounded-2xl border border-ink-100 bg-white px-4 py-2.5 text-sm text-ink-700 shadow-card">
             <span className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-ink-100 bg-white" />
-            <LumiSpeech text="👋 Salut, moi c'est Lumi — ton guide face à l'IA." />
+            <LumiSpeech text={`👋 Salut, moi c'est ${name} — ton guide face à l'IA.`} />
             <span className="block text-xs text-ink-400">(tapote-moi sur la tête 👆)</span>
           </div>
         </div>
@@ -146,7 +149,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         {/* Mini-stats de réassurance */}
         <div className="animate-fade-up mx-auto mt-14 grid max-w-2xl grid-cols-3 gap-4" style={{ animationDelay: '260ms' }}>
           {[
-            { n: '35+', l: 'métiers analysés' },
+            { n: `${PROFESSIONS.length}`, l: 'métiers analysés' },
             { n: '7', l: 'facteurs d\'exposition' },
             { n: '2040', l: 'horizon de projection' },
           ].map((s) => (

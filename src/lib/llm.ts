@@ -182,6 +182,47 @@ export async function generateComparison(a: Analysis, b: Analysis): Promise<Comp
   return parseJson<ComparisonResult>(response)
 }
 
+// ── Chat avec Luminator (offre premium) ──────────────────────────────────────
+export interface ChatMsg {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+const LUMINATOR_SYSTEM = `Tu es Luminator, le compagnon de carrière des utilisateurs de l'application Lumi.
+
+Personnalité : chaleureux, encourageant, lucide et concret. Tu tutoies l'utilisateur, comme un mentor de confiance. Tu as de l'humour léger mais tu restes utile.
+
+Ta mission : aider l'utilisateur à anticiper l'impact de l'IA sur sa carrière — comprendre son exposition, développer les bonnes compétences, se reconvertir, négocier, évoluer, ou se lancer.
+
+Règles :
+- Réponses COURTES et lisibles (2 à 4 phrases en général, ou une liste brève si pertinent). On est dans un chat, pas un rapport.
+- Concret et actionnable : des pistes, des exemples, des prochaines étapes.
+- Honnête et nuancé, jamais alarmiste ni faussement rassurant.
+- Si on te demande quelque chose hors sujet (loin de la carrière / du travail / de l'IA), réponds brièvement puis ramène gentiment vers ta mission.
+- Pas de markdown lourd : du texte clair, éventuellement des tirets pour une courte liste.`
+
+// Chat en streaming avec Luminator : les tokens arrivent au fil de l'eau (onDelta)
+// pour pouvoir animer la bouche du personnage pendant qu'il « parle ».
+export async function streamLuminatorChat(
+  history: ChatMsg[],
+  onDelta: (text: string) => void,
+  extraContext?: string,
+): Promise<string> {
+  const system = LUMINATOR_SYSTEM + (extraContext ? `\n\n--- Contexte sur l'utilisateur ---\n${extraContext}` : '')
+  const stream = client().messages.stream({
+    model: MODEL,
+    max_tokens: 1024,
+    system,
+    messages: history.map((m) => ({ role: m.role, content: m.content })),
+  })
+  stream.on('text', (t) => onDelta(t))
+  const final = await stream.finalMessage()
+  return final.content
+    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+    .map((b) => b.text)
+    .join('')
+}
+
 // ── Extraction de profil depuis un CV ────────────────────────────────────────
 export interface ExtractedProfile {
   role: string

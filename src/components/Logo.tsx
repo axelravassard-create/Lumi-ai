@@ -1,4 +1,8 @@
+import { useBrand } from '../lib/entitlement'
+
 export function Logo({ className = '', onClick }: { className?: string; onClick?: () => void }) {
+  // Une fois Luminator acquis, le personnage (et le nom) prennent la place de Lumi.
+  const { owns, name } = useBrand()
   return (
     <div
       className={`flex items-center gap-2.5 ${onClick ? 'cursor-pointer transition hover:opacity-80' : ''} ${className}`}
@@ -18,7 +22,7 @@ export function Logo({ className = '', onClick }: { className?: string; onClick?
           {/* oreilles */}
           <ellipse cx="7" cy="17" rx="2.1" ry="2.9" fill="#fff" />
           <ellipse cx="25" cy="17" rx="2.1" ry="2.9" fill="#fff" />
-          {/* tête simplifiée de Lumi */}
+          {/* tête simplifiée du personnage */}
           <path
             d="M16 5.2c4.7 0 8 3.4 8 8.4 0 5.6-3.3 9.6-8 9.6s-8-4-8-9.6c0-5 3.3-8.4 8-8.4Z"
             fill="#fff"
@@ -29,10 +33,19 @@ export function Logo({ className = '', onClick }: { className?: string; onClick?
           {/* reflets de vie */}
           <circle cx="13.4" cy="13.5" r="0.7" fill="#fff" />
           <circle cx="20" cy="13.5" r="0.7" fill="#fff" />
+          {/* lunettes rondes de Luminator */}
+          {owns && (
+            <g stroke="#23283c" strokeWidth="0.9" fill="none">
+              <circle cx="12.7" cy="14.2" r="3.1" />
+              <circle cx="19.3" cy="14.2" r="3.1" />
+              <path d="M15.8 13.9c.4-.5 .9-.5 1.3 0" strokeLinecap="round" />
+            </g>
+          )}
         </svg>
       </div>
       <span className="font-display text-lg font-extrabold tracking-tight text-ink-900">
-        Lum<span className="text-brand-600">i</span>
+        {name.slice(0, 3)}
+        <span className="text-brand-600">{name.slice(3)}</span>
       </span>
     </div>
   )

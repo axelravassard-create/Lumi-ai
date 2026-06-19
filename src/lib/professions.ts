@@ -239,4 +239,96 @@ export const PROFESSIONS: Profession[] = [
   { id: 'mover', label: 'Déménageur·se', domain: 'Services & Public', emoji: '📦', keywords: ['demenageur', 'demenagement', 'manutention demenagement'], factors: f(80, 10, 8, 24, 90, 24, 34) },
   { id: 'fishmonger', label: 'Poissonnier·ère', domain: 'Services & Public', emoji: '🐟', keywords: ['poissonnier', 'poissonnerie', 'maree'], factors: f(66, 10, 30, 34, 86, 38, 46) },
   { id: 'scrum-master', label: 'Scrum Master / Agile Coach', domain: 'Direction & Management', emoji: '🔄', keywords: ['scrum master', 'agile coach', 'agilite', 'coach agile'], factors: f(36, 58, 46, 56, 8, 70, 84) },
+
+  // ══ Santé & Social (compléments) ═══════════════════════════════════════════
+  { id: 'orderly', label: 'Brancardier·ère / Agent·e hospitalier·ère', domain: 'Santé', emoji: '🏥', keywords: ['brancardier', 'agent hospitalier', 'ash', 'agent de service hospitalier'], factors: f(72, 16, 8, 70, 86, 28, 46) },
+  { id: 'radiographer', label: 'Manipulateur·rice en radiologie', domain: 'Santé', emoji: '🩻', keywords: ['manipulateur radio', 'manipulatrice radio', 'manipulateur radiologie', 'mer'], factors: f(64, 64, 18, 54, 52, 46, 42) },
+  { id: 'audiologist', label: 'Audioprothésiste', domain: 'Santé', emoji: '🦻', keywords: ['audioprothesiste', 'audioprothese', 'appareillage auditif'], factors: f(50, 46, 30, 64, 52, 56, 58) },
+  { id: 'dental-tech', label: 'Prothésiste dentaire', domain: 'Santé', emoji: '🦷', keywords: ['prothesiste dentaire', 'prothese dentaire', 'laboratoire dentaire'], factors: f(64, 40, 46, 18, 82, 46, 26) },
+  { id: 'orthoptist', label: 'Orthoptiste', domain: 'Santé', emoji: '👁️', keywords: ['orthoptiste', 'orthoptie', 'reeducation visuelle'], factors: f(54, 40, 28, 66, 40, 56, 56) },
+  { id: 'podiatrist', label: 'Pédicure-podologue', domain: 'Santé', emoji: '🦶', keywords: ['podologue', 'pedicure', 'pedicure podologue'], factors: f(46, 28, 34, 70, 72, 58, 52) },
+  { id: 'occupational-therapist', label: 'Ergothérapeute', domain: 'Santé', emoji: '🧩', keywords: ['ergotherapeute', 'ergotherapie'], factors: f(34, 30, 48, 86, 56, 66, 64) },
+  { id: 'psychomotor', label: 'Psychomotricien·ne', domain: 'Santé', emoji: '🤸', keywords: ['psychomotricien', 'psychomotricienne', 'psychomotricite'], factors: f(32, 26, 52, 88, 60, 64, 64) },
+  { id: 'amp', label: 'Accompagnant·e éducatif·ve et social·e (AES/AMP)', domain: 'Santé', emoji: '🤝', keywords: ['aes', 'amp', 'aide medico psychologique', 'accompagnant educatif et social'], factors: f(44, 14, 22, 92, 70, 48, 60) },
+  { id: 'puericultrice', label: 'Auxiliaire de puériculture', domain: 'Santé', emoji: '🍼', keywords: ['auxiliaire de puericulture', 'puericultrice', 'creche'], factors: f(46, 16, 24, 92, 68, 48, 58) },
+  { id: 'special-educator', label: 'Éducateur·rice spécialisé·e', domain: 'Santé', emoji: '🧑‍🏫', keywords: ['educateur specialise', 'educatrice specialisee', 'moniteur educateur', 'es'], factors: f(30, 28, 46, 92, 40, 66, 80) },
+  { id: 'youth-worker', label: 'Animateur·rice socioculturel·le', domain: 'Santé', emoji: '🎈', keywords: ['animateur', 'animatrice', 'animation', 'centre de loisirs', 'periscolaire', 'bafa'], factors: f(40, 30, 58, 80, 46, 48, 80) },
+  { id: 'school-assistant', label: 'Accompagnant·e d\'élève (AESH / AVS)', domain: 'Éducation & Recherche', emoji: '🧑‍🦽', keywords: ['aesh', 'avs', 'accompagnant eleve', 'auxiliaire de vie scolaire'], factors: f(46, 20, 30, 90, 52, 46, 64) },
+  { id: 'employment-advisor', label: 'Conseiller·ère en insertion / emploi', domain: 'Services & Public', emoji: '🧭', keywords: ['conseiller en insertion', 'conseiller emploi', 'france travail', 'pole emploi', 'conseiller mission locale'], factors: f(52, 52, 32, 74, 12, 54, 72) },
+
+  // ══ Éducation & Services publics (compléments) ═════════════════════════════
+  { id: 'driving-instructor', label: 'Moniteur·rice d\'auto-école', domain: 'Services & Public', emoji: '🚗', keywords: ['moniteur auto ecole', 'enseignant de la conduite', 'auto ecole'], factors: f(58, 24, 22, 66, 60, 52, 66) },
+  { id: 'lifeguard', label: 'Maître-nageur·se sauveteur·se', domain: 'Services & Public', emoji: '🏊', keywords: ['maitre nageur', 'sauveteur', 'surveillant de baignade', 'mns'], factors: f(50, 16, 22, 62, 84, 52, 56) },
+  { id: 'life-coach', label: 'Coach professionnel·le / de vie', domain: 'Services & Public', emoji: '🌟', keywords: ['coach', 'coaching', 'coach de vie', 'coach professionnel'], factors: f(28, 40, 56, 82, 16, 66, 80) },
+  { id: 'prison-officer', label: 'Surveillant·e pénitentiaire', domain: 'Services & Public', emoji: '🔒', keywords: ['surveillant penitentiaire', 'gardien de prison', 'administration penitentiaire'], factors: f(62, 32, 14, 42, 66, 52, 56) },
+  { id: 'customs-officer', label: 'Douanier·ère', domain: 'Services & Public', emoji: '🛂', keywords: ['douanier', 'douane', 'agent des douanes'], factors: f(58, 52, 16, 40, 52, 62, 54) },
+  { id: 'undertaker', label: 'Conseiller·ère funéraire / Pompes funèbres', domain: 'Services & Public', emoji: '⚱️', keywords: ['conseiller funeraire', 'pompes funebres', 'agent funeraire', 'croque mort'], factors: f(48, 34, 30, 78, 52, 56, 68) },
+
+  // ══ Finance, gestion & administration (compléments) ════════════════════════
+  { id: 'payroll', label: 'Gestionnaire de paie', domain: 'Finance & Juridique', emoji: '💶', keywords: ['gestionnaire de paie', 'paie', 'paye', 'gestionnaire paie'], factors: f(78, 84, 14, 30, 6, 56, 40) },
+  { id: 'assistant-accountant', label: 'Assistant·e comptable', domain: 'Finance & Juridique', emoji: '🧮', keywords: ['assistant comptable', 'aide comptable', 'comptable fournisseur', 'comptable client'], factors: f(80, 84, 16, 24, 8, 46, 34) },
+  { id: 'secretary', label: 'Secrétaire / Assistant·e administratif·ve', domain: 'Direction & Management', emoji: '🗃️', keywords: ['secretaire', 'assistant administratif', 'assistante administrative', 'employe de bureau', 'agent administratif'], factors: f(78, 66, 18, 46, 12, 36, 52) },
+  { id: 'medical-secretary', label: 'Secrétaire médical·e', domain: 'Santé', emoji: '🩺', keywords: ['secretaire medicale', 'secretaire medical', 'accueil medical'], factors: f(74, 60, 16, 58, 14, 38, 58) },
+  { id: 'credit-analyst', label: 'Analyste crédit / risques', domain: 'Finance & Juridique', emoji: '📊', keywords: ['analyste credit', 'analyste risque', 'chargé de risques', 'scoring'], factors: f(60, 86, 30, 24, 6, 76, 42) },
+  { id: 'compliance', label: 'Responsable conformité (Compliance)', domain: 'Finance & Juridique', emoji: '🧷', keywords: ['conformite', 'compliance', 'lcb ft', 'controle interne'], factors: f(54, 72, 32, 30, 8, 84, 56) },
+  { id: 'order-management', label: 'Gestionnaire ADV / recouvrement', domain: 'Finance & Juridique', emoji: '📑', keywords: ['adv', 'administration des ventes', 'recouvrement', 'gestionnaire adv'], factors: f(78, 78, 16, 34, 6, 46, 48) },
+
+  // ══ Commerce & Distribution (compléments) ══════════════════════════════════
+  { id: 'store-manager', label: 'Responsable de magasin / Gérant·e', domain: 'Commerce & Marketing', emoji: '🏪', keywords: ['responsable de magasin', 'gerant magasin', 'directeur de magasin', 'responsable boutique'], factors: f(50, 52, 40, 56, 28, 68, 80) },
+  { id: 'department-head', label: 'Chef·fe de rayon', domain: 'Commerce & Marketing', emoji: '🛒', keywords: ['chef de rayon', 'manager de rayon', 'responsable de rayon'], factors: f(60, 46, 28, 46, 46, 52, 64) },
+  { id: 'merchandiser', label: 'Merchandiser', domain: 'Commerce & Marketing', emoji: '🧷', keywords: ['merchandiser', 'merchandising', 'mise en rayon visuelle'], factors: f(56, 60, 56, 34, 30, 50, 52) },
+  { id: 'bookseller', label: 'Libraire', domain: 'Commerce & Marketing', emoji: '📚', keywords: ['libraire', 'librairie', 'vendeur livres'], factors: f(54, 40, 52, 56, 40, 48, 62) },
+  { id: 'tobacconist', label: 'Buraliste', domain: 'Commerce & Marketing', emoji: '🚬', keywords: ['buraliste', 'bureau de tabac', 'tabac presse'], factors: f(72, 34, 18, 48, 40, 34, 52) },
+  { id: 'wine-merchant', label: 'Caviste', domain: 'Commerce & Marketing', emoji: '🍷', keywords: ['caviste', 'cave a vin', 'vendeur de vin'], factors: f(50, 30, 52, 56, 52, 52, 66) },
+  { id: 'greengrocer', label: 'Primeur / Épicier·ère', domain: 'Commerce & Marketing', emoji: '🥦', keywords: ['primeur', 'epicier', 'epicerie', 'marchand de fruits'], factors: f(66, 18, 28, 46, 66, 38, 56) },
+  { id: 'telemarketer', label: 'Téléprospecteur·rice / Télévendeur·se', domain: 'Commerce & Marketing', emoji: '📞', keywords: ['teleprospecteur', 'televendeur', 'prospection telephonique', 'phoning'], factors: f(82, 52, 12, 46, 6, 28, 62) },
+
+  // ══ Hôtellerie & Restauration (compléments) ════════════════════════════════
+  { id: 'commis-chef', label: 'Commis de cuisine', domain: 'Artisanat & BTP', emoji: '🔪', keywords: ['commis de cuisine', 'commis', 'aide cuisinier'], factors: f(70, 10, 40, 28, 84, 34, 38) },
+  { id: 'kitchen-porter', label: 'Plongeur·se en restauration', domain: 'Services & Public', emoji: '🍽️', keywords: ['plongeur', 'plonge', 'plongeur restauration'], factors: f(90, 6, 6, 16, 82, 16, 24) },
+  { id: 'sommelier', label: 'Sommelier·ère', domain: 'Services & Public', emoji: '🍷', keywords: ['sommelier', 'sommeliere', 'sommellerie'], factors: f(38, 24, 64, 60, 56, 60, 72) },
+  { id: 'barista', label: 'Barista', domain: 'Services & Public', emoji: '☕', keywords: ['barista', 'cafe', 'coffee shop'], factors: f(58, 16, 46, 56, 68, 36, 62) },
+  { id: 'caterer', label: 'Traiteur·se', domain: 'Artisanat & BTP', emoji: '🍱', keywords: ['traiteur', 'traiteuse', 'restauration evenementielle'], factors: f(52, 18, 66, 42, 80, 52, 56) },
+  { id: 'housekeeper', label: 'Femme/Valet de chambre · Gouvernant·e', domain: 'Services & Public', emoji: '🧺', keywords: ['femme de chambre', 'valet de chambre', 'gouvernante', 'housekeeping', 'etage hotel'], factors: f(86, 10, 10, 34, 80, 24, 34) },
+  { id: 'concierge', label: 'Concierge / Gardien·ne d\'immeuble', domain: 'Services & Public', emoji: '🛎️', keywords: ['concierge', 'gardien d immeuble', 'gardienne', 'loge'], factors: f(64, 28, 18, 56, 52, 40, 62) },
+
+  // ══ Transport & Logistique (compléments) ═══════════════════════════════════
+  { id: 'truck-driver', label: 'Chauffeur·se poids lourd / Routier·ère', domain: 'Industrie & Logistique', emoji: '🚛', keywords: ['chauffeur poids lourd', 'routier', 'conducteur poids lourd', 'chauffeur pl', 'spl'], factors: f(74, 30, 8, 26, 80, 42, 30) },
+  { id: 'taxi-vtc', label: 'Chauffeur·se VTC / Taxi', domain: 'Industrie & Logistique', emoji: '🚕', keywords: ['vtc', 'taxi', 'chauffeur prive', 'uber'], factors: f(70, 34, 10, 44, 70, 38, 48) },
+  { id: 'delivery-rider', label: 'Coursier·ère / Livreur·se à vélo', domain: 'Industrie & Logistique', emoji: '🛵', keywords: ['coursier', 'livreur a velo', 'livreur repas', 'deliveroo', 'uber eats'], factors: f(80, 30, 8, 30, 84, 26, 30) },
+  { id: 'warehouse-manager', label: 'Responsable d\'entrepôt', domain: 'Industrie & Logistique', emoji: '🏬', keywords: ['responsable entrepot', 'responsable d entrepot', 'chef d equipe logistique'], factors: f(54, 66, 34, 30, 30, 68, 66) },
+  { id: 'crane-operator', label: 'Conducteur·rice d\'engins / Grutier·ère', domain: 'Industrie & Logistique', emoji: '🏗️', keywords: ['conducteur d engins', 'grutier', 'engins de chantier', 'pelleteuse'], factors: f(64, 34, 14, 18, 84, 48, 28) },
+  { id: 'ship-captain', label: 'Officier·ère de marine marchande', domain: 'Industrie & Logistique', emoji: '⚓', keywords: ['marin', 'officier de marine', 'marine marchande', 'capitaine de navire'], factors: f(50, 48, 24, 34, 78, 78, 52) },
+  { id: 'fisherman', label: 'Marin-pêcheur·se', domain: 'Industrie & Logistique', emoji: '🎣', keywords: ['marin pecheur', 'peche', 'pecheur', 'chalutier'], factors: f(58, 16, 18, 22, 90, 48, 34) },
+  { id: 'ticket-inspector', label: 'Contrôleur·se des transports', domain: 'Services & Public', emoji: '🎫', keywords: ['controleur de train', 'controleur transports', 'controleur sncf', 'agent de controle'], factors: f(68, 40, 12, 44, 52, 46, 56) },
+
+  // ══ Artisanat, BTP & Industrie (compléments) ═══════════════════════════════
+  { id: 'tiler', label: 'Carreleur·se', domain: 'Artisanat & BTP', emoji: '🧱', keywords: ['carreleur', 'carrelage', 'pose de carrelage'], factors: f(58, 12, 32, 22, 92, 42, 34) },
+  { id: 'plasterer', label: 'Plaquiste / Plâtrier·ère', domain: 'Artisanat & BTP', emoji: '🧱', keywords: ['plaquiste', 'platrier', 'placo', 'cloison seche'], factors: f(60, 12, 28, 20, 92, 40, 32) },
+  { id: 'hvac', label: 'Frigoriste / Climaticien·ne', domain: 'Artisanat & BTP', emoji: '❄️', keywords: ['frigoriste', 'climaticien', 'climatisation', 'froid', 'pompe a chaleur'], factors: f(50, 34, 30, 24, 86, 58, 40) },
+  { id: 'glazier', label: 'Vitrier·ère / Miroitier·ère', domain: 'Artisanat & BTP', emoji: '🪟', keywords: ['vitrier', 'miroitier', 'pose de vitrage'], factors: f(56, 16, 34, 24, 88, 46, 36) },
+  { id: 'fiber-tech', label: 'Technicien·ne télécom / fibre', domain: 'Tech & Data', emoji: '📡', keywords: ['technicien fibre', 'technicien telecom', 'fibre optique', 'raccordement', 'antenniste'], factors: f(62, 56, 22, 26, 72, 48, 40) },
+  { id: 'solar-installer', label: 'Installateur·rice panneaux solaires', domain: 'Artisanat & BTP', emoji: '☀️', keywords: ['installateur solaire', 'panneaux solaires', 'photovoltaique'], factors: f(54, 30, 30, 24, 84, 52, 38) },
+  { id: 'car-body', label: 'Carrossier·ère / Peintre automobile', domain: 'Artisanat & BTP', emoji: '🚗', keywords: ['carrossier', 'carrosserie', 'peintre automobile', 'tolier'], factors: f(58, 22, 44, 20, 86, 46, 32) },
+  { id: 'vehicle-inspector', label: 'Contrôleur·se technique automobile', domain: 'Artisanat & BTP', emoji: '🚙', keywords: ['controle technique', 'controleur technique', 'controleur technique automobile'], factors: f(74, 52, 14, 30, 56, 52, 38) },
+  { id: 'upholsterer', label: 'Tapissier·ère / Sellier·ère', domain: 'Artisanat & BTP', emoji: '🛋️', keywords: ['tapissier', 'sellier', 'tapisserie d ameublement'], factors: f(54, 16, 62, 26, 84, 44, 36) },
+  { id: 'jeweler', label: 'Bijoutier·ère / Joaillier·ère', domain: 'Artisanat & BTP', emoji: '💍', keywords: ['bijoutier', 'joaillier', 'joaillerie', 'bijouterie'], factors: f(50, 24, 72, 30, 84, 52, 40) },
+  { id: 'cobbler', label: 'Cordonnier·ère', domain: 'Artisanat & BTP', emoji: '👞', keywords: ['cordonnier', 'cordonnerie', 'reparation chaussures'], factors: f(64, 12, 42, 28, 86, 40, 34) },
+  { id: 'logger', label: 'Bûcheron·ne / Sylviculteur·rice', domain: 'Artisanat & BTP', emoji: '🪵', keywords: ['bucheron', 'sylviculteur', 'elagueur', 'exploitation forestiere'], factors: f(54, 14, 16, 18, 92, 44, 28) },
+
+  // ══ Agriculture & Nature (compléments) ═════════════════════════════════════
+  { id: 'farm-worker', label: 'Ouvrier·ère agricole / Saisonnier·ère', domain: 'Artisanat & BTP', emoji: '🌱', keywords: ['ouvrier agricole', 'saisonnier agricole', 'maraicher', 'cueilleur'], factors: f(78, 12, 14, 20, 90, 28, 28) },
+  { id: 'beekeeper', label: 'Apiculteur·rice', domain: 'Artisanat & BTP', emoji: '🐝', keywords: ['apiculteur', 'apiculture', 'miel'], factors: f(54, 16, 30, 30, 86, 52, 30) },
+  { id: 'oenologist', label: 'Œnologue', domain: 'Ingénierie & Sciences', emoji: '🍷', keywords: ['oenologue', 'oenologie', 'maitre de chai'], factors: f(40, 46, 58, 30, 46, 76, 52) },
+
+  // ══ Arts, Spectacle & Sport (compléments) ══════════════════════════════════
+  { id: 'dj', label: 'DJ / Disc-jockey', domain: 'Arts & Spectacle', emoji: '🎧', keywords: ['dj', 'disc jockey', 'platines', 'mix'], factors: f(40, 52, 80, 44, 46, 46, 60) },
+  { id: 'stagehand', label: 'Régisseur·se / Technicien·ne du spectacle', domain: 'Arts & Spectacle', emoji: '🎭', keywords: ['regisseur', 'machiniste', 'technicien spectacle', 'technicien plateau', 'intermittent'], factors: f(52, 40, 52, 30, 72, 52, 52) },
+  { id: 'cultural-mediator', label: 'Médiateur·rice culturel·le', domain: 'Arts & Spectacle', emoji: '🏛️', keywords: ['mediateur culturel', 'mediation culturelle', 'guide conferencier'], factors: f(40, 44, 54, 72, 30, 52, 76) },
+  { id: 'pro-athlete', label: 'Sportif·ve professionnel·le', domain: 'Arts & Spectacle', emoji: '⚽', keywords: ['sportif professionnel', 'athlete', 'joueur professionnel', 'sport de haut niveau'], factors: f(40, 18, 52, 40, 94, 52, 56) },
+  { id: 'ski-instructor', label: 'Moniteur·rice de ski / Guide de montagne', domain: 'Services & Public', emoji: '🎿', keywords: ['moniteur de ski', 'guide de montagne', 'guide haute montagne', 'esf'], factors: f(40, 18, 34, 66, 90, 58, 66) },
+
+  // ══ Animaux & divers (compléments) ═════════════════════════════════════════
+  { id: 'animal-keeper', label: 'Soigneur·se animalier·ère / Éleveur·se', domain: 'Services & Public', emoji: '🐾', keywords: ['soigneur animalier', 'eleveur', 'animalier', 'palefrenier', 'zoo'], factors: f(56, 16, 30, 58, 82, 46, 34) },
+  { id: 'dog-groomer', label: 'Toiletteur·se canin·e', domain: 'Services & Public', emoji: '🐩', keywords: ['toiletteur', 'toilettage canin', 'toiletteur canin'], factors: f(54, 14, 46, 56, 82, 38, 48) },
 ]

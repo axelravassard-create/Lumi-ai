@@ -1,12 +1,18 @@
 import { useState } from 'react'
 import { Logo } from './Logo'
 import { Avatar } from './Avatar'
+import { useLuminator, setLuminator } from '../lib/entitlement'
 
 interface Props {
   onBack: () => void
+  /** Ouvre le chat avec Luminator (proposé une fois l'offre acquise). */
+  onOpenChat?: () => void
 }
 
 type Billing = 'monthly' | 'yearly'
+
+// Une seule fonctionnalité « Premium » de plus, mise en avant : le chat.
+const FEATURE_CHAT = 'Chat illimité avec Luminator, propulsé par Claude'
 
 const FREE_FEATURES = [
   'Score de remplaçabilité par l\'IA',
@@ -17,6 +23,7 @@ const FREE_FEATURES = [
 ]
 
 const PREMIUM_FEATURES = [
+  FEATURE_CHAT,
   'Tout le gratuit, en illimité',
   'Suivi automatique : re-bilans réguliers',
   'Impact personnalisé des tendances sur VOTRE situation',
@@ -26,8 +33,9 @@ const PREMIUM_FEATURES = [
   'Comparateur de métiers illimité',
 ]
 
-export function PricingScreen({ onBack }: Props) {
+export function PricingScreen({ onBack, onOpenChat }: Props) {
   const [billing, setBilling] = useState<Billing>('monthly')
+  const owns = useLuminator()
   const price = billing === 'monthly' ? '4,99 €' : '49 €'
   const period = billing === 'monthly' ? '/ mois' : '/ an'
 
@@ -77,7 +85,7 @@ export function PricingScreen({ onBack }: Props) {
         <section className="animate-fade-up mt-10 grid gap-6 md:grid-cols-2" style={{ animationDelay: '80ms' }}>
           {/* Lumi (gratuit) */}
           <div className="card flex flex-col p-7">
-            <Avatar className="mx-auto h-28 w-28" mood="calm" />
+            <Avatar className="mx-auto h-28 w-28" mood="calm" glasses={false} />
             <h2 className="mt-2 font-display text-xl font-bold text-ink-900">Lumi</h2>
             <p className="mt-1 text-sm text-ink-500">Pour évaluer son métier face à l'IA.</p>
             <div className="mt-5 font-display text-4xl font-extrabold text-ink-900">0 €</div>
@@ -109,10 +117,36 @@ export function PricingScreen({ onBack }: Props) {
                 <Feature key={f} text={f} highlight />
               ))}
             </ul>
-            <button className="btn-primary mt-6 w-full justify-center" disabled>
-              Bientôt disponible
-            </button>
-            <p className="mt-2 text-center text-xs text-ink-400">Paiement non actif — prototype</p>
+            {owns ? (
+              <>
+                <div className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+                  ✨ Vous êtes Luminator
+                </div>
+                {onOpenChat && (
+                  <button onClick={onOpenChat} className="btn-primary mt-3 w-full justify-center">
+                    💬 Discuter avec Luminator
+                  </button>
+                )}
+                <button
+                  onClick={() => setLuminator(false)}
+                  className="mt-2 text-center text-xs text-ink-400 underline-offset-2 hover:text-ink-600 hover:underline"
+                >
+                  Revenir à Lumi (gratuit)
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setLuminator(true)}
+                  className="btn-primary mt-6 w-full justify-center"
+                >
+                  Devenir Luminator
+                </button>
+                <p className="mt-2 text-center text-xs text-ink-400">
+                  Paiement simulé — prototype (activation immédiate)
+                </p>
+              </>
+            )}
           </div>
         </section>
 

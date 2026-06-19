@@ -5,12 +5,30 @@ let ctx: AudioContext | null = null
 
 function audioCtx(): AudioContext | null {
   if (typeof window === 'undefined') return null
-  const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+  const AC =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
   if (!AC) return null
   if (!ctx) ctx = new AC()
   // Les navigateurs suspendent le contexte tant qu'il n'y a pas eu d'interaction.
-  if (ctx.state === 'suspended') ctx.resume()
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {})
   return ctx
+}
+
+// Débloque l'audio dès la première interaction de l'utilisateur (clic, touche,
+// toucher) : sans ce « réveil », le tout premier bruitage peut être avalé par la
+// politique d'autoplay des navigateurs.
+export function installAudioUnlock() {
+  if (typeof window === 'undefined') return
+  const unlock = () => {
+    audioCtx()
+    window.removeEventListener('pointerdown', unlock)
+    window.removeEventListener('keydown', unlock)
+    window.removeEventListener('touchstart', unlock)
+  }
+  window.addEventListener('pointerdown', unlock)
+  window.addEventListener('keydown', unlock)
+  window.addEventListener('touchstart', unlock)
 }
 
 // Bruitage joué quand on tapote la tête de Lumi : un contact mat très court
@@ -32,9 +50,9 @@ export function playPat() {
   noise.buffer = buffer
   const lp = ac.createBiquadFilter()
   lp.type = 'lowpass'
-  lp.frequency.value = 380
+  lp.frequency.value = 420
   const tapGain = ac.createGain()
-  tapGain.gain.setValueAtTime(0.16, now)
+  tapGain.gain.setValueAtTime(0.32, now)
   tapGain.gain.exponentialRampToValueAtTime(0.0001, now + tapDur)
   noise.connect(lp).connect(tapGain).connect(out)
   noise.start(now)
@@ -42,19 +60,19 @@ export function playPat() {
 
   // 2) « Couic » de jouet : la hauteur monte vite puis redescend, filtrée en
   //    bande étroite pour le côté caoutchouc.
-  const dur = 0.16
+  const dur = 0.17
   const osc = ac.createOscillator()
   osc.type = 'sawtooth'
   osc.frequency.setValueAtTime(540, now + 0.01)
-  osc.frequency.exponentialRampToValueAtTime(1180, now + 0.07)
-  osc.frequency.exponentialRampToValueAtTime(860, now + dur)
+  osc.frequency.exponentialRampToValueAtTime(1200, now + 0.07)
+  osc.frequency.exponentialRampToValueAtTime(840, now + dur)
   const band = ac.createBiquadFilter()
   band.type = 'bandpass'
   band.frequency.value = 1000
-  band.Q.value = 6
+  band.Q.value = 5
   const squeak = ac.createGain()
   squeak.gain.setValueAtTime(0.0001, now + 0.01)
-  squeak.gain.exponentialRampToValueAtTime(0.2, now + 0.03)
+  squeak.gain.exponentialRampToValueAtTime(0.42, now + 0.03)
   squeak.gain.exponentialRampToValueAtTime(0.0001, now + dur)
   osc.connect(band).connect(squeak).connect(out)
   osc.start(now + 0.01)

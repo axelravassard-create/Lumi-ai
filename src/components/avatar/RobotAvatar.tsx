@@ -16,6 +16,8 @@ interface Props {
   active?: boolean
   /** Ajoute des lunettes de vue rondes (variante « Luminator »). */
   glasses?: boolean
+  /** Anime la bouche comme s'il parlait (chat avec Luminator). */
+  speaking?: boolean
 }
 
 // Pointeur global normalisé (-1..1). Le visage suit le curseur partout sur la
@@ -129,7 +131,7 @@ function Eye({
   )
 }
 
-function Face({ state, mood = 'neutral', glasses = false }: Props) {
+function Face({ state, mood = 'neutral', glasses = false, speaking = false }: Props) {
   const group = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
   const lEye = useRef<THREE.Group | null>(null)
@@ -244,12 +246,19 @@ function Face({ state, mood = 'neutral', glasses = false }: Props) {
       head.current.scale.set(1 + (1 - patSquash), patSquash, 1 + (1 - patSquash))
     }
 
-    // Sourcils levés + bouche ouverte pendant l'étonnement.
+    // Parole : la bouche s'ouvre et se ferme de façon irrégulière, comme une
+    // articulation (deux sinusoïdes désynchronisées pour éviter l'effet métronome).
+    const talk = speaking
+      ? Math.max(0, (0.5 + 0.5 * Math.sin(t * 17)) * (0.55 + 0.45 * Math.sin(t * 6.7 + 1.3)))
+      : 0
+    const mouthAmt = Math.max(mouthOpen, talk)
+
+    // Sourcils levés + bouche ouverte (étonnement ou parole).
     for (const b of browRefs.current) if (b) b.position.y = BROW_Y + browLift
     if (mouthRef.current) {
       mouthRef.current.scale.set(
-        MOUTH_SCALE[0] * (1 + mouthOpen * 0.35),
-        MOUTH_SCALE[1] * (1 + mouthOpen * 1.4),
+        MOUTH_SCALE[0] * (1 + mouthAmt * 0.3),
+        MOUTH_SCALE[1] * (1 + mouthAmt * 1.5),
         MOUTH_SCALE[2],
       )
     }
@@ -463,7 +472,7 @@ function Face({ state, mood = 'neutral', glasses = false }: Props) {
   )
 }
 
-export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false }: Props) {
+export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, speaking = false }: Props) {
   usePointerTracking()
   return (
     <Canvas
@@ -474,7 +483,7 @@ export default function RobotAvatar({ state, mood = 'neutral', active = true, gl
       camera={{ position: [0, 0.02, 4.9], fov: 30 }}
       style={{ background: 'transparent' }}
     >
-      <Face state={state} mood={mood} glasses={glasses} />
+      <Face state={state} mood={mood} glasses={glasses} speaking={speaking} />
       {/* Environnement studio généré localement (aucun téléchargement réseau). */}
       <Environment resolution={128}>
         <Lightformer intensity={0.8} position={[0, 1, 4]} scale={[10, 8, 1]} color="#ffffff" />
