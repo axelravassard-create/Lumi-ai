@@ -59,37 +59,38 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
             <Avatar state="idle" className="h-full w-full" />
           ) : (
             <>
-              {/* Plateau tournant : les deux personnages pivotent autour du centre
-                  pour échanger leurs places, en restant bien droits. La rotation
-                  du plateau (transform) est composée GPU → fluide, sans flou. */}
+              {/* Plateau tournant : les deux personnages pivotent autour d'un point
+                  décalé (haut-droite) pour échanger leurs places en restant droits.
+                  Le pivot décalé fait que celui de DEVANT est toujours centré, et
+                  celui de DERRIÈRE bien visible en haut à droite. */}
               <div
                 className="absolute inset-0 will-change-transform"
                 style={{
-                  transformOrigin: 'center',
+                  transformOrigin: '62% 38%',
                   transition: 'transform 800ms ease-in-out',
                   transform: `rotate(${reveal ? 180 : 0}deg)`,
                 }}
               >
-                {/* Lumi : devant par défaut */}
+                {/* Lumi : centré et devant par défaut */}
                 <div
                   className={`absolute inset-0 will-change-transform ${reveal ? 'pointer-events-none' : ''}`}
                   style={{
                     transition: 'transform 800ms ease-in-out, opacity 800ms ease-in-out',
-                    transform: `translate(-9%, 6%) rotate(${reveal ? -180 : 0}deg) scale(${reveal ? 0.5 : 1})`,
-                    opacity: reveal ? 0.35 : 1,
+                    transform: `translate(0%, 0%) rotate(${reveal ? -180 : 0}deg) scale(${reveal ? 0.55 : 1})`,
+                    opacity: reveal ? 0.5 : 1,
                     zIndex: reveal ? 10 : 20,
                   }}
                 >
                   <Avatar state="idle" glasses={false} className="h-full w-full" />
                 </div>
 
-                {/* Luminator : en retrait par défaut */}
+                {/* Luminator : en retrait, visible en haut à droite par défaut */}
                 <div
                   className={`absolute inset-0 will-change-transform ${reveal ? '' : 'pointer-events-none'}`}
                   style={{
                     transition: 'transform 800ms ease-in-out, opacity 800ms ease-in-out',
-                    transform: `translate(9%, -6%) rotate(${reveal ? -180 : 0}deg) scale(${reveal ? 1 : 0.5})`,
-                    opacity: reveal ? 1 : 0.35,
+                    transform: `translate(24%, -24%) rotate(${reveal ? -180 : 0}deg) scale(${reveal ? 1 : 0.55})`,
+                    opacity: reveal ? 1 : 0.5,
                     zIndex: reveal ? 20 : 10,
                   }}
                 >
@@ -103,7 +104,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
                   onClick={() => setReveal(true)}
                   aria-label="Découvrir Luminator"
                   title="Qui est là, derrière ?"
-                  className="group absolute right-0 top-[2%] z-40 h-[62%] w-[44%] cursor-pointer"
+                  className="group absolute right-0 top-0 z-40 h-[56%] w-[44%] cursor-pointer"
                 >
                   <span className="pointer-events-none absolute bottom-1 right-1 rounded-full bg-ink-900/75 px-2 py-0.5 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
                     Qui est là ? 👀
