@@ -59,19 +59,18 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
             <Avatar state="idle" className="h-full w-full" />
           ) : (
             <>
-              {/* Plateau tournant : les deux personnages pivotent autour d'un point
-                  décalé (haut-droite) pour échanger leurs places en restant droits.
-                  Le pivot décalé fait que celui de DEVANT est toujours centré, et
-                  celui de DERRIÈRE bien visible en haut à droite. */}
+              {/* Plateau tournant : au repos Lumi est centré (devant) et Luminator
+                  en haut à droite (derrière). Au clic, rotation 180° autour d'un
+                  pivot décalé → Luminator passe À GAUCHE (devant) et Lumi à droite. */}
               <div
                 className="absolute inset-0 will-change-transform"
                 style={{
-                  transformOrigin: '62% 38%',
+                  transformOrigin: '54% 40%',
                   transition: 'transform 800ms ease-in-out',
                   transform: `rotate(${reveal ? 180 : 0}deg)`,
                 }}
               >
-                {/* Lumi : centré et devant par défaut */}
+                {/* Lumi : centré et devant par défaut ; part à droite au clic */}
                 <div
                   className={`absolute inset-0 will-change-transform ${reveal ? 'pointer-events-none' : ''}`}
                   style={{
@@ -84,12 +83,12 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
                   <Avatar state="idle" glasses={false} className="h-full w-full" />
                 </div>
 
-                {/* Luminator : en retrait, visible en haut à droite par défaut */}
+                {/* Luminator : en haut à droite par défaut ; vient À GAUCHE au clic */}
                 <div
                   className={`absolute inset-0 will-change-transform ${reveal ? '' : 'pointer-events-none'}`}
                   style={{
                     transition: 'transform 800ms ease-in-out, opacity 800ms ease-in-out',
-                    transform: `translate(24%, -24%) rotate(${reveal ? -180 : 0}deg) scale(${reveal ? 1 : 0.55})`,
+                    transform: `translate(26%, -22%) rotate(${reveal ? -180 : 0}deg) scale(${reveal ? 1 : 0.55})`,
                     opacity: reveal ? 1 : 0.5,
                     zIndex: reveal ? 20 : 10,
                   }}
@@ -115,17 +114,18 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
           )}
         </div>
 
-        {/* Bulle : message de Lumi, ou offre de Luminator une fois révélé */}
-        <div className="animate-fade-in -mt-3 flex justify-center">
+        {/* Bulle : message de Lumi (centrée), ou de Luminator (à gauche, pour
+            montrer que c'est lui qui parle) une fois révélé */}
+        <div className={`animate-fade-in -mt-3 mx-auto flex max-w-sm ${reveal && !owns ? 'justify-start' : 'justify-center'}`}>
           {reveal && !owns ? (
-            <div className="relative max-w-sm rounded-2xl border border-brand-200 bg-white px-4 py-3 text-sm shadow-card">
-              <span className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-brand-200 bg-white" />
+            <div className="relative max-w-xs rounded-2xl border border-brand-200 bg-white px-4 py-3 text-left text-sm shadow-card">
+              <span className="absolute -top-1.5 left-7 h-3 w-3 rotate-45 border-l border-t border-brand-200 bg-white" />
               <p className="font-display font-bold text-ink-900">✨ Moi, c'est Luminator.</p>
               <p className="mt-1 text-ink-600">
                 J'automatise les tâches répétitives de ton métier — outils IA, no-code, modèles prêts à l'emploi,
                 adaptés à tes compétences.
               </p>
-              <div className="mt-2.5 flex flex-wrap justify-center gap-2">
+              <div className="mt-2.5 flex flex-wrap justify-start gap-2">
                 <button onClick={onOpenPricing} className="btn-primary py-2 text-sm">Débloquer Luminator</button>
                 <button onClick={() => setReveal(false)} className="btn-ghost py-2 text-sm">Plus tard</button>
               </div>
