@@ -61,7 +61,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
             <>
               {/* Lumi : devant par défaut ; s'efface quand Luminator avance */}
               <div
-                className={`absolute inset-0 origin-center transition-[transform,opacity] duration-700 ease-out will-change-[transform,opacity] ${
+                className={`absolute inset-0 origin-center transition-all duration-700 ease-out will-change-transform ${
                   reveal ? 'z-0 scale-95 opacity-0' : 'z-20'
                 }`}
               >
@@ -71,7 +71,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
               {/* Luminator : en retrait ; avance pile à la place de Lumi au clic.
                   Effet « lointain » via échelle + opacité (pas de flou = pas de lag). */}
               <div
-                className={`absolute inset-0 origin-center transition-[transform,opacity] duration-700 ease-out will-change-[transform,opacity] ${
+                className={`absolute inset-0 origin-center transition-all duration-700 ease-out will-change-transform ${
                   reveal ? 'z-30 opacity-100' : 'z-10 translate-x-[38%] -translate-y-[8%] scale-[0.5] opacity-30'
                 }`}
               >
