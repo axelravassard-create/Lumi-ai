@@ -67,9 +67,9 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
           {/* Luminator en arrière-plan (uniquement si pas encore débloqué) */}
           {!owns && (
             <div
-              className={`absolute inset-0 transition-all duration-700 ease-out ${
+              className={`absolute inset-0 origin-center transition-all duration-700 ease-out ${
                 reveal
-                  ? 'z-30 translate-x-0 translate-y-0 scale-100 opacity-100 blur-0'
+                  ? 'z-30 opacity-100 blur-0'
                   : 'z-10 translate-x-[36%] -translate-y-[8%] scale-[0.55] opacity-40 blur-[3px]'
               }`}
             >
