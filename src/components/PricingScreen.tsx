@@ -153,7 +153,7 @@ export function PricingScreen({ onBack, onOpenChat }: Props) {
         {/* Réassurance */}
         <section className="animate-fade-up mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-ink-500" style={{ animationDelay: '160ms' }}>
           <span>✅ Sans engagement, annulable à tout moment</span>
-          <span>🔒 Vos données restent sur votre appareil</span>
+          <span>🔒 Stockées sur votre appareil (envoyées à Anthropic seulement pour l'IA)</span>
           <span>🚫 Aucune revente de données</span>
         </section>
 

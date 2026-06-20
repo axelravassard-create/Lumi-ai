@@ -1,0 +1,26 @@
+Copyright (c) 2026 Lumi. Tous droits réservés. / All rights reserved.
+
+Ce logiciel et l'ensemble de son contenu (code source, interface, textes, marque
+« Lumi » / « Luminator », personnage et éléments graphiques) sont la propriété de
+leur(s) auteur(s) et sont protégés par le droit de la propriété intellectuelle.
+
+Aucune autorisation n'est accordée, sauf accord écrit préalable de l'auteur, pour
+utiliser, copier, modifier, fusionner, publier, distribuer, sous-licencier ou
+vendre des copies de ce logiciel, en tout ou partie.
+
+This software and all of its content (source code, interface, texts, the "Lumi" /
+"Luminator" brand, character and graphic assets) are proprietary and protected by
+intellectual-property law. No permission is granted, except with the prior written
+consent of the author, to use, copy, modify, merge, publish, distribute,
+sublicense or sell copies of the software, in whole or in part.
+
+---
+
+Dépendances tierces / Third-party dependencies
+
+Ce projet utilise des bibliothèques tierces distribuées sous leurs propres
+licences (notamment MIT et Apache-2.0 : React, three.js, @react-three/fiber,
+@react-three/drei, @react-three/postprocessing, @anthropic-ai/sdk,
+@vercel/analytics, Tailwind CSS) ainsi que les polices Inter et Plus Jakarta Sans
+(SIL Open Font License 1.1). Ces composants restent soumis à leurs licences
+respectives ; les présentes conditions ne s'y substituent pas.

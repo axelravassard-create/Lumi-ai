@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useRef, useState } from 'react'
 import { CareerProfile, completeness, loadProfile, saveProfile, luminatorFields, luminatorFilledLabels } from '../lib/profile'
 import { BilanRecord, clearHistory, loadHistory } from '../lib/history'
 import { describeError, extractProfileFromCV } from '../lib/llm'
+import { clearAllLocalData } from '../lib/privacy'
 import { Logo } from './Logo'
 import { useCountUp } from '../lib/ui'
 
@@ -76,7 +77,8 @@ export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: 
           <h1 className="font-display text-2xl font-extrabold text-ink-900 md:text-3xl">Mon profil carrière</h1>
           <p className="mt-1 text-ink-500">
             Plus votre profil est complet, plus le suivi et les conseils de l'IA sont précis.
-            Tout est enregistré localement, rien que pour vous.
+            Il est enregistré <strong>localement</strong> sur cet appareil ; il n'est transmis à Anthropic (Claude)
+            que lorsque vous lancez une analyse ou un chat par l'IA.
           </p>
 
           {/* Jauge de complétude */}
@@ -194,6 +196,28 @@ export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: 
           </button>
           {!profile.role.trim() && <span className="text-xs text-ink-400">Renseignez au moins votre métier pour lancer le bilan.</span>}
         </section>
+
+        {/* Confidentialité — droit à l'effacement */}
+        <section className="animate-fade-up mt-10" style={{ animationDelay: '300ms' }}>
+          <div className="rounded-2xl border border-rose-100 bg-rose-50/50 p-5">
+            <h2 className="font-display text-sm font-bold text-ink-900">Vos données</h2>
+            <p className="mt-1 text-sm text-ink-600">
+              Tout ce que Lumi enregistre (profil, historique, conversations, clé API, offre) reste sur cet appareil.
+              Vous pouvez tout effacer définitivement en un clic.
+            </p>
+            <button
+              onClick={() => {
+                if (window.confirm('Supprimer définitivement toutes vos données Lumi sur cet appareil ? Cette action est irréversible.')) {
+                  clearAllLocalData()
+                  window.location.href = window.location.pathname
+                }
+              }}
+              className="mt-3 rounded-xl border border-rose-300 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-600 hover:text-white"
+            >
+              Supprimer toutes mes données
+            </button>
+          </div>
+        </section>
       </main>
 
       <style>{`.inp{width:100%;border:1px solid #d6dae9;border-radius:0.75rem;background:#fff;padding:0.6rem 0.85rem;font-size:0.9rem;color:#1c2033;outline:none;transition:all .15s}.inp:focus{border-color:#818cf8;box-shadow:0 0 0 3px #e0e7ff}.inp::placeholder{color:#8893b8}`}</style>
@@ -248,6 +272,9 @@ function CVImport({ aiEnabled, onOpenSettings, onExtracted }: { aiEnabled: boole
             <h2 className="font-display text-lg font-bold">Pré-remplir depuis mon CV</h2>
             <p className="mt-1 text-sm text-white/60">
               Importez votre CV : Claude le lit et remplit votre profil en quelques secondes.
+              <span className="mt-1 block text-xs text-white/40">
+                Votre CV est transmis à Anthropic (Claude) pour lecture. N'importez pas d'informations que vous ne souhaitez pas partager.
+              </span>
             </p>
 
             {!aiEnabled ? (

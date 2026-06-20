@@ -164,7 +164,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         <p className="animate-fade-up mt-7 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-ink-400" style={{ animationDelay: '300ms' }}>
           <span>🔒 Gratuit en mode démo</span>
           <span className="hidden sm:inline">·</span>
-          <span>📍 Vos données restent sur votre appareil</span>
+          <span>📍 Mode démo : vos données restent sur l'appareil</span>
           <span className="hidden sm:inline">·</span>
           <span>🚫 Aucune revente de données</span>
         </p>
@@ -214,11 +214,26 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
       <footer className="mx-auto max-w-6xl px-6 py-12 text-center text-sm text-ink-400">
         <Logo className="justify-center opacity-70" />
         <p className="mt-4 flex flex-wrap justify-center gap-x-3 gap-y-1">
-          <span>🔒 Confidentialité d'abord : vos données ne quittent pas votre appareil.</span>
+          <span>🔒 Confidentialité : en mode démo, vos données restent sur votre appareil ; avec l'IA activée, elles sont envoyées à Anthropic pour produire l'analyse.</span>
         </p>
         <p className="mt-2">
           Prototype à visée pédagogique — les estimations sont indicatives et ne constituent pas un conseil professionnel.
         </p>
+        <nav className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
+          {([
+            ['mentions', 'Mentions légales'],
+            ['confidentialite', 'Confidentialité'],
+            ['cgu', "Conditions d'utilisation"],
+          ] as const).map(([d, label]) => (
+            <a
+              key={d}
+              href={`#/legal/${d}`}
+              className="text-ink-400 underline-offset-2 transition hover:text-brand-700 hover:underline"
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
       </footer>
     </div>
   )

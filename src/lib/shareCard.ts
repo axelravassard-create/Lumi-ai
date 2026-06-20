@@ -61,7 +61,7 @@ export async function createShareCard(role: string, score: number, level: RiskLe
   ctx.fillStyle = '#fff'
   ctx.textBaseline = 'middle'
   ctx.textAlign = 'left'
-  ctx.font = '700 46px "Plus Jakarta Sans", Inter, sans-serif'
+  ctx.font = '700 46px "Plus Jakarta Sans Variable", "Plus Jakarta Sans", Inter, sans-serif'
   ctx.fillText('Lumi', bx + bs + 22, by + bs / 2 + 2)
 
   // Bloc central
@@ -72,7 +72,7 @@ export async function createShareCard(role: string, score: number, level: RiskLe
 
   // Score géant
   ctx.fillStyle = '#fff'
-  ctx.font = '800 320px "Plus Jakarta Sans", Inter, sans-serif'
+  ctx.font = '800 320px "Plus Jakarta Sans Variable", "Plus Jakarta Sans", Inter, sans-serif'
   ctx.fillText(`${score}%`, W / 2, 540)
 
   // Métier

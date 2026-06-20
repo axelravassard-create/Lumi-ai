@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Lumi — Anticipez l'impact de l'IA sur votre métier",
+  "license": "UNLICENSED",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -11,6 +12,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.2",
+    "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
+    "@fontsource/inter": "^5.2.8",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
     "@react-three/postprocessing": "^2.19.1",

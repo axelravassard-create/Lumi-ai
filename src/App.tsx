@@ -10,6 +10,7 @@ import { ProfileScreen } from './components/ProfileScreen'
 import { PricingScreen } from './components/PricingScreen'
 import { MetiersDirectory } from './components/MetiersDirectory'
 import { MetierLanding } from './components/MetierLanding'
+import { LegalScreen, type LegalDoc } from './components/LegalScreen'
 import { Logo } from './components/Logo'
 import { Avatar } from './components/Avatar'
 import { LuminatorChat } from './components/LuminatorChat'
@@ -18,7 +19,7 @@ import { addBilan } from './lib/history'
 import { useLuminator } from './lib/entitlement'
 import { installAudioUnlock } from './lib/sfx'
 
-type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier'
+type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier' | 'legal'
 
 const ANALYSIS_STEPS = [
   'Identification du métier…',
@@ -53,6 +54,7 @@ export default function App() {
   const [modalOpen, setModalOpen] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [seoId, setSeoId] = useState('')
+  const [legalDoc, setLegalDoc] = useState<LegalDoc>('confidentialite')
   const [chatOpen, setChatOpen] = useState(false)
   const ownsLuminator = useLuminator()
 
@@ -71,6 +73,12 @@ export default function App() {
         window.scrollTo({ top: 0 })
       } else if (h === '#/metiers') {
         setView('directory')
+        window.scrollTo({ top: 0 })
+      } else if (h.startsWith('#/legal/')) {
+        const d = h.slice('#/legal/'.length)
+        const valid: LegalDoc[] = ['mentions', 'confidentialite', 'cgu']
+        setLegalDoc(valid.includes(d as LegalDoc) ? (d as LegalDoc) : 'confidentialite')
+        setView('legal')
         window.scrollTo({ top: 0 })
       }
     }
@@ -211,6 +219,14 @@ export default function App() {
 
       {view === 'pricing' && (
         <PricingScreen onBack={() => setView('landing')} onOpenChat={() => setChatOpen(true)} />
+      )}
+
+      {view === 'legal' && (
+        <LegalScreen
+          doc={legalDoc}
+          onBack={goHome}
+          onOpen={(d) => { window.location.hash = '/legal/' + d }}
+        />
       )}
 
       {view === 'analyzing' && <AnalyzingScreen label={label} step={step} />}
