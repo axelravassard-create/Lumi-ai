@@ -58,8 +58,9 @@ const MOOD_COLOR: Record<AvatarMood, THREE.Color> = {
   concerned: new THREE.Color('#ff7a4d'),
 }
 const SKIN = '#eef1fa' // blanc nacré, presque lumière
-// Couleurs des étincelles de joie quand on tapote la tête de Lumi.
-const SPARKLE_COLORS = ['#ff7eb6', '#ffd166', '#33e1ff', '#a5b4fc', '#ff7eb6', '#ffd166', '#9bffce']
+// Rayons de lumière dorée projetés quand on tapote la tête du personnage.
+const RAY_COUNT = 12
+const RAY_GOLD = ['#fff1c2', '#ffe08a', '#ffd24d', '#ffc21a', '#ffdf80', '#f7b500']
 // Durée de la réaction « tapote » (étonnement → joie).
 const PAT_DUR = 0.9
 const BROW_Y = 0.29 // hauteur de repos des sourcils
@@ -152,9 +153,9 @@ function Face({ state, mood = 'neutral', glasses = false, speaking = false }: Pr
   const saccade = useRef({ next: 1.5, x: 0, y: 0 })
   // Réaction « tapote sur la tête » : minuteur + étincelles de joie.
   const pat = useRef(0)
-  const sparkleRefs = useRef<(THREE.Mesh | null)[]>([])
-  const sparkleData = useRef(
-    SPARKLE_COLORS.map(() => ({ active: false, age: 0, life: 1, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0 })),
+  const rayRefs = useRef<(THREE.Mesh | null)[]>([])
+  const rayData = useRef(
+    Array.from({ length: RAY_COUNT }, () => ({ active: false, age: 0, life: 1, ang: 0, len: 0 })),
   )
 
   // Déclenche la réaction mignonne quand on clique sur Lumi.
@@ -162,19 +163,14 @@ function Face({ state, mood = 'neutral', glasses = false, speaking = false }: Pr
     e.stopPropagation()
     playPat() // petit « couic » réaliste au contact
     pat.current = PAT_DUR
-    sparkleData.current.forEach((s, i) => {
-      s.active = true
-      s.age = 0
-      s.life = 0.7 + Math.random() * 0.4
-      // Réparties en éventail serré autour du haut de la tête : le jet reste
-      // dans le cadre de rendu (pas d'étincelle coupée net au bord).
-      const ang = (i / sparkleData.current.length) * Math.PI * 2
-      s.x = Math.cos(ang) * 0.38
-      s.y = 0.5 + Math.random() * 0.25
-      s.z = 0.3 + Math.random() * 0.4
-      s.vx = Math.cos(ang) * 0.34 + (Math.random() - 0.5) * 0.14
-      s.vy = 0.4 + Math.random() * 0.3
-      s.vz = (Math.random() - 0.5) * 0.24
+    rayData.current.forEach((r, i) => {
+      r.active = true
+      r.age = 0
+      r.life = 0.5 + Math.random() * 0.35
+      // Éventail dans la moitié supérieure : les rayons jaillissent vers le haut
+      // et les côtés depuis la tête, en restant dans le cadre.
+      r.ang = (i / RAY_COUNT) * Math.PI + (Math.random() - 0.5) * 0.12
+      r.len = 0.45 + Math.random() * 0.25
     })
   }
   const setCursor = (c: string) => {
@@ -302,29 +298,32 @@ function Face({ state, mood = 'neutral', glasses = false, speaking = false }: Pr
       m.emissiveIntensity = (1.3 + k * 3.4) * pulse + patJoy * 2.5
     }
 
-    // Étincelles de joie : elles jaillissent puis retombent en s'effaçant.
-    for (let i = 0; i < sparkleData.current.length; i++) {
-      const s = sparkleData.current[i]
-      const m = sparkleRefs.current[i]
+    // Rayons de lumière dorée : ils jaillissent de la tête puis s'estompent.
+    const RAY_ORIGIN_Y = 0.5
+    const RAY_ORIGIN_Z = 0.6
+    for (let i = 0; i < rayData.current.length; i++) {
+      const r = rayData.current[i]
+      const m = rayRefs.current[i]
       if (!m) continue
-      if (!s.active) {
-        m.scale.setScalar(0)
+      if (!r.active) {
+        m.scale.set(0, 0, 0)
         continue
       }
-      s.age += d
-      s.vy -= d * 2.2 // gravité plus marquée : les étincelles retombent vite et restent près de la tête
-      s.x += s.vx * d
-      s.y += s.vy * d
-      s.z += s.vz * d
-      m.position.set(s.x, s.y, s.z)
-      const t01 = s.age / s.life
-      const pop = Math.sin(Math.min(1, t01) * Math.PI)
-      m.scale.setScalar(0.12 * pop + 0.02)
-      const mat = m.material as THREE.MeshStandardMaterial
-      mat.opacity = Math.max(0, 1 - t01)
+      r.age += d
+      const t01 = r.age / r.life
+      const grow = Math.min(1, t01 / 0.35)
+      const ease = 1 - Math.pow(1 - grow, 3) // easeOutCubic : jaillissement rapide
+      const len = r.len * ease
+      const dx = Math.cos(r.ang)
+      const dy = Math.sin(r.ang)
+      m.position.set(dx * (len / 2), RAY_ORIGIN_Y + dy * (len / 2), RAY_ORIGIN_Z)
+      m.rotation.z = r.ang - Math.PI / 2 // oriente la longueur du rayon vers l'extérieur
+      m.scale.set(1, Math.max(0.0001, len), 1)
+      const mat = m.material as THREE.MeshBasicMaterial
+      mat.opacity = Math.max(0, 1 - t01) * (0.35 + 0.65 * grow)
       if (t01 >= 1) {
-        s.active = false
-        m.scale.setScalar(0)
+        r.active = false
+        m.scale.set(0, 0, 0)
       }
     }
 
@@ -455,11 +454,18 @@ function Face({ state, mood = 'neutral', glasses = false, speaking = false }: Pr
         </points>
       </group>
 
-      {/* Étincelles de joie (réaction au « tapote ») */}
-      {SPARKLE_COLORS.map((c, i) => (
-        <mesh key={i} ref={(el) => (sparkleRefs.current[i] = el)} scale={0}>
-          <sphereGeometry args={[1, 10, 10]} />
-          <meshStandardMaterial color="#000" emissive={c} emissiveIntensity={3} transparent toneMapped={false} />
+      {/* Rayons de lumière dorée (réaction au « tapote ») */}
+      {Array.from({ length: RAY_COUNT }).map((_, i) => (
+        <mesh key={i} ref={(el) => (rayRefs.current[i] = el)} scale={0}>
+          <boxGeometry args={[0.045, 1, 0.02]} />
+          <meshBasicMaterial
+            color={RAY_GOLD[i % RAY_GOLD.length]}
+            transparent
+            opacity={0}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+            toneMapped={false}
+          />
         </mesh>
       ))}
 
