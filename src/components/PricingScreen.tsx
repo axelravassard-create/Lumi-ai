@@ -11,9 +11,6 @@ interface Props {
 
 type Billing = 'monthly' | 'yearly'
 
-// Une seule fonctionnalité « Premium » de plus, mise en avant : le chat.
-const FEATURE_CHAT = 'Chat illimité avec Luminator, propulsé par Claude'
-
 const FREE_FEATURES = [
   'Score de remplaçabilité par l\'IA',
   'Verdict + projection 2026 → 2040',
@@ -23,14 +20,13 @@ const FREE_FEATURES = [
 ]
 
 const PREMIUM_FEATURES = [
-  FEATURE_CHAT,
-  'Tout le gratuit, en illimité',
-  'Suivi automatique : re-bilans réguliers',
-  'Impact personnalisé des tendances sur VOTRE situation',
-  'Alertes quand votre secteur bouge',
-  'Import de CV (pré-remplissage par Claude)',
-  'Plan d\'action personnalisé & approfondi',
-  'Comparateur de métiers illimité',
+  'Luminator repère les tâches de VOTRE métier à automatiser — et vous montre comment',
+  'Des solutions concrètes et accessibles : IA, no-code, modèles prêts à l\'emploi',
+  'Calibré sur vos compétences et votre niveau technique',
+  'Chat illimité avec Luminator, propulsé par Claude',
+  'Il mémorise votre parcours et personnalise chaque conseil',
+  'Suivi automatique, re-bilans & alertes quand votre secteur bouge',
+  'Import de CV pré-rempli par Claude & comparateur de métiers illimité',
 ]
 
 export function PricingScreen({ onBack, onOpenChat }: Props) {
@@ -57,10 +53,10 @@ export function PricingScreen({ onBack, onOpenChat }: Props) {
         <section className="animate-fade-up pt-12 text-center md:pt-16">
           <span className="pill mx-auto bg-brand-50 text-brand-700">💳 Tarifs</span>
           <h1 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-ink-900 md:text-5xl">
-            Simple, accessible, sans surprise
+            Évaluez avec Lumi. Gagnez du temps avec Luminator.
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-ink-500">
-            L'essentiel est gratuit. Le premium finance ce qui vous accompagne dans la durée.
+            Le gratuit évalue votre métier face à l'IA. Luminator passe à l'action : il automatise ce qui peut l'être, pour vous faire gagner des heures.
           </p>
 
           {/* Bascule mensuel / annuel */}
@@ -85,7 +81,7 @@ export function PricingScreen({ onBack, onOpenChat }: Props) {
         <section className="animate-fade-up mt-10 grid gap-6 md:grid-cols-2" style={{ animationDelay: '80ms' }}>
           {/* Lumi (gratuit) */}
           <div className="card flex flex-col p-7">
-            <Avatar className="mx-auto h-28 w-28" mood="calm" glasses={false} />
+            <Avatar className="mx-auto h-28 w-28" glasses={false} />
             <h2 className="mt-2 font-display text-xl font-bold text-ink-900">Lumi</h2>
             <p className="mt-1 text-sm text-ink-500">Pour évaluer son métier face à l'IA.</p>
             <div className="mt-5 font-display text-4xl font-extrabold text-ink-900">0 €</div>
@@ -104,9 +100,9 @@ export function PricingScreen({ onBack, onOpenChat }: Props) {
             <span className="absolute -top-3 left-1/2 -translate-x-1/2 pill bg-brand-600 text-white shadow">
               ⭐ Le plus populaire
             </span>
-            <Avatar className="mx-auto h-28 w-28" mood="neutral" glasses />
+            <Avatar className="mx-auto h-28 w-28" glasses />
             <h2 className="mt-2 font-display text-xl font-bold text-brand-700">Luminator</h2>
-            <p className="mt-1 text-sm text-ink-500">Votre compagnon de carrière, dans la durée.</p>
+            <p className="mt-1 text-sm text-ink-500">Votre copilote pour automatiser votre métier et garder une longueur d'avance.</p>
             <div className="mt-5 flex items-end gap-1">
               <span className="font-display text-4xl font-extrabold text-ink-900">{price}</span>
               <span className="mb-1 text-sm text-ink-500">{period}</span>

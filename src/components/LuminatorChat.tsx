@@ -12,12 +12,12 @@ interface Props {
 }
 
 const GREETING =
-  "Hey 👋 Je suis Luminator, ton coach de carrière. Dis-moi ton métier (ou ce qui t'occupe en ce moment) et on construit ta trajectoire face à l'IA, étape par étape."
+  "Hey 👋 Je suis Luminator. Dis-moi ton métier, et je te montre quelles tâches tu peux automatiser ou accélérer toi-même — avec des outils simples adaptés à tes compétences."
 
 const STARTERS = [
-  'Mon métier est-il menacé ?',
-  'Quelles compétences développer ?',
-  'Comment me reconvertir ?',
+  'Quelles tâches automatiser dans mon métier ?',
+  'Quels outils IA / no-code pour moi ?',
+  'Comment gagner du temps cette semaine ?',
 ]
 
 // Mémoire de la conversation : conservée d'une session à l'autre.
