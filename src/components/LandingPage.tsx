@@ -59,23 +59,42 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
             <Avatar state="idle" className="h-full w-full" />
           ) : (
             <>
-              {/* Lumi : devant par défaut ; s'efface quand Luminator avance */}
+              {/* Plateau tournant : les deux personnages pivotent autour du centre
+                  pour échanger leurs places, en restant bien droits. La rotation
+                  du plateau (transform) est composée GPU → fluide, sans flou. */}
               <div
-                className={`absolute inset-0 origin-center transition-all duration-700 ease-out will-change-transform ${
-                  reveal ? 'z-0 scale-95 opacity-0' : 'z-20'
-                }`}
+                className="absolute inset-0 will-change-transform"
+                style={{
+                  transformOrigin: 'center',
+                  transition: 'transform 800ms ease-in-out',
+                  transform: `rotate(${reveal ? 180 : 0}deg)`,
+                }}
               >
-                <Avatar state="idle" glasses={false} className={`h-full w-full ${reveal ? 'pointer-events-none' : ''}`} />
-              </div>
+                {/* Lumi : devant par défaut */}
+                <div
+                  className={`absolute inset-0 will-change-transform ${reveal ? 'pointer-events-none' : ''}`}
+                  style={{
+                    transition: 'transform 800ms ease-in-out, opacity 800ms ease-in-out',
+                    transform: `translate(-9%, 6%) rotate(${reveal ? -180 : 0}deg) scale(${reveal ? 0.5 : 1})`,
+                    opacity: reveal ? 0.35 : 1,
+                    zIndex: reveal ? 10 : 20,
+                  }}
+                >
+                  <Avatar state="idle" glasses={false} className="h-full w-full" />
+                </div>
 
-              {/* Luminator : en retrait ; avance pile à la place de Lumi au clic.
-                  Effet « lointain » via échelle + opacité (pas de flou = pas de lag). */}
-              <div
-                className={`absolute inset-0 origin-center transition-all duration-700 ease-out will-change-transform ${
-                  reveal ? 'z-30 opacity-100' : 'z-10 translate-x-[38%] -translate-y-[8%] scale-[0.5] opacity-30'
-                }`}
-              >
-                <Avatar state="idle" glasses className="h-full w-full pointer-events-none" />
+                {/* Luminator : en retrait par défaut */}
+                <div
+                  className={`absolute inset-0 will-change-transform ${reveal ? '' : 'pointer-events-none'}`}
+                  style={{
+                    transition: 'transform 800ms ease-in-out, opacity 800ms ease-in-out',
+                    transform: `translate(9%, -6%) rotate(${reveal ? -180 : 0}deg) scale(${reveal ? 1 : 0.5})`,
+                    opacity: reveal ? 1 : 0.35,
+                    zIndex: reveal ? 20 : 10,
+                  }}
+                >
+                  <Avatar state="idle" glasses className="h-full w-full" />
+                </div>
               </div>
 
               {/* Zone cliquable sur la silhouette floue (tant qu'il est en retrait) */}
@@ -84,7 +103,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
                   onClick={() => setReveal(true)}
                   aria-label="Découvrir Luminator"
                   title="Qui est là, derrière ?"
-                  className="group absolute right-0 top-[18%] z-40 h-[64%] w-[42%] cursor-pointer"
+                  className="group absolute right-0 top-[2%] z-40 h-[62%] w-[44%] cursor-pointer"
                 >
                   <span className="pointer-events-none absolute bottom-1 right-1 rounded-full bg-ink-900/75 px-2 py-0.5 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
                     Qui est là ? 👀
