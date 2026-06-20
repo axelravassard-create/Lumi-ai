@@ -165,15 +165,16 @@ function Face({ state, mood = 'neutral', glasses = false, speaking = false }: Pr
     sparkleData.current.forEach((s, i) => {
       s.active = true
       s.age = 0
-      s.life = 0.8 + Math.random() * 0.5
-      // Réparties en éventail autour du haut de la tête, bien dans le cadre.
+      s.life = 0.7 + Math.random() * 0.4
+      // Réparties en éventail serré autour du haut de la tête : le jet reste
+      // dans le cadre de rendu (pas d'étincelle coupée net au bord).
       const ang = (i / sparkleData.current.length) * Math.PI * 2
-      s.x = Math.cos(ang) * 0.6
-      s.y = 0.8 + Math.random() * 0.35
-      s.z = 0.4 + Math.random() * 0.45
-      s.vx = Math.cos(ang) * 1.1 + (Math.random() - 0.5) * 0.3
-      s.vy = 0.7 + Math.random() * 0.6
-      s.vz = (Math.random() - 0.5) * 0.4
+      s.x = Math.cos(ang) * 0.38
+      s.y = 0.5 + Math.random() * 0.25
+      s.z = 0.3 + Math.random() * 0.4
+      s.vx = Math.cos(ang) * 0.34 + (Math.random() - 0.5) * 0.14
+      s.vy = 0.4 + Math.random() * 0.3
+      s.vz = (Math.random() - 0.5) * 0.24
     })
   }
   const setCursor = (c: string) => {
@@ -311,7 +312,7 @@ function Face({ state, mood = 'neutral', glasses = false, speaking = false }: Pr
         continue
       }
       s.age += d
-      s.vy -= d * 1.5
+      s.vy -= d * 2.2 // gravité plus marquée : les étincelles retombent vite et restent près de la tête
       s.x += s.vx * d
       s.y += s.vy * d
       s.z += s.vz * d

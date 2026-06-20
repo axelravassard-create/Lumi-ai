@@ -143,11 +143,7 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
             </button>
           </div>
           <div className="flex flex-col items-center">
-            <div
-              className={`h-24 w-24 overflow-hidden rounded-3xl bg-gradient-to-b from-ink-50 to-white transition ${
-                streaming ? 'ring-2 ring-brand-300' : ''
-              }`}
-            >
+            <div className="h-24 w-24">
               <Avatar glasses speaking={streaming} className="h-full w-full" />
             </div>
             <div className="mt-1.5 font-display text-base font-bold text-ink-900">Luminator</div>
