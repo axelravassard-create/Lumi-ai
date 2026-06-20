@@ -55,10 +55,10 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         {/* Scène : Lumi au premier plan ; Luminator en retrait (~1 m derrière,
             à droite), flou. Cliquer sur sa silhouette le fait avancer. */}
         <div className="animate-fade-in relative mx-auto h-60 w-full max-w-sm md:h-72">
-          {/* Lumi (premier plan par défaut) */}
+          {/* Lumi (premier plan par défaut ; s'efface quand Luminator avance) */}
           <div
             className={`absolute inset-0 transition-all duration-700 ease-out ${
-              reveal ? 'z-10 -translate-x-[16%] scale-90 opacity-40 blur-[1px]' : 'z-20'
+              reveal ? 'z-0 scale-95 opacity-0' : 'z-20'
             }`}
           >
             <Avatar state="idle" glasses={owns} className={`h-full w-full ${reveal ? 'pointer-events-none' : ''}`} />
