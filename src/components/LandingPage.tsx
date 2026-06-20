@@ -100,7 +100,10 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
             {swapped && !owns ? (
               <>
                 <LumiSpeech text="✨ Moi c'est Luminator — j'automatise les tâches de ton métier." />
-                <span className="block text-xs text-ink-400">(re-clique à droite pour revenir à Lumi 🔄)</span>
+                <div className="mt-2 flex flex-wrap justify-center gap-2">
+                  <button onClick={onOpenPricing} className="btn-primary py-2 text-sm">Débloquer Luminator</button>
+                </div>
+                <span className="mt-1 block text-xs text-ink-400">(re-clique à droite pour revenir à Lumi 🔄)</span>
               </>
             ) : (
               <>
