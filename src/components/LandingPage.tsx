@@ -24,8 +24,8 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
   const [value, setValue] = useState('')
   const [valueB, setValueB] = useState('')
   const { owns, name } = useBrand()
-  // Échange de place Lumi ↔ Luminator au clic (toggle).
-  const [swapped, setSwapped] = useState(false)
+  // Luminator avance à la place de Lumi au clic sur sa silhouette floue.
+  const [reveal, setReveal] = useState(false)
 
   const submit = () => {
     if (mode === 'single') {
@@ -52,68 +52,72 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
 
       {/* Hero */}
       <section className="relative mx-auto max-w-4xl px-6 pt-8 pb-16 text-center md:pt-12">
-        {/* Scène : Lumi et Luminator. L'un est au premier plan (net, centré),
-            l'autre en retrait (flou, à droite). Cliquer sur celui en retrait
-            les fait échanger de place. */}
+        {/* Scène : Lumi devant ; Luminator en retrait (flou) à droite. Cliquer
+            sur la silhouette de Luminator le fait avancer à la place de Lumi. */}
         <div className="animate-fade-in relative mx-auto h-60 w-full max-w-sm md:h-72">
           {owns ? (
             <Avatar state="idle" className="h-full w-full" />
           ) : (
             <>
-              {/* Lumi : devant par défaut, recule quand on échange */}
+              {/* Lumi : devant par défaut ; s'efface quand Luminator avance */}
               <div
                 className={`absolute inset-0 origin-center transition-all duration-700 ease-out ${
-                  swapped ? 'z-10 translate-x-[36%] -translate-y-[8%] scale-[0.55] opacity-40 blur-[3px]' : 'z-20'
+                  reveal ? 'z-0 scale-95 opacity-0' : 'z-20'
                 }`}
               >
-                <Avatar state="idle" glasses={false} className={`h-full w-full ${swapped ? 'pointer-events-none' : ''}`} />
+                <Avatar state="idle" glasses={false} className={`h-full w-full ${reveal ? 'pointer-events-none' : ''}`} />
               </div>
 
-              {/* Luminator : en retrait par défaut, avance quand on échange */}
+              {/* Luminator : en retrait ; avance pile à la place de Lumi au clic */}
               <div
                 className={`absolute inset-0 origin-center transition-all duration-700 ease-out ${
-                  swapped ? 'z-20' : 'z-10 translate-x-[36%] -translate-y-[8%] scale-[0.55] opacity-40 blur-[3px]'
+                  reveal ? 'z-30 opacity-100 blur-0' : 'z-10 translate-x-[36%] -translate-y-[8%] scale-[0.55] opacity-40 blur-[3px]'
                 }`}
               >
-                <Avatar state="idle" glasses className={`h-full w-full ${swapped ? '' : 'pointer-events-none'}`} />
+                <Avatar state="idle" glasses className="h-full w-full pointer-events-none" />
               </div>
 
-              {/* Zone cliquable sur le personnage en retrait (à droite) → échange */}
-              <button
-                onClick={() => setSwapped((s) => !s)}
-                aria-label="Échanger Lumi et Luminator"
-                title="Échanger 🔄"
-                className="group absolute right-0 top-[18%] z-40 h-[64%] w-[42%] cursor-pointer"
-              >
-                <span className="pointer-events-none absolute bottom-1 right-1 rounded-full bg-ink-900/75 px-2 py-0.5 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
-                  🔄 échanger
-                </span>
-              </button>
+              {/* Zone cliquable sur la silhouette floue (tant qu'il est en retrait) */}
+              {!reveal && (
+                <button
+                  onClick={() => setReveal(true)}
+                  aria-label="Découvrir Luminator"
+                  title="Qui est là, derrière ?"
+                  className="group absolute right-0 top-[18%] z-40 h-[64%] w-[42%] cursor-pointer"
+                >
+                  <span className="pointer-events-none absolute bottom-1 right-1 rounded-full bg-ink-900/75 px-2 py-0.5 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
+                    Qui est là ? 👀
+                  </span>
+                </button>
+              )}
             </>
           )}
         </div>
 
-        {/* Bulle : message du personnage qui est devant */}
+        {/* Bulle : message de Lumi, ou offre de Luminator une fois révélé */}
         <div className="animate-fade-in -mt-3 flex justify-center">
-          <div className="relative max-w-sm rounded-2xl border border-ink-100 bg-white px-4 py-2.5 text-sm text-ink-700 shadow-card">
-            <span className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-ink-100 bg-white" />
-            {swapped && !owns ? (
-              <>
-                <LumiSpeech text="✨ Moi c'est Luminator — j'automatise les tâches de ton métier." />
-                <div className="mt-2 flex flex-wrap justify-center gap-2">
-                  <button onClick={onOpenPricing} className="btn-primary py-2 text-sm">Débloquer Luminator</button>
-                </div>
-                <span className="mt-1 block text-xs text-ink-400">(re-clique à droite pour revenir à Lumi 🔄)</span>
-              </>
-            ) : (
-              <>
-                <LumiSpeech text={`👋 Salut, moi c'est ${name} — ton guide face à l'IA.`} />
-                <span className="block text-xs text-ink-400">
-                  {owns ? '(tapote-moi sur la tête 👆)' : '(tapote-moi 👆 — clique sur Luminator à droite pour échanger 🔄)'}
-                </span>
-              </>
-            )}
-          </div>
+          {reveal && !owns ? (
+            <div className="relative max-w-sm rounded-2xl border border-brand-200 bg-white px-4 py-3 text-sm shadow-card">
+              <span className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-brand-200 bg-white" />
+              <p className="font-display font-bold text-ink-900">✨ Moi, c'est Luminator.</p>
+              <p className="mt-1 text-ink-600">
+                J'automatise les tâches répétitives de ton métier — outils IA, no-code, modèles prêts à l'emploi,
+                adaptés à tes compétences.
+              </p>
+              <div className="mt-2.5 flex flex-wrap justify-center gap-2">
+                <button onClick={onOpenPricing} className="btn-primary py-2 text-sm">Débloquer Luminator</button>
+                <button onClick={() => setReveal(false)} className="btn-ghost py-2 text-sm">Plus tard</button>
+              </div>
+            </div>
+          ) : (
+            <div className="relative max-w-sm rounded-2xl border border-ink-100 bg-white px-4 py-2.5 text-sm text-ink-700 shadow-card">
+              <span className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-ink-100 bg-white" />
+              <LumiSpeech text={`👋 Salut, moi c'est ${name} — ton guide face à l'IA.`} />
+              <span className="block text-xs text-ink-400">
+                {owns ? '(tapote-moi sur la tête 👆)' : '(tapote-moi 👆 — et clique sur l’ombre à droite 👀)'}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="animate-fade-up">
