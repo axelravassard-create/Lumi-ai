@@ -59,42 +59,34 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
             <Avatar state="idle" className="h-full w-full" />
           ) : (
             <>
-              {/* Plateau tournant : au repos Lumi est centré (devant) et Luminator
-                  en haut à droite (derrière). Au clic, rotation 180° autour d'un
-                  pivot décalé → Luminator passe À GAUCHE (devant) et Lumi à droite. */}
+              {/* Deux états SEULEMENT, déterministes (aucun re-rendu ne peut les
+                  désynchroniser) :
+                  • repos  → Lumi centré (devant), Luminator caché en arrière-plan (haut-droite)
+                  • cliqué → Luminator à gauche (devant), Lumi à droite (derrière) */}
+              {/* Lumi */}
               <div
-                className="absolute inset-0 will-change-transform"
+                className={`absolute inset-0 will-change-transform ${reveal ? 'pointer-events-none' : ''}`}
                 style={{
-                  transformOrigin: '54% 40%',
-                  transition: 'transform 800ms ease-in-out',
-                  transform: `rotate(${reveal ? 180 : 0}deg)`,
+                  transition: 'transform 800ms ease-in-out, opacity 800ms ease-in-out',
+                  transform: reveal ? 'translate(40%, -14%) scale(0.55)' : 'translate(0%, 0%) scale(1)',
+                  opacity: reveal ? 0.5 : 1,
+                  zIndex: reveal ? 10 : 20,
                 }}
               >
-                {/* Lumi : centré et devant par défaut ; part à droite au clic */}
-                <div
-                  className={`absolute inset-0 will-change-transform ${reveal ? 'pointer-events-none' : ''}`}
-                  style={{
-                    transition: 'transform 800ms ease-in-out, opacity 800ms ease-in-out',
-                    transform: `translate(0%, 0%) rotate(${reveal ? -180 : 0}deg) scale(${reveal ? 0.55 : 1})`,
-                    opacity: reveal ? 0.5 : 1,
-                    zIndex: reveal ? 10 : 20,
-                  }}
-                >
-                  <Avatar state="idle" glasses={false} className="h-full w-full" />
-                </div>
+                <Avatar state="idle" glasses={false} className="h-full w-full" />
+              </div>
 
-                {/* Luminator : en haut à droite par défaut ; vient À GAUCHE au clic */}
-                <div
-                  className={`absolute inset-0 will-change-transform ${reveal ? '' : 'pointer-events-none'}`}
-                  style={{
-                    transition: 'transform 800ms ease-in-out, opacity 800ms ease-in-out',
-                    transform: `translate(26%, -22%) rotate(${reveal ? -180 : 0}deg) scale(${reveal ? 1 : 0.55})`,
-                    opacity: reveal ? 1 : 0.5,
-                    zIndex: reveal ? 20 : 10,
-                  }}
-                >
-                  <Avatar state="idle" glasses className="h-full w-full" />
-                </div>
+              {/* Luminator */}
+              <div
+                className={`absolute inset-0 will-change-transform ${reveal ? '' : 'pointer-events-none'}`}
+                style={{
+                  transition: 'transform 800ms ease-in-out, opacity 800ms ease-in-out',
+                  transform: reveal ? 'translate(-22%, 4%) scale(1)' : 'translate(28%, -22%) scale(0.55)',
+                  opacity: reveal ? 1 : 0.5,
+                  zIndex: reveal ? 20 : 10,
+                }}
+              >
+                <Avatar state="idle" glasses className="h-full w-full" />
               </div>
 
               {/* Zone cliquable sur la silhouette floue (tant qu'il est en retrait) */}
