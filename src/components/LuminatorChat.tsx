@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Avatar } from './Avatar'
 import { streamLuminatorChat, describeError, type ChatMsg } from '../lib/llm'
 import { applyProfilePatch } from '../lib/profile'
+import { addPlanItem } from '../lib/plan'
 
 interface Props {
   onClose: () => void
@@ -48,6 +49,7 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
   const [input, setInput] = useState(initialMessage ?? '')
   const [streaming, setStreaming] = useState(false)
   const [noted, setNoted] = useState(false)
+  const [planned, setPlanned] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Persiste la conversation (mémoire) à chaque évolution.
@@ -66,6 +68,13 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
     const t = setTimeout(() => setNoted(false), 4000)
     return () => clearTimeout(t)
   }, [noted])
+
+  // Indicateur « ajouté à ton plan » qui s'efface tout seul.
+  useEffect(() => {
+    if (!planned) return
+    const t = setTimeout(() => setPlanned(false), 4000)
+    return () => clearTimeout(t)
+  }, [planned])
 
   const newChat = () => {
     setMessages([])
@@ -102,6 +111,12 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
           return changed.length
             ? `Profil mis à jour : ${changed.join(', ')}.`
             : 'Déjà connu, rien à ajouter.'
+        },
+        onPlanAdd: (title, detail) => {
+          // Luminator ajoute une action concrète au plan d'action de l'utilisateur.
+          const added = addPlanItem(title, detail)
+          if (added) setPlanned(true)
+          return added ? `Ajouté au plan d'action : « ${title} ».` : 'Déjà dans le plan.'
         },
         extraContext,
       })
@@ -157,6 +172,11 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
           {noted && (
             <div className="absolute left-1/2 top-2 -translate-x-1/2 animate-fade-in rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
               🧠 noté sur ton profil
+            </div>
+          )}
+          {planned && !noted && (
+            <div className="absolute left-1/2 top-2 -translate-x-1/2 animate-fade-in rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-medium text-brand-700">
+              ✅ ajouté à ton plan
             </div>
           )}
         </header>

@@ -66,10 +66,19 @@ visée pédagogique.
   coaching (reconversion, compétences, etc.).
 - **Streaming** (la bouche bouge pendant qu'il parle).
 - **Mémoire** : conversation persistée en `localStorage` (`lumi.luminator.chat`).
+- **Profil D'ABORD** : le system prompt demande à Luminator de faire connaissance
+  (1-2 questions) avant de guider si le profil est trop maigre. Côté UI, la home
+  membre (`MemberHome`) est **gardée par `profileReady(profile)`** (`profile.ts`) :
+  tant que le profil n'a pas le métier + 2 signaux (tâches/compétences/objectif/
+  expérience), elle affiche « Faisons connaissance » (jauge + CTA profil / chat).
 - **Outil `update_career_profile`** : Luminator note les infos de parcours sur le
   profil (`applyProfilePatch` dans `profile.ts`) → évite de re-demander / refaire
   travailler l'API. Le `ProfileScreen` affiche un badge « 🤓 Luminator » sur les
   champs qu'il a remplis (`luminatorFields()`).
+- **Outil `add_plan_item`** : Luminator pousse des actions concrètes dans le
+  **plan d'action** (`src/lib/plan.ts`, localStorage `lumi.luminator.plan`).
+  Écran `PlanScreen.tsx` (vue `plan`) : colonnes À faire / En cours / Fait, ajout
+  manuel, statuts, suppression. Le chat affiche « ✅ ajouté à ton plan ».
 - Accès au chat : bouton flottant (FAB) quand `owns`, + bouton sur l'écran Tarifs.
 
 ## Tarifs — `src/components/PricingScreen.tsx`

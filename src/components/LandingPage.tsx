@@ -6,7 +6,7 @@ import { LumiSpeech } from './LumiSpeech'
 import { SUGGESTIONS } from '../lib/engine'
 import { PROFESSIONS } from '../lib/professions'
 import { useBrand } from '../lib/entitlement'
-import { loadProfile } from '../lib/profile'
+import { loadProfile, completeness, profileReady } from '../lib/profile'
 
 type Mode = 'single' | 'compare'
 
@@ -19,9 +19,10 @@ interface Props {
   onOpenPricing: () => void
   onOpenMetiers: () => void
   onOpenChat: (message?: string) => void
+  onOpenPlan: () => void
 }
 
-export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, onOpenProfile, onOpenPricing, onOpenMetiers, onOpenChat }: Props) {
+export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, onOpenProfile, onOpenPricing, onOpenMetiers, onOpenChat, onOpenPlan }: Props) {
   const [mode, setMode] = useState<Mode>('single')
   const [value, setValue] = useState('')
   const [valueB, setValueB] = useState('')
@@ -71,12 +72,12 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
 
       {owns ? (
         <MemberHome
-          role={loadProfile().role}
           aiEnabled={aiEnabled}
           onOpenChat={onOpenChat}
           onOpenProfile={onOpenProfile}
           onAnalyze={onAnalyze}
           onOpenSettings={onOpenSettings}
+          onOpenPlan={onOpenPlan}
         />
       ) : (
         <>
@@ -387,22 +388,83 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
 // Accueil dédié aux abonnés Luminator : plus de « ton métier est-il exposé ? »
 // (ils ont déjà testé). Tout est tourné vers l'ACTION : automatiser son métier,
 // avec accès immédiat au copilote.
+//
+// ⚠️ Profil D'ABORD : tant que Luminator ne connaît pas assez l'utilisateur, on
+// l'invite à faire connaissance avant de proposer l'accompagnement.
 function MemberHome({
-  role,
   aiEnabled,
   onOpenChat,
   onOpenProfile,
   onAnalyze,
   onOpenSettings,
+  onOpenPlan,
 }: {
-  role: string
   aiEnabled: boolean
   onOpenChat: (message?: string) => void
   onOpenProfile: () => void
   onAnalyze: (role: string) => void
   onOpenSettings: () => void
+  onOpenPlan: () => void
 }) {
+  const profile = loadProfile()
+  const role = profile.role
   const hasRole = !!role?.trim()
+  const ready = profileReady(profile)
+  const pct = completeness(profile)
+
+  // Étape « faisons connaissance » : Luminator a besoin du profil pour guider.
+  if (!ready) {
+    return (
+      <section className="relative mx-auto max-w-2xl px-6 pt-6 pb-16 text-center md:pt-10">
+        <div className="animate-fade-in mx-auto h-48 w-full max-w-xs md:h-56">
+          <Avatar state="idle" glasses className="h-full w-full" />
+        </div>
+        <div className="animate-fade-in -mt-2 flex justify-center">
+          <div className="relative max-w-sm rounded-2xl border border-brand-200 bg-white px-4 py-2.5 text-sm text-ink-700 shadow-card">
+            <span className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-brand-200 bg-white" />
+            <LumiSpeech text="Avant de t'aider, j'ai besoin de bien te connaître 🙂 Parle-moi de ton métier et de ton parcours — ensuite je personnalise tout." />
+          </div>
+        </div>
+
+        <h1 className="animate-fade-up mt-6 font-display text-2xl font-extrabold leading-tight tracking-tight text-ink-900 md:text-4xl" style={{ animationDelay: '60ms' }}>
+          Faisons connaissance d'abord
+        </h1>
+        <p className="animate-fade-up mx-auto mt-3 max-w-md text-ink-500" style={{ animationDelay: '120ms' }}>
+          Plus Luminator connaît ton métier, tes tâches et ton objectif, plus ses conseils d'automatisation sont
+          précis et utiles. Deux minutes pour un accompagnement vraiment sur-mesure.
+        </p>
+
+        {/* Jauge de complétude */}
+        <div className="animate-fade-up mx-auto mt-6 max-w-sm" style={{ animationDelay: '160ms' }}>
+          <div className="flex items-center justify-between text-xs text-ink-400">
+            <span>Profil complété</span>
+            <span className="font-semibold text-brand-600">{pct}%</span>
+          </div>
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-ink-100">
+            <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-violet-500 transition-all" style={{ width: `${Math.max(pct, 4)}%` }} />
+          </div>
+        </div>
+
+        <div className="animate-fade-up mt-7 flex flex-col items-center gap-3" style={{ animationDelay: '200ms' }}>
+          <button onClick={onOpenProfile} className="btn-primary px-6 py-3.5 text-base">
+            🧭 Compléter mon profil
+          </button>
+          <button
+            onClick={() => onOpenChat('Aide-moi à compléter mon profil : pose-moi les questions clés sur mon métier, mon parcours et mon objectif, puis enregistre mes réponses.')}
+            className="text-sm text-ink-500 underline-offset-2 hover:text-brand-700 hover:underline"
+          >
+            …ou le faire en discutant avec Luminator
+          </button>
+          {!aiEnabled && (
+            <button onClick={onOpenSettings} className="text-xs text-ink-400 underline-offset-2 hover:text-brand-700 hover:underline">
+              Connecte ta clé API Claude pour discuter
+            </button>
+          )}
+        </div>
+      </section>
+    )
+  }
+
   const STARTERS = [
     'Quelles tâches de mon métier puis-je automatiser ?',
     'Un outil IA pour me faire gagner du temps',
@@ -469,11 +531,17 @@ function MemberHome({
 
       {/* Raccourcis */}
       <section className="mx-auto max-w-4xl px-6 pb-8">
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <ActionCard
+            emoji="🗂️"
+            title="Mon plan d'action"
+            desc="Tes actions à automatiser, suivies pas à pas."
+            onClick={onOpenPlan}
+          />
           <ActionCard
             emoji="⚡"
             title="Automatiser une tâche"
-            desc="Luminator te guide pas à pas, adapté à ton métier."
+            desc="Luminator te guide, adapté à ton métier."
             onClick={() => onOpenChat('Aide-moi à automatiser une tâche précise de mon métier, étape par étape.')}
           />
           <ActionCard
@@ -484,7 +552,7 @@ function MemberHome({
           />
           <ActionCard
             emoji="📈"
-            title="Refaire le point sur mon métier"
+            title="Refaire le point"
             desc="Mets à jour ton exposition à l'IA dans le temps."
             onClick={() => (hasRole ? onAnalyze(role) : onOpenProfile())}
           />
