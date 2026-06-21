@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Logo } from './Logo'
 import { AiStatusButton } from './AiStatusButton'
 import { Avatar } from './Avatar'
@@ -28,6 +28,16 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
   const { owns, name } = useBrand()
   // Luminator avance à la place de Lumi au clic sur sa silhouette floue.
   const [reveal, setReveal] = useState(false)
+  // Pendant le déplacement (0,8 s), on GÈLE le rendu 3D des 2 persos : la
+  // transition CSS n'anime plus qu'une image figée → fluide, sans lag.
+  const [moving, setMoving] = useState(false)
+  const moveTimer = useRef<ReturnType<typeof setTimeout>>()
+  const setRevealAnimated = (v: boolean) => {
+    setReveal(v)
+    setMoving(true)
+    clearTimeout(moveTimer.current)
+    moveTimer.current = setTimeout(() => setMoving(false), 850)
+  }
 
   const submit = () => {
     if (mode === 'single') {
@@ -86,7 +96,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
                   zIndex: reveal ? 10 : 20,
                 }}
               >
-                <Avatar state="idle" glasses={false} className="h-full w-full" />
+                <Avatar state="idle" glasses={false} paused={moving} className="h-full w-full" />
               </div>
 
               {/* Luminator */}
@@ -99,13 +109,13 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
                   zIndex: reveal ? 20 : 10,
                 }}
               >
-                <Avatar state="idle" glasses className="h-full w-full" />
+                <Avatar state="idle" glasses paused={moving} className="h-full w-full" />
               </div>
 
               {/* Zone cliquable sur la silhouette floue (tant qu'il est en retrait) */}
               {!reveal && (
                 <button
-                  onClick={() => setReveal(true)}
+                  onClick={() => setRevealAnimated(true)}
                   aria-label="Découvrir Luminator"
                   title="Qui est là, derrière ?"
                   className="group absolute right-0 top-0 z-40 h-[56%] w-[44%] cursor-pointer"
@@ -132,7 +142,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
               </p>
               <div className="mt-2.5 flex flex-wrap justify-start gap-2">
                 <button onClick={onOpenPricing} className="btn-primary py-2 text-sm">Débloquer Luminator</button>
-                <button onClick={() => setReveal(false)} className="btn-ghost py-2 text-sm">Plus tard</button>
+                <button onClick={() => setRevealAnimated(false)} className="btn-ghost py-2 text-sm">Plus tard</button>
               </div>
             </div>
           ) : (

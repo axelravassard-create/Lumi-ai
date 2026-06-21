@@ -16,6 +16,8 @@ interface Props {
   glasses?: boolean
   /** Anime la bouche comme s'il parlait. */
   speaking?: boolean
+  /** Gèle la boucle de rendu 3D (ex. pendant une transition CSS pour éviter les lags). */
+  paused?: boolean
 }
 
 // Détection WebGL : si le navigateur ne sait pas faire de 3D, on retombe
@@ -48,7 +50,7 @@ function Fallback({ state, glasses }: { state: AvatarState; glasses: boolean }) 
   )
 }
 
-export function Avatar({ state = 'idle', mood = 'neutral', className = '', forceFallback = false, glasses, speaking = false }: Props) {
+export function Avatar({ state = 'idle', mood = 'neutral', className = '', forceFallback = false, glasses, speaking = false, paused = false }: Props) {
   const owns = useLuminator()
   // Si `glasses` n'est pas imposé, on suit la possession de Luminator.
   const showGlasses = glasses ?? owns
@@ -73,7 +75,7 @@ export function Avatar({ state = 'idle', mood = 'neutral', className = '', force
     <div ref={ref} className={`relative select-none ${className}`}>
       {canRender3D ? (
         <Suspense fallback={<Fallback state={state} glasses={showGlasses} />}>
-          <RobotAvatar state={state} mood={mood} active={visible} glasses={showGlasses} speaking={speaking} />
+          <RobotAvatar state={state} mood={mood} active={visible && !paused} glasses={showGlasses} speaking={speaking} />
         </Suspense>
       ) : (
         <Fallback state={state} glasses={showGlasses} />
