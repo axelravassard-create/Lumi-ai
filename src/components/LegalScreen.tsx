@@ -1,5 +1,6 @@
 import { ReactNode } from 'react'
 import { Logo } from './Logo'
+import { LEGAL_INFO } from '../lib/legal'
 
 export type LegalDoc = 'mentions' | 'confidentialite' | 'cgu'
 
@@ -9,8 +10,8 @@ interface Props {
   onOpen: (doc: LegalDoc) => void
 }
 
-const CONTACT = 'axel.ravassard@gmail.com'
-const UPDATED = 'juin 2026'
+const CONTACT = LEGAL_INFO.contact
+const UPDATED = LEGAL_INFO.updated
 
 export function LegalScreen({ doc, onBack, onOpen }: Props) {
   const title =
@@ -79,26 +80,47 @@ function Note() {
 }
 
 function Mentions() {
+  const i = LEGAL_INFO
   return (
     <>
       <Note />
       <div className="space-y-1">
         <H>Éditeur du site</H>
         <p>
-          Lumi — projet édité par <strong>[Nom / raison sociale à compléter]</strong>.<br />
-          Statut & immatriculation (SIRET / RCS) : <strong>[à compléter]</strong>.<br />
+          {i.brand} — {i.status === 'societe' ? 'site édité par' : 'site édité par'}{' '}
+          <strong>{i.editorName}</strong>
+          {i.status === 'societe' && i.legalForm ? <>, {i.legalForm}</> : null}
+          {i.status === 'societe' && i.capital ? <> au capital de {i.capital}</> : null}.
+          {i.address ? (
+            <>
+              <br />
+              Adresse : {i.address}.
+            </>
+          ) : null}
+          {i.status === 'micro' && i.siret ? (
+            <>
+              <br />
+              Micro-entreprise immatriculée — SIRET : <strong>{i.siret}</strong>.
+            </>
+          ) : null}
+          {i.status === 'societe' ? (
+            <>
+              <br />
+              SIRET : <strong>{i.siret ?? '[à compléter]'}</strong> — RCS : <strong>{i.rcs ?? '[à compléter]'}</strong>.
+            </>
+          ) : null}
+          <br />
           Contact : <a className="text-brand-700 underline" href={`mailto:${CONTACT}`}>{CONTACT}</a>
         </p>
       </div>
       <div className="space-y-1">
         <H>Directeur de la publication</H>
-        <p>[Nom du responsable de publication à compléter].</p>
+        <p>{i.publicationDirector ?? i.editorName}.</p>
       </div>
       <div className="space-y-1">
         <H>Hébergement</H>
         <p>
-          Le site est hébergé par <strong>Vercel Inc.</strong>, 340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis —
-          vercel.com. (À adapter si vous changez d'hébergeur.)
+          Le site est hébergé par <strong>{i.host.name}</strong>, {i.host.address} — {i.host.url}.
         </p>
       </div>
       <div className="space-y-1">
@@ -125,9 +147,10 @@ function Confidentialite() {
       <div className="space-y-1">
         <H>1. Données stockées sur votre appareil</H>
         <p>
-          Votre profil carrière, l'historique de vos bilans, vos conversations avec Luminator, votre clé API et votre
-          statut d'offre sont enregistrés <strong>localement</strong> dans votre navigateur (localStorage). Ils ne sont
-          pas envoyés à un serveur Lumi — nous n'avons pas de base de données qui les centralise.
+          Votre profil carrière, l'historique de vos bilans, vos conversations avec Luminator, votre statut d'offre et,
+          le cas échéant, votre clé API personnelle sont enregistrés <strong>localement</strong> dans votre navigateur
+          (localStorage). Ils ne sont pas envoyés à un serveur Lumi — nous n'avons pas de base de données qui les
+          centralise.
         </p>
       </div>
 
@@ -173,9 +196,10 @@ function Confidentialite() {
       <div className="space-y-1">
         <H>6. Sécurité</H>
         <p>
-          La clé API que vous saisissez reste dans votre navigateur et appelle directement l'API d'Anthropic. Dans ce
-          prototype, elle n'est pas protégée par un serveur intermédiaire : ne l'utilisez que sur un appareil de
-          confiance, et révoquez-la depuis la console Anthropic en cas de doute.
+          Par défaut, les appels à l'IA passent par un <strong>serveur intermédiaire (proxy)</strong> qui détient la clé
+          d'accès : celle-ci n'est jamais exposée dans votre navigateur. Si vous choisissez de fournir votre propre clé
+          API, elle reste stockée localement dans votre navigateur et appelle directement Anthropic — dans ce cas,
+          ne l'utilisez que sur un appareil de confiance et révoquez-la depuis la console Anthropic en cas de doute.
         </p>
       </div>
     </>
@@ -204,8 +228,9 @@ function Cgu() {
       <div className="space-y-1">
         <H>3. Utilisation de l'IA</H>
         <p>
-          Les fonctionnalités d'IA nécessitent votre propre clé API Anthropic et sont soumises aux conditions et à la
-          facturation d'Anthropic. Vous êtes responsable de l'usage de votre clé et des coûts associés.
+          Les fonctionnalités d'IA s'appuient sur le modèle Claude d'Anthropic et sont soumises à ses conditions. Elles
+          sont fournies via un accès géré par l'éditeur ; un usage raisonnable et de bonne foi est attendu. Si vous
+          utilisez votre propre clé API, vous êtes responsable de son usage et des coûts associés.
         </p>
       </div>
       <div className="space-y-1">
