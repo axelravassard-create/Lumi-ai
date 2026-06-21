@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Logo } from './Logo'
 import { Avatar } from './Avatar'
 import { useLuminator, setLuminator } from '../lib/entitlement'
+import { checkBilling, startCheckout } from '../lib/billing'
 
 interface Props {
   onBack: () => void
@@ -34,6 +35,31 @@ export function PricingScreen({ onBack, onOpenChat }: Props) {
   const owns = useLuminator()
   const price = billing === 'monthly' ? '4,99 €' : '49 €'
   const period = billing === 'monthly' ? '/ mois' : '/ an'
+
+  // Paiement réel disponible ? (Stripe configuré côté serveur). Sinon : simulé.
+  const [billingOn, setBillingOn] = useState(false)
+  const [buying, setBuying] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  useEffect(() => {
+    checkBilling().then(setBillingOn)
+  }, [])
+
+  const buy = async () => {
+    setErr(null)
+    if (!billingOn) {
+      // Prototype : activation immédiate simulée (aucun paiement réel branché).
+      setLuminator(true)
+      return
+    }
+    try {
+      setBuying(true)
+      await startCheckout(billing) // redirige vers Stripe Checkout
+    } catch (e) {
+      setErr((e as Error).message)
+      setBuying(false)
+    }
+  }
 
   return (
     <div className="min-h-screen pb-20">
@@ -133,14 +159,16 @@ export function PricingScreen({ onBack, onOpenChat }: Props) {
             ) : (
               <>
                 <button
-                  onClick={() => setLuminator(true)}
-                  className="btn-primary mt-6 w-full justify-center"
+                  onClick={buy}
+                  disabled={buying}
+                  className="btn-primary mt-6 w-full justify-center disabled:opacity-60"
                 >
-                  Devenir Luminator
+                  {buying ? 'Redirection vers le paiement…' : 'Devenir Luminator'}
                 </button>
                 <p className="mt-2 text-center text-xs text-ink-400">
-                  Paiement simulé — prototype (activation immédiate)
+                  {billingOn ? '🔒 Paiement sécurisé via Stripe — sans engagement' : 'Paiement simulé — prototype (activation immédiate)'}
                 </p>
+                {err && <p className="mt-2 text-center text-xs text-rose-500">{err}</p>}
               </>
             )}
           </div>
