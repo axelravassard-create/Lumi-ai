@@ -110,6 +110,25 @@ export function SectorTrendCard({ sector, aiEnabled, onOpenSettings }: Props) {
               ))}
             </ul>
           )}
+          {trend.sources && trend.sources.length > 0 && (
+            <div className="mt-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">Sources</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {trend.sources.map((s, i) => (
+                  <a
+                    key={i}
+                    href={s.url}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="inline-flex max-w-full items-center gap-1 truncate rounded-full border border-ink-200 px-3 py-1 text-xs text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
+                  >
+                    🔗 <span className="truncate">{s.title}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-4 flex items-center gap-3 text-xs text-ink-400">
             <span>Mis à jour le {fmtDate(trend.updatedAt)}</span>
             {aiEnabled && (

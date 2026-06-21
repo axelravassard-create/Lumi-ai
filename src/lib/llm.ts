@@ -471,6 +471,7 @@ export interface SectorTrend {
   direction: 'hausse' | 'stable' | 'baisse'
   summary: string
   signals: string[]
+  sources?: { title: string; url: string }[]
   updatedAt: string
 }
 
@@ -489,9 +490,10 @@ Puis renvoie UNIQUEMENT un objet JSON valide (aucun texte autour, pas de balises
   "headline": "accroche courte (max 90 caractères)",
   "direction": "hausse | stable | baisse",
   "summary": "2 à 3 phrases factuelles de synthèse",
-  "signals": ["3 à 4 développements récents et concrets"]
+  "signals": ["3 à 4 développements récents et concrets"],
+  "sources": [{"title": "titre court de la source", "url": "https://lien-exact-de-la-source"}]
 }
-La "direction" décrit l'évolution de la pression de l'IA sur le secteur. Appuie-toi sur tes recherches, n'invente rien. Réponds en français.`,
+La "direction" décrit l'évolution de la pression de l'IA sur le secteur. Dans "sources", mets 2 à 4 liens RÉELS issus de tes recherches (URLs exactes, pas inventées). Appuie-toi sur tes recherches, n'invente rien. Réponds en français.`,
     },
   ]
 
@@ -510,6 +512,12 @@ La "direction" décrit l'évolution de la pression de l'IA sur le secteur. Appui
     direction: ['hausse', 'stable', 'baisse'].includes(parsed.direction) ? parsed.direction : 'stable',
     summary: parsed.summary,
     signals: Array.isArray(parsed.signals) ? parsed.signals.slice(0, 4) : [],
+    sources: Array.isArray(parsed.sources)
+      ? parsed.sources
+          .filter((s) => s && typeof s.url === 'string' && /^https?:\/\//i.test(s.url))
+          .map((s) => ({ title: String(s.title || s.url), url: s.url }))
+          .slice(0, 4)
+      : [],
     updatedAt: new Date().toISOString(),
   }
 }
