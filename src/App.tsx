@@ -15,13 +15,14 @@ import { Logo } from './components/Logo'
 import { Avatar } from './components/Avatar'
 import { LuminatorChat } from './components/LuminatorChat'
 import { PlanScreen } from './components/PlanScreen'
+import { ToolboxScreen } from './components/ToolboxScreen'
 import { loadProfile, profileToContext } from './lib/profile'
 import { addBilan } from './lib/history'
 import { useLuminator } from './lib/entitlement'
 import { handleCheckoutReturn } from './lib/billing'
 import { installAudioUnlock } from './lib/sfx'
 
-type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier' | 'legal' | 'plan'
+type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier' | 'legal' | 'plan' | 'toolbox'
 
 const ANALYSIS_STEPS = [
   'Identification du métier…',
@@ -223,11 +224,16 @@ export default function App() {
           onOpenMetiers={() => { window.location.hash = '/metiers' }}
           onOpenChat={openChat}
           onOpenPlan={() => { setView('plan'); window.scrollTo({ top: 0 }) }}
+          onOpenToolbox={() => { setView('toolbox'); window.scrollTo({ top: 0 }) }}
         />
       )}
 
       {view === 'plan' && (
         <PlanScreen onBack={() => setView('landing')} onOpenChat={openChat} />
+      )}
+
+      {view === 'toolbox' && (
+        <ToolboxScreen onBack={() => setView('landing')} onOpenChat={openChat} />
       )}
 
       {view === 'directory' && (
