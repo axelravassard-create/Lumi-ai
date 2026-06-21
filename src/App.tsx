@@ -16,13 +16,15 @@ import { Avatar } from './components/Avatar'
 import { LuminatorChat } from './components/LuminatorChat'
 import { PlanScreen } from './components/PlanScreen'
 import { ToolboxScreen } from './components/ToolboxScreen'
+import { VeilleScreen } from './components/VeilleScreen'
+import { GeneratorsScreen } from './components/GeneratorsScreen'
 import { loadProfile, profileToContext } from './lib/profile'
 import { addBilan } from './lib/history'
 import { useLuminator } from './lib/entitlement'
 import { handleCheckoutReturn } from './lib/billing'
 import { installAudioUnlock } from './lib/sfx'
 
-type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier' | 'legal' | 'plan' | 'toolbox'
+type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier' | 'legal' | 'plan' | 'toolbox' | 'veille' | 'generators'
 
 const ANALYSIS_STEPS = [
   'Identification du métier…',
@@ -225,6 +227,8 @@ export default function App() {
           onOpenChat={openChat}
           onOpenPlan={() => { setView('plan'); window.scrollTo({ top: 0 }) }}
           onOpenToolbox={() => { setView('toolbox'); window.scrollTo({ top: 0 }) }}
+          onOpenVeille={() => { setView('veille'); window.scrollTo({ top: 0 }) }}
+          onOpenGenerators={() => { setView('generators'); window.scrollTo({ top: 0 }) }}
         />
       )}
 
@@ -234,6 +238,20 @@ export default function App() {
 
       {view === 'toolbox' && (
         <ToolboxScreen onBack={() => setView('landing')} onOpenChat={openChat} />
+      )}
+
+      {view === 'veille' && (
+        <VeilleScreen
+          onBack={() => setView('landing')}
+          aiEnabled={aiEnabled}
+          onOpenSettings={() => setModalOpen(true)}
+          onOpenChat={openChat}
+          onOpenProfile={() => setView('profile')}
+        />
+      )}
+
+      {view === 'generators' && (
+        <GeneratorsScreen onBack={() => setView('landing')} onOpenChat={openChat} />
       )}
 
       {view === 'directory' && (
