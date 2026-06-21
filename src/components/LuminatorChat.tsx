@@ -268,10 +268,26 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
   )
 }
 
+function downloadMarkdown(text: string) {
+  try {
+    const blob = new Blob([text], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `luminator-${new Date().toISOString().slice(0, 10)}.md`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch {
+    /* ignore */
+  }
+}
+
 function Bubble({ role, text, typing }: { role: 'user' | 'assistant'; text: string; typing?: boolean }) {
   const mine = role === 'user'
+  // Boutons « livrable » sur les réponses de Luminator terminées : repartir avec.
+  const showActions = !mine && !typing && text.trim().length > 0
   return (
-    <div className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex flex-col ${mine ? 'items-end' : 'items-start'}`}>
       <div
         className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
           mine ? 'bg-brand-600 text-white' : 'bg-ink-50 text-ink-800'
@@ -284,6 +300,16 @@ function Bubble({ role, text, typing }: { role: 'user' | 'assistant'; text: stri
           <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-ink-400" style={{ animationDelay: '240ms' }} />
         </span>}
       </div>
+      {showActions && (
+        <div className="mt-1 flex gap-3 pl-1 text-[11px] text-ink-400">
+          <button onClick={() => navigator.clipboard?.writeText(text)} className="transition hover:text-brand-700">
+            Copier
+          </button>
+          <button onClick={() => downloadMarkdown(text)} className="transition hover:text-brand-700">
+            Télécharger
+          </button>
+        </div>
+      )}
     </div>
   )
 }
