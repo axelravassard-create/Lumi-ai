@@ -21,9 +21,11 @@ interface Props {
   onOpenChat: (message?: string) => void
   onOpenPlan: () => void
   onOpenToolbox: () => void
+  onOpenVeille: () => void
+  onOpenGenerators: () => void
 }
 
-export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, onOpenProfile, onOpenPricing, onOpenMetiers, onOpenChat, onOpenPlan, onOpenToolbox }: Props) {
+export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, onOpenProfile, onOpenPricing, onOpenMetiers, onOpenChat, onOpenPlan, onOpenToolbox, onOpenVeille, onOpenGenerators }: Props) {
   const [mode, setMode] = useState<Mode>('single')
   const [value, setValue] = useState('')
   const [valueB, setValueB] = useState('')
@@ -80,6 +82,8 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
           onOpenSettings={onOpenSettings}
           onOpenPlan={onOpenPlan}
           onOpenToolbox={onOpenToolbox}
+          onOpenVeille={onOpenVeille}
+          onOpenGenerators={onOpenGenerators}
         />
       ) : (
         <>
@@ -401,6 +405,8 @@ function MemberHome({
   onOpenSettings,
   onOpenPlan,
   onOpenToolbox,
+  onOpenVeille,
+  onOpenGenerators,
 }: {
   aiEnabled: boolean
   onOpenChat: (message?: string) => void
@@ -409,6 +415,8 @@ function MemberHome({
   onOpenSettings: () => void
   onOpenPlan: () => void
   onOpenToolbox: () => void
+  onOpenVeille: () => void
+  onOpenGenerators: () => void
 }) {
   const profile = loadProfile()
   const role = profile.role
@@ -550,6 +558,18 @@ function MemberHome({
             title="Ma boîte à outils"
             desc="Les outils recommandés pour ton métier, avec leurs liens."
             onClick={onOpenToolbox}
+          />
+          <ActionCard
+            emoji="✨"
+            title="Générateurs express"
+            desc="CV, pitch, audit d'auto… des livrables en 1 clic."
+            onClick={onOpenGenerators}
+          />
+          <ActionCard
+            emoji="🌐"
+            title="Veille de mon métier"
+            desc="Ce qui bouge cette semaine + quoi en faire."
+            onClick={onOpenVeille}
           />
           <ActionCard
             emoji="⚡"
