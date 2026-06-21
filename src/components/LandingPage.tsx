@@ -20,9 +20,10 @@ interface Props {
   onOpenMetiers: () => void
   onOpenChat: (message?: string) => void
   onOpenPlan: () => void
+  onOpenToolbox: () => void
 }
 
-export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, onOpenProfile, onOpenPricing, onOpenMetiers, onOpenChat, onOpenPlan }: Props) {
+export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, onOpenProfile, onOpenPricing, onOpenMetiers, onOpenChat, onOpenPlan, onOpenToolbox }: Props) {
   const [mode, setMode] = useState<Mode>('single')
   const [value, setValue] = useState('')
   const [valueB, setValueB] = useState('')
@@ -78,6 +79,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
           onAnalyze={onAnalyze}
           onOpenSettings={onOpenSettings}
           onOpenPlan={onOpenPlan}
+          onOpenToolbox={onOpenToolbox}
         />
       ) : (
         <>
@@ -398,6 +400,7 @@ function MemberHome({
   onAnalyze,
   onOpenSettings,
   onOpenPlan,
+  onOpenToolbox,
 }: {
   aiEnabled: boolean
   onOpenChat: (message?: string) => void
@@ -405,10 +408,12 @@ function MemberHome({
   onAnalyze: (role: string) => void
   onOpenSettings: () => void
   onOpenPlan: () => void
+  onOpenToolbox: () => void
 }) {
   const profile = loadProfile()
   const role = profile.role
   const hasRole = !!role?.trim()
+  const location = profile.location?.trim()
   const ready = profileReady(profile)
   const pct = completeness(profile)
 
@@ -469,7 +474,9 @@ function MemberHome({
     'Quelles tâches de mon métier puis-je automatiser ?',
     'Un outil IA pour me faire gagner du temps',
     'Crée-moi un modèle / template réutilisable',
-    'Automatiser mes e-mails et mes relances',
+    location
+      ? `Formations & opportunités près de ${location} ?`
+      : 'Quelles formations pour faire évoluer mon métier ?',
   ]
 
   return (
@@ -539,6 +546,12 @@ function MemberHome({
             onClick={onOpenPlan}
           />
           <ActionCard
+            emoji="🧰"
+            title="Ma boîte à outils"
+            desc="Les outils recommandés pour ton métier, avec leurs liens."
+            onClick={onOpenToolbox}
+          />
+          <ActionCard
             emoji="⚡"
             title="Automatiser une tâche"
             desc="Luminator te guide, adapté à ton métier."
@@ -549,6 +562,18 @@ function MemberHome({
             title="Mon profil & parcours"
             desc="Plus il te connaît, mieux il cible ses conseils."
             onClick={onOpenProfile}
+          />
+          <ActionCard
+            emoji="📍"
+            title="Opportunités locales"
+            desc="Formations & pistes près de chez toi."
+            onClick={() =>
+              onOpenChat(
+                location
+                  ? `Quelles formations, aides et opportunités près de ${location} pour mon métier ?`
+                  : 'Quelles formations et opportunités pour faire évoluer mon métier ? (je peux préciser ma ville)'
+              )
+            }
           />
           <ActionCard
             emoji="📈"

@@ -3,6 +3,7 @@ import { Avatar } from './Avatar'
 import { streamLuminatorChat, describeError, type ChatMsg } from '../lib/llm'
 import { applyProfilePatch } from '../lib/profile'
 import { addPlanItem } from '../lib/plan'
+import { addTool } from '../lib/toolbox'
 
 interface Props {
   onClose: () => void
@@ -50,6 +51,7 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
   const [streaming, setStreaming] = useState(false)
   const [noted, setNoted] = useState(false)
   const [planned, setPlanned] = useState(false)
+  const [tooled, setTooled] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Persiste la conversation (mémoire) à chaque évolution.
@@ -75,6 +77,13 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
     const t = setTimeout(() => setPlanned(false), 4000)
     return () => clearTimeout(t)
   }, [planned])
+
+  // Indicateur « ajouté à ta boîte à outils » qui s'efface tout seul.
+  useEffect(() => {
+    if (!tooled) return
+    const t = setTimeout(() => setTooled(false), 4000)
+    return () => clearTimeout(t)
+  }, [tooled])
 
   const newChat = () => {
     setMessages([])
@@ -117,6 +126,12 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
           const added = addPlanItem(title, detail)
           if (added) setPlanned(true)
           return added ? `Ajouté au plan d'action : « ${title} ».` : 'Déjà dans le plan.'
+        },
+        onToolAdd: (name, url, reason) => {
+          // Luminator range un outil recommandé dans la boîte à outils.
+          const added = addTool(name, url, reason)
+          if (added) setTooled(true)
+          return added ? `Ajouté à la boîte à outils : « ${name} ».` : 'Déjà dans la boîte à outils.'
         },
         extraContext,
       })
@@ -177,6 +192,11 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
           {planned && !noted && (
             <div className="absolute left-1/2 top-2 -translate-x-1/2 animate-fade-in rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-medium text-brand-700">
               ✅ ajouté à ton plan
+            </div>
+          )}
+          {tooled && !noted && !planned && (
+            <div className="absolute left-1/2 top-2 -translate-x-1/2 animate-fade-in rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-medium text-violet-700">
+              🧰 ajouté à ta boîte à outils
             </div>
           )}
         </header>

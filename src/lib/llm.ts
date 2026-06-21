@@ -289,12 +289,30 @@ const PLAN_TOOL: Anthropic.Tool = {
   },
 }
 
+// Outil : Luminator recommande un outil (IA, no-code, app) → boîte à outils.
+const TOOLBOX_TOOL: Anthropic.Tool = {
+  name: 'recommend_tool',
+  description:
+    "Ajoute un outil concret (IA, no-code, app…) à la boîte à outils de l'utilisateur quand tu en recommandes un précis et adapté à son métier. Donne le nom, l'URL officielle si tu la connais, et en une phrase à quoi il lui sert.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      name: { type: 'string', description: 'Nom de l\'outil (ex : « Make », « Notion », « Claude »).' },
+      url: { type: 'string', description: 'URL officielle si tu la connais (ex : make.com).' },
+      reason: { type: 'string', description: 'À quoi il lui sert concrètement, en une phrase.' },
+    },
+    required: ['name'],
+  },
+}
+
 interface ChatOptions {
   onDelta: (text: string) => void
   /** Appelé quand Luminator note des infos de parcours ; renvoie un message de confirmation pour l'IA. */
   onProfileUpdate?: (patch: Record<string, unknown>) => string
   /** Appelé quand Luminator ajoute une action au plan ; renvoie un message de confirmation pour l'IA. */
   onPlanAdd?: (title: string, detail?: string) => string
+  /** Appelé quand Luminator recommande un outil ; renvoie un message de confirmation pour l'IA. */
+  onToolAdd?: (name: string, url?: string, reason?: string) => string
   extraContext?: string
 }
 
@@ -313,7 +331,7 @@ export async function streamLuminatorChat(history: ChatMsg[], opts: ChatOptions)
       model: MODEL,
       max_tokens: 1024,
       system,
-      tools: [PROFILE_TOOL, PLAN_TOOL],
+      tools: [PROFILE_TOOL, PLAN_TOOL, TOOLBOX_TOOL],
       messages,
     })
     stream.on('text', (t) => {
@@ -337,6 +355,12 @@ export async function streamLuminatorChat(history: ChatMsg[], opts: ChatOptions)
         const input = block.input as { title?: string; detail?: string }
         const note = opts.onPlanAdd
           ? opts.onPlanAdd(input.title ?? '', input.detail)
+          : 'ok'
+        results.push({ type: 'tool_result', tool_use_id: block.id, content: note })
+      } else if (block.name === 'recommend_tool') {
+        const input = block.input as { name?: string; url?: string; reason?: string }
+        const note = opts.onToolAdd
+          ? opts.onToolAdd(input.name ?? '', input.url, input.reason)
           : 'ok'
         results.push({ type: 'tool_result', tool_use_id: block.id, content: note })
       }
