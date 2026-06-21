@@ -232,8 +232,13 @@ PRIORITÉ N°1 — automatiser et accélérer SON métier :
 
 Tu gardes AUSSI tes autres rôles de coach : exposition du métier à l'IA, compétences d'avenir, reconversion, évolution, négociation, se lancer. Mais ramène souvent vers le concret et l'automatisation.
 
+Apprendre à le connaître AVANT de guider :
+- Si tu ne connais pas encore son métier et son contexte (parcours, tâches, objectif), COMMENCE par faire connaissance : 1 à 2 questions courtes et ciblées, puis note ses réponses. Ne déballe pas de conseils génériques tant que tu ne sais pas à qui tu parles.
+- Une fois que tu le cernes, passe au concret et personnalise tout.
+
 Mémoire :
 - Outil "update_career_profile" : dès que l'utilisateur révèle une info stable (métier, secteur, expérience, compétences, outils maîtrisés, objectif, contraintes…), note-la sur son profil. N'invente rien. Reste naturel, n'annonce pas « j'ai noté » à chaque fois.
+- Outil "add_plan_item" : quand tu proposes une action concrète qu'il peut suivre (une tâche à automatiser, une étape précise), ajoute-la à son plan d'action. Titre court et actionnable. N'ajoute que des actions vraiment utiles, pas chaque phrase.
 - Sers-toi de ce que tu sais de lui pour personnaliser. S'il te manque une info clé pour bien cibler une automatisation, pose UNE question précise.
 
 Réponses :
@@ -269,10 +274,27 @@ const PROFILE_TOOL: Anthropic.Tool = {
   },
 }
 
+// Outil : Luminator ajoute une action concrète au plan d'action de l'utilisateur.
+const PLAN_TOOL: Anthropic.Tool = {
+  name: 'add_plan_item',
+  description:
+    "Ajoute une action concrète au plan d'action de l'utilisateur (une tâche à automatiser, une étape à suivre) qu'il pourra retrouver et cocher. N'ajoute que des actions réellement utiles et actionnables, pas chaque phrase.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      title: { type: 'string', description: 'Action concise et actionnable (ex : « Automatiser mes relances clients avec un modèle d\'email »).' },
+      detail: { type: 'string', description: 'Précision courte : outil suggéré ou première étape.' },
+    },
+    required: ['title'],
+  },
+}
+
 interface ChatOptions {
   onDelta: (text: string) => void
   /** Appelé quand Luminator note des infos de parcours ; renvoie un message de confirmation pour l'IA. */
   onProfileUpdate?: (patch: Record<string, unknown>) => string
+  /** Appelé quand Luminator ajoute une action au plan ; renvoie un message de confirmation pour l'IA. */
+  onPlanAdd?: (title: string, detail?: string) => string
   extraContext?: string
 }
 
@@ -291,7 +313,7 @@ export async function streamLuminatorChat(history: ChatMsg[], opts: ChatOptions)
       model: MODEL,
       max_tokens: 1024,
       system,
-      tools: [PROFILE_TOOL],
+      tools: [PROFILE_TOOL, PLAN_TOOL],
       messages,
     })
     stream.on('text', (t) => {
@@ -305,9 +327,16 @@ export async function streamLuminatorChat(history: ChatMsg[], opts: ChatOptions)
 
     const results: Anthropic.ToolResultBlockParam[] = []
     for (const block of msg.content) {
-      if (block.type === 'tool_use' && block.name === 'update_career_profile') {
+      if (block.type !== 'tool_use') continue
+      if (block.name === 'update_career_profile') {
         const note = opts.onProfileUpdate
           ? opts.onProfileUpdate(block.input as Record<string, unknown>)
+          : 'ok'
+        results.push({ type: 'tool_result', tool_use_id: block.id, content: note })
+      } else if (block.name === 'add_plan_item') {
+        const input = block.input as { title?: string; detail?: string }
+        const note = opts.onPlanAdd
+          ? opts.onPlanAdd(input.title ?? '', input.detail)
           : 'ok'
         results.push({ type: 'tool_result', tool_use_id: block.id, content: note })
       }

@@ -14,13 +14,14 @@ import { LegalScreen, type LegalDoc } from './components/LegalScreen'
 import { Logo } from './components/Logo'
 import { Avatar } from './components/Avatar'
 import { LuminatorChat } from './components/LuminatorChat'
+import { PlanScreen } from './components/PlanScreen'
 import { loadProfile, profileToContext } from './lib/profile'
 import { addBilan } from './lib/history'
 import { useLuminator } from './lib/entitlement'
 import { handleCheckoutReturn } from './lib/billing'
 import { installAudioUnlock } from './lib/sfx'
 
-type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier' | 'legal'
+type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier' | 'legal' | 'plan'
 
 const ANALYSIS_STEPS = [
   'Identification du métier…',
@@ -221,7 +222,12 @@ export default function App() {
           onOpenPricing={() => setView('pricing')}
           onOpenMetiers={() => { window.location.hash = '/metiers' }}
           onOpenChat={openChat}
+          onOpenPlan={() => { setView('plan'); window.scrollTo({ top: 0 }) }}
         />
+      )}
+
+      {view === 'plan' && (
+        <PlanScreen onBack={() => setView('landing')} onOpenChat={openChat} />
       )}
 
       {view === 'directory' && (

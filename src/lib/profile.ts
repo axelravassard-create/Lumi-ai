@@ -133,6 +133,20 @@ export function hasProfile(p: CareerProfile): boolean {
   return completeness(p) > 0
 }
 
+// Luminator « connaît »-il assez l'utilisateur pour l'accompagner ?
+// On exige le métier + au moins 2 signaux concrets (tâches, compétences,
+// objectif, expérience). En dessous, on l'invite d'abord à faire connaissance.
+export function profileReady(p: CareerProfile): boolean {
+  if (!p.role.trim()) return false
+  const signals = [
+    p.tasks.length > 0,
+    p.hardSkills.length > 0,
+    !!p.goal.trim(),
+    !!p.experience.trim() || !!p.level.trim(),
+  ]
+  return signals.filter(Boolean).length >= 2
+}
+
 // Champs que Luminator peut renseigner depuis la conversation.
 const STRING_FIELDS: { key: keyof CareerProfile; label: string }[] = [
   { key: 'role', label: 'métier' },
