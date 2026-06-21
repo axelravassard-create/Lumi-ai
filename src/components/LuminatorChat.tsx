@@ -9,6 +9,8 @@ interface Props {
   onOpenSettings: () => void
   /** Contexte profil/dernier bilan, injecté dans le system prompt. */
   extraContext?: string
+  /** Message pré-rempli dans la saisie à l'ouverture (démarrage rapide). */
+  initialMessage?: string
 }
 
 const GREETING =
@@ -41,9 +43,9 @@ function saveChat(messages: ChatMsg[]) {
   }
 }
 
-export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext }: Props) {
+export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext, initialMessage }: Props) {
   const [messages, setMessages] = useState<ChatMsg[]>(() => loadChat())
-  const [input, setInput] = useState('')
+  const [input, setInput] = useState(initialMessage ?? '')
   const [streaming, setStreaming] = useState(false)
   const [noted, setNoted] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)

@@ -6,6 +6,7 @@ import { LumiSpeech } from './LumiSpeech'
 import { SUGGESTIONS } from '../lib/engine'
 import { PROFESSIONS } from '../lib/professions'
 import { useBrand } from '../lib/entitlement'
+import { loadProfile } from '../lib/profile'
 
 type Mode = 'single' | 'compare'
 
@@ -17,9 +18,10 @@ interface Props {
   onOpenProfile: () => void
   onOpenPricing: () => void
   onOpenMetiers: () => void
+  onOpenChat: (message?: string) => void
 }
 
-export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, onOpenProfile, onOpenPricing, onOpenMetiers }: Props) {
+export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, onOpenProfile, onOpenPricing, onOpenMetiers, onOpenChat }: Props) {
   const [mode, setMode] = useState<Mode>('single')
   const [value, setValue] = useState('')
   const [valueB, setValueB] = useState('')
@@ -50,6 +52,17 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         </nav>
       </header>
 
+      {owns ? (
+        <MemberHome
+          role={loadProfile().role}
+          aiEnabled={aiEnabled}
+          onOpenChat={onOpenChat}
+          onOpenProfile={onOpenProfile}
+          onAnalyze={onAnalyze}
+          onOpenSettings={onOpenSettings}
+        />
+      ) : (
+        <>
       {/* Hero */}
       <section className="relative mx-auto max-w-4xl px-6 pt-8 pb-16 text-center md:pt-12">
         {/* Scène : Lumi devant ; Luminator en retrait (flou) à droite. Cliquer
@@ -281,6 +294,8 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
           </div>
         </div>
       </section>
+        </>
+      )}
 
       <footer className="mx-auto max-w-6xl px-6 py-12 text-center text-sm text-ink-400">
         <Logo className="justify-center opacity-70" />
@@ -307,6 +322,126 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         </nav>
       </footer>
     </div>
+  )
+}
+
+// Accueil dédié aux abonnés Luminator : plus de « ton métier est-il exposé ? »
+// (ils ont déjà testé). Tout est tourné vers l'ACTION : automatiser son métier,
+// avec accès immédiat au copilote.
+function MemberHome({
+  role,
+  aiEnabled,
+  onOpenChat,
+  onOpenProfile,
+  onAnalyze,
+  onOpenSettings,
+}: {
+  role: string
+  aiEnabled: boolean
+  onOpenChat: (message?: string) => void
+  onOpenProfile: () => void
+  onAnalyze: (role: string) => void
+  onOpenSettings: () => void
+}) {
+  const hasRole = !!role?.trim()
+  const STARTERS = [
+    'Quelles tâches de mon métier puis-je automatiser ?',
+    'Un outil IA pour me faire gagner du temps',
+    'Crée-moi un modèle / template réutilisable',
+    'Automatiser mes e-mails et mes relances',
+  ]
+
+  return (
+    <>
+      <section className="relative mx-auto max-w-3xl px-6 pt-6 pb-10 text-center md:pt-10">
+        <div className="animate-fade-in mx-auto h-52 w-full max-w-xs md:h-60">
+          <Avatar state="idle" glasses className="h-full w-full" />
+        </div>
+        <div className="animate-fade-in -mt-2 flex justify-center">
+          <div className="relative max-w-sm rounded-2xl border border-brand-200 bg-white px-4 py-2.5 text-sm text-ink-700 shadow-card">
+            <span className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-brand-200 bg-white" />
+            <LumiSpeech
+              text={
+                hasRole
+                  ? `Content de te revoir 👋 On automatise quoi dans ton métier de ${role} aujourd'hui ?`
+                  : "Content de te revoir 👋 On automatise quoi aujourd'hui ?"
+              }
+            />
+          </div>
+        </div>
+
+        <h1 className="animate-fade-up mt-6 font-display text-3xl font-extrabold leading-[1.1] tracking-tight text-ink-900 md:text-5xl" style={{ animationDelay: '60ms' }}>
+          Gagne du temps.
+          <br />
+          <span className="bg-gradient-to-r from-brand-600 to-violet-500 bg-clip-text text-transparent">Luminator automatise ton métier.</span>
+        </h1>
+        <p className="animate-fade-up mx-auto mt-4 max-w-xl text-lg text-ink-500" style={{ animationDelay: '120ms' }}>
+          Décris une tâche et Luminator te montre comment la faire plus vite — outils IA, no-code, modèles prêts à
+          l'emploi, adaptés à ton parcours.
+        </p>
+
+        <div className="animate-fade-up mt-7 flex flex-col items-center gap-2" style={{ animationDelay: '160ms' }}>
+          <button onClick={() => onOpenChat()} className="btn-primary px-6 py-3.5 text-base">
+            💬 Discuter avec Luminator
+          </button>
+          {!aiEnabled && (
+            <button onClick={onOpenSettings} className="text-xs text-ink-400 underline-offset-2 hover:text-brand-700 hover:underline">
+              Connecte ta clé API Claude pour discuter
+            </button>
+          )}
+        </div>
+
+        {/* Démarrages rapides : ouvrent le chat avec la question pré-remplie */}
+        <div className="animate-fade-up mt-8" style={{ animationDelay: '200ms' }}>
+          <p className="text-sm text-ink-400">Idées rapides :</p>
+          <div className="mt-3 flex flex-wrap justify-center gap-2">
+            {STARTERS.map((s) => (
+              <button
+                key={s}
+                onClick={() => onOpenChat(s)}
+                className="rounded-full border border-ink-200 bg-white px-3.5 py-1.5 text-sm text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Raccourcis */}
+      <section className="mx-auto max-w-4xl px-6 pb-8">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <ActionCard
+            emoji="⚡"
+            title="Automatiser une tâche"
+            desc="Luminator te guide pas à pas, adapté à ton métier."
+            onClick={() => onOpenChat('Aide-moi à automatiser une tâche précise de mon métier, étape par étape.')}
+          />
+          <ActionCard
+            emoji="🧭"
+            title="Mon profil & parcours"
+            desc="Plus il te connaît, mieux il cible ses conseils."
+            onClick={onOpenProfile}
+          />
+          <ActionCard
+            emoji="📈"
+            title="Refaire le point sur mon métier"
+            desc="Mets à jour ton exposition à l'IA dans le temps."
+            onClick={() => (hasRole ? onAnalyze(role) : onOpenProfile())}
+          />
+        </div>
+      </section>
+    </>
+  )
+}
+
+function ActionCard({ emoji, title, desc, onClick }: { emoji: string; title: string; desc: string; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="card flex flex-col items-start p-5 text-left transition hover:-translate-y-0.5 hover:shadow-glow">
+      <span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-50 text-xl">{emoji}</span>
+      <h3 className="mt-3 font-display font-bold text-ink-900">{title}</h3>
+      <p className="mt-1 text-sm text-ink-500">{desc}</p>
+    </button>
   )
 }
 
