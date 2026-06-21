@@ -28,12 +28,22 @@ export interface LegalInfo {
   updated: string
 }
 
-// ⚠️ À COMPLÉTER avant exploitation : remplace les champs entre crochets.
+// Pré-rempli pour un particulier (offre actuellement gratuite).
+// À vérifier / compléter :
+//  - editorName / publicationDirector : confirme l'orthographe.
+//  - address : facultative pour un particulier (voir note ci-dessous), mais
+//    OBLIGATOIRE dès le passage en micro-entreprise.
+//
+// 💡 Régime « particulier non professionnel » (LCEN art. 6 III 2) : tant que le
+// site est gratuit et non professionnel, tu PEUX ne pas afficher ton nom/adresse
+// publiquement, à condition d'avoir communiqué ton identité à l'hébergeur (Vercel,
+// via ton compte). Dans ce cas, ne publie que l'hébergeur + un contact, et passe
+// editorName à 'Éditeur particulier (identité connue de l’hébergeur)'.
 export const LEGAL_INFO: LegalInfo = {
   status: 'particulier',
   brand: 'Lumi',
-  editorName: '[Prénom Nom à compléter]',
-  publicationDirector: '[Prénom Nom à compléter]',
+  editorName: 'Axel Ravassard',
+  publicationDirector: 'Axel Ravassard',
   address: undefined, // facultatif pour un particulier ; obligatoire dès la micro
   siret: undefined,
   rcs: undefined,
