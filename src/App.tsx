@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { analyze, withScore, applyProfileAdjustment, personalAssets, Analysis } from './lib/engine'
-import { describeError, generateComparison, generateNarrative, hasApiKey, ComparisonResult } from './lib/llm'
+import { describeError, generateComparison, generateNarrative, aiReady, checkServerKey, ComparisonResult } from './lib/llm'
 import { LandingPage } from './components/LandingPage'
 import { Dashboard } from './components/Dashboard'
 import { CompareView } from './components/CompareView'
@@ -50,7 +50,7 @@ export default function App() {
   const [compareData, setCompareData] = useState<{ a: Analysis; b: Analysis; comparison: ComparisonResult | null } | null>(null)
   const [step, setStep] = useState(0)
   const [label, setLabel] = useState('')
-  const [aiEnabled, setAiEnabled] = useState(hasApiKey())
+  const [aiEnabled, setAiEnabled] = useState(aiReady())
   const [modalOpen, setModalOpen] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [seoId, setSeoId] = useState('')
@@ -72,6 +72,12 @@ export default function App() {
   // Débloque l'audio (bruitage) dès la première interaction de l'utilisateur.
   useEffect(() => {
     installAudioUnlock()
+  }, [])
+
+  // Détecte si une clé serveur est configurée → l'IA s'active pour tous sans
+  // que l'utilisateur ait à saisir quoi que ce soit.
+  useEffect(() => {
+    checkServerKey().then(() => setAiEnabled(aiReady()))
   }, [])
 
   // Routage léger par hash pour les pages SEO (#/metiers, #/metier/<id>).
@@ -121,7 +127,7 @@ export default function App() {
     let result = base
     let note: string | null = null
 
-    if (hasApiKey()) {
+    if (aiReady()) {
       try {
         const context = withProfile ? profileToContext(loadProfile()) : undefined
         const n = await generateNarrative(base, context || undefined)
@@ -139,7 +145,7 @@ export default function App() {
       result = applyProfileAdjustment(base, loadProfile())
     }
 
-    await sleep(Math.max(0, (hasApiKey() ? 1100 : 1900) - (Date.now() - started)))
+    await sleep(Math.max(0, (aiReady() ? 1100 : 1900) - (Date.now() - started)))
     addBilan({
       role: result.profession.label,
       score: result.currentRisk,
@@ -162,7 +168,7 @@ export default function App() {
     let comparison: ComparisonResult | null = null
     let note: string | null = null
 
-    if (hasApiKey()) {
+    if (aiReady()) {
       try {
         comparison = await generateComparison(a, b)
       } catch (e) {
@@ -170,7 +176,7 @@ export default function App() {
       }
     }
 
-    await sleep(Math.max(0, (hasApiKey() ? 1100 : 1900) - (Date.now() - started)))
+    await sleep(Math.max(0, (aiReady() ? 1100 : 1900) - (Date.now() - started)))
     setNotice(note)
     setCompareData({ a, b, comparison })
     setView('compare')
@@ -258,7 +264,7 @@ export default function App() {
       )}
 
       {modalOpen && (
-        <ApiKeyModal onClose={() => setModalOpen(false)} onChange={() => setAiEnabled(hasApiKey())} />
+        <ApiKeyModal onClose={() => setModalOpen(false)} onChange={() => setAiEnabled(aiReady())} />
       )}
 
       {/* Bouton flottant : discuter avec Luminator (une fois l'offre acquise). */}

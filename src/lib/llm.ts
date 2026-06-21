@@ -9,14 +9,34 @@ import { Analysis, Recommendation, Skill } from './engine'
 //  *rédactionnelle* (verdict, recommandations, compétences, comparaison) à partir
 //  de ces chiffres : c'est un usage « grounded », l'IA n'invente pas les données.
 //
-//  Prototype : la clé API est saisie par l'utilisateur et stockée en localStorage.
-//  Elle part directement vers api.anthropic.com depuis le navigateur — aucun
-//  serveur intermédiaire. À ne pas utiliser tel quel en production (une clé ne
-//  devrait jamais vivre côté client).
+//  Production : par défaut, l'app appelle Claude via un PROXY serveur
+//  (`/api/anthropic/...`) qui détient la clé dans une variable d'environnement
+//  Vercel (`ANTHROPIC_API_KEY`). La clé ne vit jamais dans le navigateur.
+//
+//  Repli « BYOK » : si l'utilisateur saisit sa propre clé (localStorage), elle
+//  est utilisée directement depuis son navigateur (sa clé, sa machine) — pratique
+//  en dev local quand aucun serveur n'est branché.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'yourcareer.anthropic_key'
 const MODEL = 'claude-opus-4-8'
+const PROXY_PATH = '/api/anthropic'
+
+// Une clé serveur est-elle configurée ? Déterminé une fois au chargement via
+// l'endpoint /api/anthropic-status (qui ne révèle jamais la clé elle-même).
+let serverKeyAvailable = false
+
+export async function checkServerKey(): Promise<boolean> {
+  try {
+    const r = await fetch('/api/anthropic-status')
+    if (!r.ok) return false
+    const j = (await r.json()) as { enabled?: boolean }
+    serverKeyAvailable = !!j.enabled
+  } catch {
+    serverKeyAvailable = false
+  }
+  return serverKeyAvailable
+}
 
 export function getApiKey(): string | null {
   try {
@@ -34,15 +54,27 @@ export function clearApiKey() {
   localStorage.removeItem(STORAGE_KEY)
 }
 
+// L'utilisateur a-t-il fourni SA propre clé ?
 export function hasApiKey(): boolean {
   return !!getApiKey()
 }
 
+// L'IA est-elle utilisable ? (clé serveur OU clé personnelle)
+export function aiReady(): boolean {
+  return serverKeyAvailable || hasApiKey()
+}
+
 function client(): Anthropic {
-  const apiKey = getApiKey()
-  if (!apiKey) throw new Error('Aucune clé API configurée.')
-  // dangerouslyAllowBrowser : assumé pour ce prototype (voir avertissement ci-dessus).
-  return new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
+  const userKey = getApiKey()
+  if (userKey) {
+    // BYOK : la clé de l'utilisateur, appelée directement depuis son navigateur.
+    return new Anthropic({ apiKey: userKey, dangerouslyAllowBrowser: true })
+  }
+  if (!serverKeyAvailable) throw new Error('Aucune clé API configurée.')
+  // Mode proxy : la vraie clé est ajoutée côté serveur. Le placeholder ci-dessous
+  // n'est jamais transmis à Anthropic (le proxy l'écrase).
+  const baseURL = (typeof window !== 'undefined' ? window.location.origin : '') + PROXY_PATH
+  return new Anthropic({ apiKey: 'proxy', baseURL, dangerouslyAllowBrowser: true })
 }
 
 const SYSTEM_PROMPT = `Tu es Lumi, l'analyste IA de l'application "Lumi" qui évalue l'exposition des métiers à l'automatisation par l'IA.

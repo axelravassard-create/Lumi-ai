@@ -11,9 +11,19 @@ visée pédagogique.
 
 - **Stack** : Vite + React + TypeScript + Tailwind. Avatar 3D via three.js /
   @react-three/fiber / drei / postprocessing. IA via `@anthropic-ai/sdk`.
-- **Modèle Claude utilisé** : `claude-opus-4-8`. Clé API saisie par l'utilisateur,
-  stockée en `localStorage` (`yourcareer.anthropic_key`), appel direct navigateur
-  (`dangerouslyAllowBrowser`) — OK pour le proto, à proxifier en prod.
+- **Modèle Claude utilisé** : `claude-opus-4-8`.
+- **Accès API (prod)** : par défaut l'app appelle Claude via un **proxy serveur**
+  (`api/anthropic/[...path].ts`, Edge function Vercel) qui détient la clé dans la
+  variable d'env **`ANTHROPIC_API_KEY`** (à définir dans Vercel) → la clé ne vit
+  jamais côté navigateur. `api/anthropic-status.ts` dit au front si la clé serveur
+  est présente (sans la révéler) → l'IA s'active pour tous sans saisie.
+  - **Repli BYOK** : si l'utilisateur saisit sa propre clé (`localStorage`
+    `yourcareer.anthropic_key`), elle est utilisée en direct (`dangerouslyAllowBrowser`).
+  - Logique dans `llm.ts` : `client()` (proxy vs BYOK), `checkServerKey()`,
+    `aiReady()` (= clé serveur OU clé perso). `App.tsx` appelle `checkServerKey()`
+    au montage et fixe `aiEnabled`.
+  - ⚠️ `vercel.json` : le rewrite SPA exclut `/api` (`"/((?!api/).*)"`), sinon les
+    fonctions seraient réécrites vers `index.html`.
 
 ## Marque : Lumi (gratuit) vs Luminator (payant)
 - **Lumi** = mascotte + nom de l'app (offre gratuite).
@@ -78,7 +88,12 @@ visée pédagogique.
 
 ## Conformité / légal
 - Pages : `src/components/LegalScreen.tsx` (routes `#/legal/mentions|confidentialite|cgu`),
-  liens dans le footer. Mentions légales à compléter (éditeur, SIRET…).
+  liens dans le footer.
+- **Infos légales centralisées dans `src/lib/legal.ts`** (`LEGAL_INFO`) : un seul
+  endroit à compléter (nom éditeur, SIRET…). `status` ∈ `particulier|micro|societe`
+  → les mentions s'adaptent. **Défaut : `particulier`** (le plus simple tant que
+  l'app est gratuite ; passer en `micro` le jour d'un vrai paiement Luminator).
+  Champs `[à compléter]` = nom/prénom + directeur de publication.
 - **Polices auto-hébergées** via `@fontsource/inter` + `@fontsource-variable/plus-jakarta-sans`
   (plus de requête Google Fonts). Famille display = `Plus Jakarta Sans Variable`.
 - `LICENSE` propriétaire ("UNLICENSED" dans package.json).
