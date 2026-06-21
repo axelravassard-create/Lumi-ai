@@ -56,9 +56,16 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         <Logo />
         <nav className="flex items-center gap-3 text-sm font-medium text-ink-600 md:gap-5">
           <button onClick={onOpenMetiers} className="hidden transition hover:text-brand-700 md:inline">Métiers</button>
-          <button onClick={onOpenPricing} className="transition hover:text-brand-700">Tarifs</button>
           <button onClick={onOpenProfile} className="transition hover:text-brand-700">Mon profil</button>
           <AiStatusButton enabled={aiEnabled} onClick={onOpenSettings} />
+          {!owns && (
+            <button
+              onClick={onOpenPricing}
+              className="rounded-full bg-gradient-to-r from-brand-600 to-violet-600 px-3.5 py-1.5 font-semibold text-white shadow-sm transition hover:opacity-90"
+            >
+              ✨ Luminator
+            </button>
+          )}
         </nav>
       </header>
 
@@ -263,6 +270,48 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
           <span>🚫 Aucune revente de données</span>
         </p>
       </section>
+
+      {/* Mise en avant de l'offre Luminator — la vraie valeur, visible dès l'accueil.
+          L'analyse gratuite montre le risque ; Luminator est ce qui aide à agir
+          dans la durée (rétention + valeur de l'abonnement). */}
+      {!owns && (
+        <section className="mx-auto max-w-5xl px-6 py-10">
+          <div className="card relative overflow-hidden bg-gradient-to-br from-brand-600 to-violet-600 p-8 text-white md:p-12">
+            <div className="grid items-center gap-8 md:grid-cols-[1fr_auto]">
+              <div>
+                <span className="pill mb-4 bg-white/15 text-white">✨ L'offre Luminator</span>
+                <h2 className="font-display text-2xl font-extrabold leading-tight md:text-3xl">
+                  L'analyse te montre le risque.
+                  <br />
+                  Luminator t'aide à agir — toute l'année.
+                </h2>
+                <p className="mt-3 max-w-xl text-white/85">
+                  Ton copilote IA qui <strong>automatise les tâches de ton métier</strong>, te fait gagner du temps et
+                  t'accompagne dans la durée. C'est le vrai moyen de prendre une longueur d'avance — pas juste un score.
+                </p>
+                <ul className="mt-5 grid gap-2 text-sm text-white/90 sm:grid-cols-2">
+                  <li>⚡ Automatise tes tâches répétitives</li>
+                  <li>🧠 Conseils ciblés sur ton métier</li>
+                  <li>🛠️ Outils IA / no-code prêts à l'emploi</li>
+                  <li>📈 Un accompagnement continu, pas un one-shot</li>
+                </ul>
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={onOpenPricing}
+                    className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-brand-700 shadow-sm transition hover:bg-white/90"
+                  >
+                    Découvrir Luminator
+                  </button>
+                  <span className="text-sm text-white/70">Essaie l'analyse gratuitement, passe à l'action avec Luminator.</span>
+                </div>
+              </div>
+              <div className="hidden h-40 w-40 shrink-0 md:block">
+                <Avatar glasses forceFallback className="h-full w-full" />
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Comment ça marche */}
       <section id="how" className="mx-auto max-w-5xl px-6 py-16">
