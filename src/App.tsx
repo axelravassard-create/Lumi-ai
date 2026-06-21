@@ -17,6 +17,7 @@ import { LuminatorChat } from './components/LuminatorChat'
 import { loadProfile, profileToContext } from './lib/profile'
 import { addBilan } from './lib/history'
 import { useLuminator } from './lib/entitlement'
+import { handleCheckoutReturn } from './lib/billing'
 import { installAudioUnlock } from './lib/sfx'
 
 type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier' | 'legal'
@@ -78,6 +79,16 @@ export default function App() {
   // que l'utilisateur ait à saisir quoi que ce soit.
   useEffect(() => {
     checkServerKey().then(() => setAiEnabled(aiReady()))
+  }, [])
+
+  // Retour de paiement Stripe : vérifie et débloque Luminator si payé.
+  useEffect(() => {
+    handleCheckoutReturn().then((unlocked) => {
+      if (unlocked) {
+        setNotice(null)
+        window.scrollTo({ top: 0 })
+      }
+    })
   }, [])
 
   // Routage léger par hash pour les pages SEO (#/metiers, #/metier/<id>).

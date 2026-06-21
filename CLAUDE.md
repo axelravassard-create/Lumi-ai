@@ -74,7 +74,16 @@ visée pédagogique.
 
 ## Tarifs — `src/components/PricingScreen.tsx`
 - Carte **Lumi** (gratuit) / carte **Luminator** (payant) — chacune avec le perso.
-- « Devenir Luminator » = **achat simulé** (`setLuminator(true)`, gratuit dans le proto).
+- « Devenir Luminator » : **paiement Stripe « prêt à brancher »**. Si Stripe est
+  configuré côté serveur → ouvre Stripe Checkout ; sinon → **achat simulé**
+  (`setLuminator(true)`). Logique dans `src/lib/billing.ts` (`checkBilling`,
+  `startCheckout`, `handleCheckoutReturn`) + Edge functions `api/stripe/*`
+  (`status`, `create-checkout-session`, `verify-session`).
+  - Variables Vercel à poser le jour J : `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`
+    (+ `STRIPE_PRICE_ID_YEARLY` optionnel). Au retour de Stripe, `App.tsx`
+    appelle `handleCheckoutReturn()` qui vérifie le paiement et fait `setLuminator(true)`.
+  - ⚠️ Accès stocké en localStorage (proto) → falsifiable / non multi-appareil :
+    pour un vrai produit payant, ajouter des **comptes légers (email)**.
 - Argumentaire centré sur la **valeur d'automatisation** (gain de temps).
 
 ## Profil — `src/components/ProfileScreen.tsx` / `src/lib/profile.ts`
