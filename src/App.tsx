@@ -56,7 +56,18 @@ export default function App() {
   const [seoId, setSeoId] = useState('')
   const [legalDoc, setLegalDoc] = useState<LegalDoc>('confidentialite')
   const [chatOpen, setChatOpen] = useState(false)
+  const [chatInitial, setChatInitial] = useState<string | undefined>(undefined)
   const ownsLuminator = useLuminator()
+
+  // Ouvre le chat Luminator, éventuellement avec un message pré-rempli.
+  const openChat = (message?: string) => {
+    setChatInitial(message)
+    setChatOpen(true)
+  }
+  const closeChat = () => {
+    setChatOpen(false)
+    setChatInitial(undefined)
+  }
 
   // Débloque l'audio (bruitage) dès la première interaction de l'utilisateur.
   useEffect(() => {
@@ -192,6 +203,7 @@ export default function App() {
           onOpenProfile={() => setView('profile')}
           onOpenPricing={() => setView('pricing')}
           onOpenMetiers={() => { window.location.hash = '/metiers' }}
+          onOpenChat={openChat}
         />
       )}
 
@@ -218,7 +230,7 @@ export default function App() {
       )}
 
       {view === 'pricing' && (
-        <PricingScreen onBack={() => setView('landing')} onOpenChat={() => setChatOpen(true)} />
+        <PricingScreen onBack={() => setView('landing')} onOpenChat={() => openChat()} />
       )}
 
       {view === 'legal' && (
@@ -252,7 +264,7 @@ export default function App() {
       {/* Bouton flottant : discuter avec Luminator (une fois l'offre acquise). */}
       {ownsLuminator && !chatOpen && view !== 'analyzing' && (
         <button
-          onClick={() => setChatOpen(true)}
+          onClick={() => openChat()}
           aria-label="Discuter avec Luminator"
           className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-brand-600 py-3 pl-3 pr-4 text-sm font-semibold text-white shadow-glow transition hover:bg-brand-700"
         >
@@ -265,10 +277,11 @@ export default function App() {
 
       {chatOpen && (
         <LuminatorChat
-          onClose={() => setChatOpen(false)}
+          onClose={closeChat}
           aiEnabled={aiEnabled}
           onOpenSettings={() => setModalOpen(true)}
           extraContext={chatContext(analysis)}
+          initialMessage={chatInitial}
         />
       )}
 
