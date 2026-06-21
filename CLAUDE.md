@@ -79,6 +79,13 @@ visée pédagogique.
   **plan d'action** (`src/lib/plan.ts`, localStorage `lumi.luminator.plan`).
   Écran `PlanScreen.tsx` (vue `plan`) : colonnes À faire / En cours / Fait, ajout
   manuel, statuts, suppression. Le chat affiche « ✅ ajouté à ton plan ».
+- **Outil `recommend_tool`** : Luminator range les outils conseillés dans la
+  **boîte à outils** (`src/lib/toolbox.ts`, localStorage `lumi.luminator.tools`).
+  Écran `ToolboxScreen.tsx` (vue `toolbox`) : liens cliquables, ajout manuel.
+- **Autres modules membres** (cartes sur `MemberHome`) :
+  `VeilleScreen.tsx` (vue `veille`, réutilise `SectorTrendCard` → action),
+  `GeneratorsScreen.tsx` (vue `generators`, livrables 1 clic → ouvrent le chat),
+  + raccourci « Opportunités locales » (exploite `profile.location`).
 - Accès au chat : bouton flottant (FAB) quand `owns`, + bouton sur l'écran Tarifs.
 
 ## Tarifs — `src/components/PricingScreen.tsx`
