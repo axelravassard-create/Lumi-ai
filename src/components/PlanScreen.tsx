@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Logo } from './Logo'
 import { usePlan, addPlanItem, setPlanStatus, removePlanItem, type PlanItem, type PlanStatus } from '../lib/plan'
+import { useToolbox } from '../lib/toolbox'
+import { loadProfile } from '../lib/profile'
+import { automationProgress, progressLabel } from '../lib/score'
 
 interface Props {
   onBack: () => void
@@ -15,6 +18,7 @@ const COLUMNS: { status: PlanStatus; label: string; emoji: string }[] = [
 
 export function PlanScreen({ onBack, onOpenChat }: Props) {
   const items = usePlan()
+  const tools = useToolbox()
   const [draft, setDraft] = useState('')
 
   const add = () => {
@@ -22,6 +26,7 @@ export function PlanScreen({ onBack, onOpenChat }: Props) {
   }
 
   const done = items.filter((i) => i.status === 'done').length
+  const progress = automationProgress(items, loadProfile(), tools)
 
   return (
     <div className="min-h-screen pb-20">
@@ -50,6 +55,20 @@ export function PlanScreen({ onBack, onOpenChat }: Props) {
             {items.length > 0 && (
               <span className="pill bg-brand-50 text-brand-700">{done}/{items.length} fait{done > 1 ? 's' : ''}</span>
             )}
+          </div>
+
+          {/* Score d'automatisation : monte à mesure que tu coches tes actions. */}
+          <div className="card mt-5 p-5">
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-sm font-semibold text-ink-900">Mon avancée automatisation</p>
+                <p className="mt-0.5 text-xs text-ink-500">{progressLabel(progress.score)}</p>
+              </div>
+              <span className="font-display text-3xl font-extrabold text-brand-600">{progress.score}%</span>
+            </div>
+            <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-ink-100">
+              <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-violet-500 transition-all" style={{ width: `${Math.max(progress.score, 3)}%` }} />
+            </div>
           </div>
 
           {/* Ajout manuel rapide */}

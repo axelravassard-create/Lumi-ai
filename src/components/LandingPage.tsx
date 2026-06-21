@@ -7,6 +7,9 @@ import { SUGGESTIONS } from '../lib/engine'
 import { PROFESSIONS } from '../lib/professions'
 import { useBrand } from '../lib/entitlement'
 import { loadProfile, completeness, profileReady } from '../lib/profile'
+import { usePlan } from '../lib/plan'
+import { useToolbox } from '../lib/toolbox'
+import { automationProgress, progressLabel } from '../lib/score'
 
 type Mode = 'single' | 'compare'
 
@@ -419,11 +422,14 @@ function MemberHome({
   onOpenGenerators: () => void
 }) {
   const profile = loadProfile()
+  const plan = usePlan()
+  const tools = useToolbox()
   const role = profile.role
   const hasRole = !!role?.trim()
   const location = profile.location?.trim()
   const ready = profileReady(profile)
   const pct = completeness(profile)
+  const progress = automationProgress(plan, profile, tools)
 
   // Étape « faisons connaissance » : Luminator a besoin du profil pour guider.
   if (!ready) {
@@ -542,6 +548,26 @@ function MemberHome({
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Score d'automatisation : la progression dans le temps (monte quand on
+          coche son plan). Transforme le bilan one-shot en suivi. */}
+      <section className="mx-auto max-w-4xl px-6 pb-2">
+        <button onClick={onOpenPlan} className="card w-full p-5 text-left transition hover:shadow-glow">
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-sm font-semibold text-ink-900">Mon avancée automatisation</p>
+              <p className="mt-0.5 text-xs text-ink-500">{progressLabel(progress.score)}</p>
+            </div>
+            <span className="font-display text-3xl font-extrabold text-brand-600">{progress.score}%</span>
+          </div>
+          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-ink-100">
+            <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-violet-500 transition-all" style={{ width: `${Math.max(progress.score, 3)}%` }} />
+          </div>
+          <p className="mt-2 text-xs text-ink-400">
+            {progress.done}/{progress.total} action{progress.total > 1 ? 's' : ''} faite{progress.done > 1 ? 's' : ''} · {progress.tools} outil{progress.tools > 1 ? 's' : ''} · profil {progress.profilePct}% — voir mon plan →
+          </p>
+        </button>
       </section>
 
       {/* Raccourcis */}
