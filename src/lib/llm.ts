@@ -64,6 +64,25 @@ export function aiReady(): boolean {
   return serverKeyAvailable || hasApiKey()
 }
 
+// Garde-fou de coût (mode proxy) : un plafond souple d'actions IA par jour, côté
+// navigateur. Empêche les emballements et l'usage abusif occasionnel. (Ce n'est
+// pas une protection dure — la vraie limite par compte demanderait un stockage
+// serveur ; le proxy plafonne déjà modèle et max_tokens.)
+const DAILY_LIMIT = 80
+const QUOTA_MSG = 'Limite quotidienne d\'utilisation atteinte. Réessaie demain, ou ajoute ta propre clé API dans les réglages.'
+
+function consumeQuota(): boolean {
+  try {
+    const k = 'lumi.ai.quota.' + new Date().toISOString().slice(0, 10)
+    const n = parseInt(localStorage.getItem(k) || '0', 10) || 0
+    if (n >= DAILY_LIMIT) return false
+    localStorage.setItem(k, String(n + 1))
+  } catch {
+    return true // localStorage indisponible : on ne bloque pas
+  }
+  return true
+}
+
 function client(): Anthropic {
   const userKey = getApiKey()
   if (userKey) {
@@ -71,6 +90,7 @@ function client(): Anthropic {
     return new Anthropic({ apiKey: userKey, dangerouslyAllowBrowser: true })
   }
   if (!serverKeyAvailable) throw new Error('Aucune clé API configurée.')
+  if (!consumeQuota()) throw new Error(QUOTA_MSG)
   // Mode proxy : la vraie clé est ajoutée côté serveur. Le placeholder ci-dessous
   // n'est jamais transmis à Anthropic (le proxy l'écrase).
   const baseURL = (typeof window !== 'undefined' ? window.location.origin : '') + PROXY_PATH
@@ -517,6 +537,7 @@ function parseJsonLoose<T>(response: Anthropic.Message): T {
 
 // Traduit une erreur API en message lisible.
 export function describeError(err: unknown): string {
+  if (err instanceof Error && err.message.includes('Limite quotidienne')) return err.message
   if (err instanceof Anthropic.AuthenticationError) return 'Clé API invalide ou révoquée.'
   if (err instanceof Anthropic.PermissionDeniedError) return 'Cette clé n\'a pas accès au modèle Claude Opus.'
   if (err instanceof Anthropic.RateLimitError) return 'Trop de requêtes — réessayez dans un instant.'
