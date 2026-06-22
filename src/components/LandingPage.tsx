@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Logo } from './Logo'
 import { AiStatusButton } from './AiStatusButton'
 import { Avatar } from './Avatar'
@@ -48,6 +48,8 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
     clearTimeout(moveTimer.current)
     moveTimer.current = setTimeout(() => setMoving(false), 850)
   }
+  // Nettoyage du timer si le composant est démonté pendant la transition.
+  useEffect(() => () => clearTimeout(moveTimer.current), [])
 
   const submit = () => {
     if (mode === 'single') {
