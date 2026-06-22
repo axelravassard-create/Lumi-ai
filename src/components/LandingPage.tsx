@@ -10,6 +10,7 @@ import { loadProfile, completeness, profileReady } from '../lib/profile'
 import { usePlan } from '../lib/plan'
 import { useToolbox } from '../lib/toolbox'
 import { automationProgress, progressLabel } from '../lib/score'
+import { useAccount } from '../lib/account'
 
 type Mode = 'single' | 'compare'
 
@@ -26,13 +27,15 @@ interface Props {
   onOpenToolbox: () => void
   onOpenVeille: () => void
   onOpenGenerators: () => void
+  onOpenAccount: () => void
 }
 
-export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, onOpenProfile, onOpenPricing, onOpenMetiers, onOpenChat, onOpenPlan, onOpenToolbox, onOpenVeille, onOpenGenerators }: Props) {
+export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, onOpenProfile, onOpenPricing, onOpenMetiers, onOpenChat, onOpenPlan, onOpenToolbox, onOpenVeille, onOpenGenerators, onOpenAccount }: Props) {
   const [mode, setMode] = useState<Mode>('single')
   const [value, setValue] = useState('')
   const [valueB, setValueB] = useState('')
   const { owns, name } = useBrand()
+  const account = useAccount()
   // Luminator avance à la place de Lumi au clic sur sa silhouette floue.
   const [reveal, setReveal] = useState(false)
   // Pendant le déplacement (0,8 s), on GÈLE le rendu 3D des 2 persos : la
@@ -64,6 +67,15 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         <nav className="flex items-center gap-3 text-sm font-medium text-ink-600 md:gap-5">
           <button onClick={onOpenMetiers} className="hidden transition hover:text-brand-700 md:inline">Métiers</button>
           <button onClick={onOpenProfile} className="transition hover:text-brand-700">Mon profil</button>
+          {account.configured && (
+            <button
+              onClick={onOpenAccount}
+              title={account.email || 'Se connecter'}
+              className="transition hover:text-brand-700"
+            >
+              {account.email ? '👤' : 'Se connecter'}
+            </button>
+          )}
           <AiStatusButton enabled={aiEnabled} onClick={onOpenSettings} />
           {!owns && (
             <button

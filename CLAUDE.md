@@ -102,6 +102,24 @@ visée pédagogique.
     pour un vrai produit payant, ajouter des **comptes légers (email)**.
 - Argumentaire centré sur la **valeur d'automatisation** (gain de temps).
 
+## Comptes (lien magique) — « prêt à brancher »
+- **Inerte tant que non configuré** (Vercel KV + Resend) → l'app marche comme avant
+  (accès Luminator via localStorage / Stripe simulé). Une fois branché, le compte
+  devient la **source de vérité** de l'accès Luminator (multi-appareil).
+- Back : Edge functions `api/auth/*` (`request`, `verify`, `me`, `logout`) +
+  helpers `api/_lib/kv.ts` (Upstash/Vercel KV REST) & `api/_lib/email.ts` (Resend).
+  Session = cookie httpOnly `lumi_session`. Clés KV : `magic:<token>`, `sess:<id>`,
+  `user:<email>`, `luminator:<email>`, `cust:<stripeCustomer>`.
+- `api/stripe/webhook.ts` : à `checkout.session.completed`, met `luminator:<email>='1'`
+  (signature vérifiée via `STRIPE_WEBHOOK_SECRET`). `create-checkout-session` passe
+  l'email du compte connecté (`customer_email` + metadata) → le webhook sait qui créditer.
+- Front : `src/lib/account.ts` (`checkAccount`, `requestLoginLink`,
+  `completeLoginFromUrl`, `logoutAccount`, `useAccount`) + `AccountModal.tsx`.
+  Bouton compte dans la nav (affiché seulement si `account.configured`).
+- **Variables Vercel à poser le jour J** : `KV_REST_API_URL`, `KV_REST_API_TOKEN`,
+  `RESEND_API_KEY`, `EMAIL_FROM` (expéditeur vérifié), `STRIPE_WEBHOOK_SECRET`,
+  `APP_URL` (optionnel). ⚠️ logique non testable tant que KV/Resend absents.
+
 ## Profil — `src/components/ProfileScreen.tsx` / `src/lib/profile.ts`
 - Profil carrière en `localStorage` (`yourcareer.profile`). Jauge de complétude.
 - Import de CV (lu par Claude). Bouton **« Supprimer toutes mes données »**

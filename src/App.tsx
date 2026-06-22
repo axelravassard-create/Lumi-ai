@@ -22,6 +22,8 @@ import { loadProfile, profileToContext } from './lib/profile'
 import { addBilan } from './lib/history'
 import { useLuminator } from './lib/entitlement'
 import { handleCheckoutReturn } from './lib/billing'
+import { completeLoginFromUrl, checkAccount } from './lib/account'
+import { AccountModal } from './components/AccountModal'
 import { installAudioUnlock } from './lib/sfx'
 
 type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier' | 'legal' | 'plan' | 'toolbox' | 'veille' | 'generators'
@@ -62,6 +64,7 @@ export default function App() {
   const [legalDoc, setLegalDoc] = useState<LegalDoc>('confidentialite')
   const [chatOpen, setChatOpen] = useState(false)
   const [chatInitial, setChatInitial] = useState<string | undefined>(undefined)
+  const [accountOpen, setAccountOpen] = useState(false)
   const ownsLuminator = useLuminator()
 
   // Ouvre le chat Luminator, éventuellement avec un message pré-rempli.
@@ -93,6 +96,12 @@ export default function App() {
         window.scrollTo({ top: 0 })
       }
     })
+  }, [])
+
+  // Comptes (lien magique) : finalise une éventuelle connexion (?auth=…) puis
+  // charge la session. Inerte si les comptes ne sont pas configurés côté serveur.
+  useEffect(() => {
+    completeLoginFromUrl().then(() => checkAccount())
   }, [])
 
   // Routage léger par hash pour les pages SEO (#/metiers, #/metier/<id>).
@@ -229,6 +238,7 @@ export default function App() {
           onOpenToolbox={() => { setView('toolbox'); window.scrollTo({ top: 0 }) }}
           onOpenVeille={() => { setView('veille'); window.scrollTo({ top: 0 }) }}
           onOpenGenerators={() => { setView('generators'); window.scrollTo({ top: 0 }) }}
+          onOpenAccount={() => setAccountOpen(true)}
         />
       )}
 
@@ -307,6 +317,8 @@ export default function App() {
       {modalOpen && (
         <ApiKeyModal onClose={() => setModalOpen(false)} onChange={() => setAiEnabled(aiReady())} />
       )}
+
+      {accountOpen && <AccountModal onClose={() => setAccountOpen(false)} />}
 
       {/* Bouton flottant : discuter avec Luminator (une fois l'offre acquise). */}
       {ownsLuminator && !chatOpen && view !== 'analyzing' && (
