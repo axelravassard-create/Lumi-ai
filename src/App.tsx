@@ -18,6 +18,7 @@ import { PlanScreen } from './components/PlanScreen'
 import { ToolboxScreen } from './components/ToolboxScreen'
 import { VeilleScreen } from './components/VeilleScreen'
 import { GeneratorsScreen } from './components/GeneratorsScreen'
+import { StudioScene } from './components/StudioScene'
 import { loadProfile, profileToContext } from './lib/profile'
 import { addBilan } from './lib/history'
 import { useLuminator } from './lib/entitlement'
@@ -26,7 +27,7 @@ import { completeLoginFromUrl, checkAccount } from './lib/account'
 import { AccountModal } from './components/AccountModal'
 import { installAudioUnlock } from './lib/sfx'
 
-type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier' | 'legal' | 'plan' | 'toolbox' | 'veille' | 'generators'
+type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier' | 'legal' | 'plan' | 'toolbox' | 'veille' | 'generators' | 'studio'
 
 const ANALYSIS_STEPS = [
   'Identification du métier…',
@@ -114,6 +115,9 @@ export default function App() {
         window.scrollTo({ top: 0 })
       } else if (h === '#/metiers') {
         setView('directory')
+        window.scrollTo({ top: 0 })
+      } else if (h === '#/studio') {
+        setView('studio')
         window.scrollTo({ top: 0 })
       } else if (h.startsWith('#/legal/')) {
         const d = h.slice('#/legal/'.length)
@@ -263,6 +267,8 @@ export default function App() {
       {view === 'generators' && (
         <GeneratorsScreen onBack={() => setView('landing')} onOpenChat={openChat} />
       )}
+
+      {view === 'studio' && <StudioScene onBack={goHome} />}
 
       {view === 'directory' && (
         <MetiersDirectory onBack={goHome} onOpenMetier={(id) => { window.location.hash = '/metier/' + id }} />
