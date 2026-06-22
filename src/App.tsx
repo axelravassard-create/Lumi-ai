@@ -83,6 +83,27 @@ export default function App() {
     installAudioUnlock()
   }, [])
 
+  // Titre d'onglet par vue (clarté + contexte des liens partagés).
+  useEffect(() => {
+    const titles: Record<View, string> = {
+      landing: "Lumi · Votre métier face à l'IA",
+      analyzing: 'Analyse en cours… · Lumi',
+      dashboard: 'Votre résultat · Lumi',
+      compare: 'Comparaison · Lumi',
+      profile: 'Mon profil · Lumi',
+      pricing: 'Tarifs · Lumi',
+      directory: 'Métiers · Lumi',
+      metier: 'Métier · Lumi',
+      legal: 'Informations légales · Lumi',
+      plan: "Mon plan d'action · Lumi",
+      toolbox: 'Ma boîte à outils · Lumi',
+      veille: 'Veille de mon métier · Lumi',
+      generators: 'Générateurs · Lumi',
+      studio: 'Studio · Lumi',
+    }
+    document.title = titles[view] || 'Lumi'
+  }, [view])
+
   // Détecte si une clé serveur est configurée → l'IA s'active pour tous sans
   // que l'utilisateur ait à saisir quoi que ce soit.
   useEffect(() => {
