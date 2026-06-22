@@ -43,7 +43,10 @@ export default async function handler(req: Request): Promise<Response> {
     const email = String(s.customer_details?.email || s.customer_email || s.metadata?.email || '').toLowerCase()
     if (email) {
       await kvSet(`luminator:${email}`, '1')
-      if (s.customer) await kvSet(`cust:${s.customer}`, email) // pour gérer l'annulation plus tard
+      if (s.customer) {
+        await kvSet(`cust:${s.customer}`, email) // customer → email (annulation)
+        await kvSet(`stripecust:${email}`, s.customer) // email → customer (portail)
+      }
     }
   } else if (evt.type === 'customer.subscription.deleted') {
     const sub = evt.data?.object || {}

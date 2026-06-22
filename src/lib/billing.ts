@@ -34,6 +34,14 @@ export async function startCheckout(plan: 'monthly' | 'yearly' = 'monthly'): Pro
   window.location.href = j.url
 }
 
+// Ouvre le portail client Stripe (gérer / résilier l'abonnement, factures…).
+export async function openBillingPortal(): Promise<void> {
+  const r = await fetch('/api/stripe/portal', { method: 'POST' })
+  const j = (await r.json().catch(() => ({}))) as { url?: string; error?: string }
+  if (!r.ok || !j.url) throw new Error(j.error || 'Gestion de l\'abonnement indisponible.')
+  window.location.href = j.url
+}
+
 function cleanUrl(url: URL) {
   url.searchParams.delete('checkout')
   url.searchParams.delete('session_id')

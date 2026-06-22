@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Logo } from './Logo'
 import { Avatar } from './Avatar'
 import { useLuminator, setLuminator } from '../lib/entitlement'
-import { checkBilling, startCheckout } from '../lib/billing'
+import { checkBilling, startCheckout, openBillingPortal } from '../lib/billing'
 
 interface Props {
   onBack: () => void
@@ -58,6 +58,16 @@ export function PricingScreen({ onBack, onOpenChat }: Props) {
     } catch (e) {
       setErr((e as Error).message)
       setBuying(false)
+    }
+  }
+
+  // Gérer / résilier : portail client Stripe (paiement réel) ou retour simulé.
+  const manage = async () => {
+    setErr(null)
+    try {
+      await openBillingPortal()
+    } catch (e) {
+      setErr((e as Error).message)
     }
   }
 
@@ -149,12 +159,19 @@ export function PricingScreen({ onBack, onOpenChat }: Props) {
                     💬 Discuter avec Luminator
                   </button>
                 )}
-                <button
-                  onClick={() => setLuminator(false)}
-                  className="mt-2 text-center text-xs text-ink-400 underline-offset-2 hover:text-ink-600 hover:underline"
-                >
-                  Revenir à Lumi (gratuit)
-                </button>
+                {billingOn ? (
+                  <button onClick={manage} className="btn-ghost mt-3 w-full justify-center text-sm">
+                    Gérer / résilier mon abonnement
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setLuminator(false)}
+                    className="mt-2 text-center text-xs text-ink-400 underline-offset-2 hover:text-ink-600 hover:underline"
+                  >
+                    Revenir à Lumi (gratuit)
+                  </button>
+                )}
+                {err && <p className="mt-2 text-center text-xs text-rose-500">{err}</p>}
               </>
             ) : (
               <>
