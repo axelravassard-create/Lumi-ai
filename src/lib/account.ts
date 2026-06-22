@@ -31,7 +31,12 @@ function apply(data: { email?: string | null; luminator?: boolean; configured?: 
     luminator: !!data.luminator,
     configured: data.configured !== false,
   }
+  // Quand un compte est connecté, le serveur fait foi (dans les deux sens) :
+  // on accorde l'accès s'il est abonné, on le retire si le serveur dit non.
+  // Hors compte connecté (email null), on ne touche pas au localStorage (le
+  // parcours simulé / retour Stripe le gère).
   if (state.luminator) setLuminator(true)
+  else if (state.email) setLuminator(false)
   emit()
 }
 
@@ -92,6 +97,7 @@ export async function logoutAccount(): Promise<void> {
     /* ignore */
   }
   state = { ...state, email: null, luminator: false }
+  setLuminator(false) // déconnexion = on retire l'accès sur cet appareil
   emit()
 }
 

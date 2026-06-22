@@ -327,7 +327,7 @@ export default function App() {
       {accountOpen && <AccountModal onClose={() => setAccountOpen(false)} />}
 
       {/* Bouton flottant : discuter avec Luminator (une fois l'offre acquise). */}
-      {ownsLuminator && !chatOpen && view !== 'analyzing' && (
+      {ownsLuminator && !chatOpen && view !== 'analyzing' && view !== 'studio' && view !== 'legal' && (
         <button
           onClick={() => openChat()}
           aria-label="Discuter avec Luminator"
