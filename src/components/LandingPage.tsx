@@ -138,7 +138,10 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
                   zIndex: reveal ? 20 : 10,
                 }}
               >
-                <Avatar state="idle" glasses paused={moving} className="h-full w-full" />
+                {/* Perf : tant que Luminator est en retrait (non révélé), on
+                    n'allume PAS un 2e canvas WebGL — repli léger (emoji). Il
+                    passe en 3D au clic. → un seul canvas 3D au repos sur l'accueil. */}
+                <Avatar state="idle" glasses paused={moving} forceFallback={!reveal} className="h-full w-full" />
               </div>
 
               {/* Zone cliquable sur la silhouette floue (tant qu'il est en retrait) */}
@@ -287,7 +290,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         <p className="animate-fade-up mt-7 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-ink-400" style={{ animationDelay: '300ms' }}>
           <span>🔒 Gratuit en mode démo</span>
           <span className="hidden sm:inline">·</span>
-          <span>📍 Mode démo : vos données restent sur l'appareil</span>
+          <span>📍 Vos données restent sur l'appareil (envoyées à Anthropic seulement si l'IA est activée)</span>
           <span className="hidden sm:inline">·</span>
           <span>🚫 Aucune revente de données</span>
         </p>
