@@ -79,7 +79,11 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
             </button>
           )}
           <AiStatusButton enabled={aiEnabled} onClick={onOpenSettings} />
-          {!owns && (
+          {owns ? (
+            <button onClick={onOpenPricing} className="transition hover:text-brand-700">
+              Mon abonnement
+            </button>
+          ) : (
             <button
               onClick={onOpenPricing}
               className="rounded-full bg-gradient-to-r from-brand-600 to-violet-600 px-3.5 py-1.5 font-semibold text-white shadow-sm transition hover:opacity-90"
