@@ -11,10 +11,18 @@
 // Tant que STRIPE_SECRET_KEY / STRIPE_PRICE_ID ne sont pas définis, l'endpoint
 // renvoie 503 et le front retombe sur l'achat simulé du prototype.
 
+import { kvConfigured, kvGet } from '../_lib/kv'
+
 export const config = { runtime: 'edge' }
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } })
+}
+
+function readCookie(req: Request, name: string): string | null {
+  const c = req.headers.get('cookie') || ''
+  const m = c.match(new RegExp('(?:^|; )' + name + '=([^;]+)'))
+  return m ? m[1] : null
 }
 
 export default async function handler(req: Request): Promise<Response> {
@@ -30,11 +38,24 @@ export default async function handler(req: Request): Promise<Response> {
   const price = plan === 'yearly' && yearly ? yearly : monthly
   const origin = req.headers.get('origin') || url.origin
 
+  // Si l'utilisateur est connecté (compte), on relie le paiement à son email →
+  // le webhook saura à quel compte accorder l'accès Luminator.
+  let email: string | null = null
+  if (kvConfigured()) {
+    const sess = readCookie(req, 'lumi_session')
+    if (sess) email = await kvGet(`sess:${sess}`)
+  }
+
   const params = new URLSearchParams()
   params.set('mode', 'subscription')
   params.append('line_items[0][price]', price)
   params.append('line_items[0][quantity]', '1')
   params.set('allow_promotion_codes', 'true')
+  if (email) {
+    params.set('customer_email', email)
+    params.set('metadata[email]', email)
+    params.set('subscription_data[metadata][email]', email)
+  }
   params.set('success_url', `${origin}/?checkout=success&session_id={CHECKOUT_SESSION_ID}`)
   params.set('cancel_url', `${origin}/?checkout=cancel`)
 
