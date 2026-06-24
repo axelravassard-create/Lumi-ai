@@ -39,7 +39,7 @@ export function ApiKeyModal({ onClose, onChange }: Props) {
           <div>
             <h2 className="font-display text-lg font-bold text-ink-900">Activer l'IA Claude</h2>
             <p className="mt-1 text-sm text-ink-500">
-              Connectez votre clé API Anthropic pour générer des analyses rédigées par Claude Opus 4.8.
+              Connectez votre clé API Anthropic pour générer des analyses rédigées par Claude.
               Sans clé, l'application fonctionne en mode démo (analyse locale).
             </p>
           </div>
