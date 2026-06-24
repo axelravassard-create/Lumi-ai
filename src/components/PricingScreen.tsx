@@ -3,6 +3,7 @@ import { Logo } from './Logo'
 import { Avatar } from './Avatar'
 import { useTier, setTier, type Tier } from '../lib/entitlement'
 import { checkBilling, startCheckout, openBillingPortal } from '../lib/billing'
+import { DAILY_LIMITS } from '../lib/llm'
 
 interface Props {
   onBack: () => void
@@ -17,6 +18,7 @@ interface Plan {
   key: Tier
   name: string
   glasses: boolean
+  laptop?: boolean
   tagline: string
   monthly: string
   yearly: string
@@ -31,50 +33,50 @@ const PLANS: Plan[] = [
     key: 'free',
     name: 'Blumi',
     glasses: false,
-    tagline: 'Évaluer son métier face à l’IA.',
+    tagline: 'Mesure l’exposition de ton métier à l’IA.',
     monthly: '0 €',
     yearly: '0 €',
     features: [
-      'Score de remplaçabilité par l’IA',
-      'Verdict + projection 2026 → 2040',
-      'Tendance de ton secteur, chaque semaine',
-      'Profil carrière & jauge de complétude',
+      'Ton score de remplaçabilité par l’IA, métier par métier',
+      'Verdict clair + projection 2026 → 2040',
+      'Tendance de ton secteur, mise à jour chaque semaine',
+      'Profil carrière et comparateur de métiers',
     ],
   },
   {
     key: 'blumiman',
     name: 'Blumiman',
     glasses: true,
-    tagline: 'Ton copilote pour automatiser ton métier.',
+    tagline: 'Le copilote qui automatise les tâches de ton métier.',
     monthly: '4,99 €',
     yearly: '49 €',
     yearlyNote: 'soit ~4,08 €/mois',
     highlight: true,
-    badge: '⭐ Le plus populaire',
+    badge: '⭐ Le choix de la plupart',
     features: [
-      'Le copilote qui repère les tâches de TON métier à automatiser — et te montre comment',
-      'Solutions concrètes : outils IA, no-code, modèles prêts à l’emploi',
-      'Plan d’action, boîte à outils, veille & générateurs',
-      'Il mémorise ton parcours et personnalise chaque conseil',
-      'Import de CV & comparateur de métiers illimité',
-      'Usage IA confortable pour un usage régulier',
+      'Repère les tâches de ton métier automatisables — et te montre, pas à pas, comment t’y prendre',
+      'Outils IA, no-code et modèles prêts à l’emploi, choisis pour ton métier',
+      'Plan d’action, boîte à outils, veille et générateurs de livrables',
+      'Se souvient de ton parcours : chaque réponse est taillée pour toi',
+      `Jusqu’à ${DAILY_LIMITS.blumiman} échanges avec le copilote par jour — large pour un usage régulier`,
     ],
   },
   {
     key: 'bluminator',
     name: 'Bluminator',
     glasses: true,
-    tagline: 'Pour ceux qui s’en servent beaucoup.',
+    laptop: true,
+    tagline: 'Pour qui automatise tous les jours.',
     monthly: '14,99 €',
     yearly: '149 €',
     yearlyNote: 'soit ~12,42 €/mois',
     badge: '🚀 Usage intensif',
     features: [
-      'Tout Blumiman, en mieux',
-      'Usage IA étendu (~4× plus) — pour automatiser au quotidien',
-      'Réponses plus approfondies',
-      'Priorité quand le service est très demandé',
-      'Accès en avant-première aux nouveautés',
+      'Tout ce que fait Blumiman, le copilote complet',
+      `Jusqu’à ${DAILY_LIMITS.bluminator} échanges par jour — 4× plus, pour enchaîner sans compter`,
+      'Réponses plus longues : plans détaillés et livrables complets, d’un seul coup',
+      'Le bon choix si tu automatises plusieurs tâches chaque jour',
+      'Tu peux repasser à Blumiman quand tu veux, sans frais',
     ],
   },
 ]
@@ -171,7 +173,7 @@ export function PricingScreen({ onBack, onOpenChat }: Props) {
                     {p.badge}
                   </span>
                 )}
-                <Avatar className="mx-auto h-24 w-24" glasses={p.glasses} />
+                <Avatar className="mx-auto h-24 w-24" glasses={p.glasses} laptop={!!p.laptop} />
                 <h2 className={`mt-2 font-display text-xl font-bold ${p.highlight ? 'text-brand-700' : 'text-ink-900'}`}>{p.name}</h2>
                 <p className="mt-1 text-sm text-ink-500">{p.tagline}</p>
                 <div className="mt-5 flex items-end gap-1">
@@ -245,7 +247,8 @@ export function PricingScreen({ onBack, onOpenChat }: Props) {
 
         <p className="animate-fade-up mx-auto mt-8 max-w-2xl text-center text-xs text-ink-400" style={{ animationDelay: '220ms' }}>
           {billingOn ? '🔒 Paiement sécurisé via Stripe.' : 'Prototype : paiement simulé (activation immédiate).'}{' '}
-          La plupart des gens choisissent Blumiman. Bluminator n’a d’intérêt que si tu utilises l’IA très souvent — pas la peine de payer plus sinon.
+          On te le dit franchement : <strong className="text-ink-500">Blumiman suffit à la grande majorité</strong>.
+          Ne prends Bluminator que si tu atteins vraiment la limite quotidienne — sinon tu paierais pour rien.
         </p>
       </main>
     </div>

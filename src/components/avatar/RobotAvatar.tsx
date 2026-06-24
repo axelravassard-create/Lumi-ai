@@ -14,9 +14,11 @@ interface Props {
   mood?: AvatarMood
   /** Quand false, la boucle de rendu est mise en pause (économie GPU hors écran). */
   active?: boolean
-  /** Ajoute des lunettes de vue rondes (variante « Luminator »). */
+  /** Ajoute des lunettes de vue rondes (variantes « Blumiman » / « Bluminator »). */
   glasses?: boolean
-  /** Anime la bouche comme s'il parlait (chat avec Luminator). */
+  /** Ajoute un petit ordinateur portable lumineux (variante « Bluminator »). */
+  laptop?: boolean
+  /** Anime la bouche comme s'il parlait (chat avec le copilote). */
   speaking?: boolean
 }
 
@@ -134,7 +136,7 @@ function Eye({
   )
 }
 
-function Face({ state, mood = 'neutral', glasses = false, speaking = false }: Props) {
+function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaking = false }: Props) {
   const group = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
   const lEye = useRef<THREE.Group | null>(null)
@@ -374,10 +376,14 @@ function Face({ state, mood = 'neutral', glasses = false, speaking = false }: Pr
       }
     }
 
-    // Respiration / lévitation : un être de lumière qui flotte.
+    // Respiration / lévitation : un être de lumière qui flotte. Avec le portable
+    // (Bluminator), on remonte la tête pour laisser de la place à l'écran sous le
+    // menton, sans rien couper au bord du cadre.
     if (group.current && !reducedMotion) {
-      group.current.position.y = -0.02 + Math.sin(t * 1.1) * 0.03
+      group.current.position.y = (laptop ? 0.34 : -0.02) + Math.sin(t * 1.1) * 0.03
       group.current.rotation.z = Math.sin(t * 0.5) * 0.01
+    } else if (group.current) {
+      group.current.position.y = laptop ? 0.34 : -0.02
     }
 
     // Halo orbital.
@@ -393,7 +399,7 @@ function Face({ state, mood = 'neutral', glasses = false, speaking = false }: Pr
   })
 
   return (
-    <group ref={group}>
+    <group ref={group} scale={laptop ? 0.8 : 1}>
       <group
         ref={head}
         onClick={onPat}
@@ -491,6 +497,10 @@ function Face({ state, mood = 'neutral', glasses = false, speaking = false }: Pr
         <meshStandardMaterial color={SKIN} roughness={0.5} metalness={0.05} />
       </mesh>
 
+      {/* Petit ordinateur portable lumineux (variante « Bluminator ») : posé
+          devant, sous le menton — discret, jamais coupé au bord du cadre. */}
+      {laptop && <Laptop />}
+
       {/* Halo orbital de particules (flux de pensée) */}
       <group ref={halo} rotation={[0.5, 0, 0]}>
         <points>
@@ -534,7 +544,40 @@ function Face({ state, mood = 'neutral', glasses = false, speaking = false }: Pr
   )
 }
 
-export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, speaking = false }: Props) {
+// Ordinateur portable « Bluminator » : petit, posé devant le buste, écran
+// lumineux (même langage visuel que le regard du personnage). Volontairement
+// modeste — « pas trop imposant ». Pensé pour rester entièrement dans le cadre.
+function Laptop() {
+  const SHELL = '#262c44'
+  return (
+    <group position={[0, -1.42, 0.62]} scale={0.6}>
+      {/* Base / clavier, légèrement inclinée vers le spectateur */}
+      <mesh position={[0, -0.16, 0.46]} rotation={[-0.5, 0, 0]}>
+        <boxGeometry args={[1.5, 0.07, 1.0]} />
+        <meshStandardMaterial color={SHELL} roughness={0.4} metalness={0.55} />
+      </mesh>
+      {/* Pavé tactile (petit détail) */}
+      <mesh position={[0, -0.12, 0.62]} rotation={[-0.5, 0, 0]}>
+        <boxGeometry args={[0.5, 0.012, 0.34]} />
+        <meshStandardMaterial color="#1b2036" roughness={0.5} metalness={0.4} />
+      </mesh>
+      {/* Capot / écran, incliné vers l'arrière */}
+      <group rotation={[0.3, 0, 0]}>
+        <mesh position={[0, 0.5, -0.02]}>
+          <boxGeometry args={[1.5, 1.0, 0.06]} />
+          <meshStandardMaterial color={SHELL} roughness={0.3} metalness={0.6} />
+        </mesh>
+        {/* Dalle lumineuse, tournée vers le spectateur */}
+        <mesh position={[0, 0.5, 0.02]}>
+          <planeGeometry args={[1.3, 0.82]} />
+          <meshStandardMaterial color="#0a0e1a" emissive={IRIS_IDLE} emissiveIntensity={1.25} toneMapped={false} />
+        </mesh>
+      </group>
+    </group>
+  )
+}
+
+export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, laptop = false, speaking = false }: Props) {
   usePointerTracking()
   return (
     <Canvas
@@ -545,7 +588,7 @@ export default function RobotAvatar({ state, mood = 'neutral', active = true, gl
       camera={{ position: [0, 0.02, 4.9], fov: 30 }}
       style={{ background: 'transparent' }}
     >
-      <Face state={state} mood={mood} glasses={glasses} speaking={speaking} />
+      <Face state={state} mood={mood} glasses={glasses} laptop={laptop} speaking={speaking} />
       {/* Environnement studio généré localement (aucun téléchargement réseau). */}
       <Environment resolution={128}>
         <Lightformer intensity={0.8} position={[0, 1, 4]} scale={[10, 8, 1]} color="#ffffff" />
