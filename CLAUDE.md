@@ -75,8 +75,11 @@ pédagogique.
   - `mood`, `state` ('idle'|'thinking'), `active` (pause du rendu hors écran),
     `forceFallback` (emoji au lieu de la 3D).
 - **Réaction « tapote sur la tête »** (clic sur la tête) — cinématiques DISTINCTES :
-  - **Lumi** (sans lunettes) → **bulles de lumière multicolores** (`SPARKLE_COLORS`).
-  - **Luminator** (lunettes) → **rayons de lumière dorée** (`RAY_*`), plus intenses.
+  - **Blumi** (sans lunettes) → **bulles de lumière multicolores** (`SPARKLE_COLORS`).
+  - **Blumiman** (lunettes) → **rayons de lumière dorée** (`RAY_GOLD`), plus intenses.
+  - **Bluminator** (ordi) → **énormes rayons BLEUS projetés par l'écran** vers son
+    visage (`RAY_BLUE`, `SCREEN_RAY_COUNT`) : origine basse (l'écran), faisceaux
+    larges (`RAY_WIDTH`) qui montent en éventail. Réutilise le système `rayData`.
 - **Son** : `src/lib/sfx.ts` joue un petit « couic » au tapote. `installAudioUnlock()`
   est appelé dans `App.tsx` (réveille l'audio au 1er geste, sinon 1er son avalé).
 

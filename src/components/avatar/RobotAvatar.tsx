@@ -65,6 +65,10 @@ const SPARKLE_COLORS = ['#ff7eb6', '#ffd166', '#33e1ff', '#a5b4fc', '#ff7eb6', '
 // Rayons de lumière dorée (réaction de Luminator) — plus nombreux et intenses.
 const RAY_COUNT = 16
 const RAY_GOLD = ['#fff6cf', '#ffe9a0', '#ffd24d', '#ffc21a', '#ffe27a', '#ffb300']
+// Rayons bleus (réaction de Bluminator) : projetés par l'écran sur le personnage.
+// Moins nombreux mais ÉNORMES — de gros faisceaux qui montent vers son visage.
+const SCREEN_RAY_COUNT = 9
+const RAY_BLUE = ['#dff0ff', '#a9d2ff', '#6fb0ff', '#2e83ff', '#8ec2ff', '#1e6fff']
 // Durée de la réaction « tapote » (étonnement → joie).
 const PAT_DUR = 0.9
 const BROW_Y = 0.29 // hauteur de repos des sourcils
@@ -171,7 +175,22 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     e.stopPropagation()
     playPat() // petit « couic » réaliste au contact
     pat.current = PAT_DUR
-    if (glasses) {
+    if (laptop) {
+      // Bluminator : l'écran projette d'ÉNORMES rayons bleus vers son visage.
+      rayData.current.forEach((r, i) => {
+        if (i >= SCREEN_RAY_COUNT) {
+          r.active = false
+          return
+        }
+        r.active = true
+        r.age = 0
+        r.life = 0.6 + Math.random() * 0.4
+        // Éventail dirigé vers le haut (centré sur la verticale = π/2).
+        const f = i / (SCREEN_RAY_COUNT - 1) - 0.5
+        r.ang = Math.PI / 2 + f * 1.25 + (Math.random() - 0.5) * 0.05
+        r.len = 1.8 + Math.random() * 0.8
+      })
+    } else if (glasses) {
       // Luminator : rayons de lumière dorée qui jaillissent vers le haut.
       rayData.current.forEach((r, i) => {
         r.active = true
@@ -357,9 +376,11 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
       }
     }
 
-    // Rayons de lumière dorée : ils jaillissent de la tête puis s'estompent.
-    const RAY_ORIGIN_Y = 0.5
-    const RAY_ORIGIN_Z = 0.6
+    // Rayons : dorés (Luminator) jaillissant de la tête, OU bleus (Bluminator)
+    // projetés par l'écran de l'ordi (origine basse, gros faisceaux qui montent).
+    const RAY_ORIGIN_Y = laptop ? -1.0 : 0.5
+    const RAY_ORIGIN_Z = laptop ? 0.78 : 0.6
+    const RAY_WIDTH = laptop ? 5 : 1 // largeur des faisceaux (bleus = énormes)
     for (let i = 0; i < rayData.current.length; i++) {
       const r = rayData.current[i]
       const m = rayRefs.current[i]
@@ -377,7 +398,7 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
       const dy = Math.sin(r.ang)
       m.position.set(dx * (len / 2), RAY_ORIGIN_Y + dy * (len / 2), RAY_ORIGIN_Z)
       m.rotation.z = r.ang - Math.PI / 2 // oriente la longueur du rayon vers l'extérieur
-      m.scale.set(1, Math.max(0.0001, len), 1)
+      m.scale.set(RAY_WIDTH, Math.max(0.0001, len), 1)
       const mat = m.material as THREE.MeshBasicMaterial
       mat.opacity = Math.max(0, 1 - t01) * (0.6 + 0.4 * grow)
       if (t01 >= 1) {
@@ -529,12 +550,12 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
         </mesh>
       ))}
 
-      {/* Rayons de lumière dorée — réaction de Luminator au « tapote » */}
+      {/* Rayons au « tapote » : dorés (Luminator) ou bleus depuis l'écran (Bluminator) */}
       {Array.from({ length: RAY_COUNT }).map((_, i) => (
         <mesh key={`r${i}`} ref={(el) => (rayRefs.current[i] = el)} scale={0}>
           <boxGeometry args={[0.06, 1, 0.02]} />
           <meshBasicMaterial
-            color={RAY_GOLD[i % RAY_GOLD.length]}
+            color={laptop ? RAY_BLUE[i % RAY_BLUE.length] : RAY_GOLD[i % RAY_GOLD.length]}
             transparent
             opacity={0}
             blending={THREE.AdditiveBlending}
