@@ -598,15 +598,15 @@ function Laptop() {
           <meshStandardMaterial color={SHELL} roughness={0.35} metalness={0.6} />
         </mesh>
         {/* Dalle lumineuse, tournée vers LUI (−z) → cachée au spectateur ;
-            sa lueur éclaire le visage. */}
+            émission DOUCE pour ne pas inonder le petit cadre (pas de bloom). */}
         <mesh position={[0, 0.56, -0.035]} rotation={[0, Math.PI, 0]}>
           <planeGeometry args={[1.36, 0.9]} />
-          <meshStandardMaterial color="#0a0e1a" emissive={IRIS_IDLE} emissiveIntensity={1.3} toneMapped={false} />
+          <meshStandardMaterial color="#101626" emissive={IRIS_IDLE} emissiveIntensity={0.45} toneMapped />
         </mesh>
         {/* Petit logo lumineux sur le dos (côté spectateur) */}
         <mesh position={[0, 0.56, 0.035]}>
           <circleGeometry args={[0.12, 24]} />
-          <meshStandardMaterial color="#0a0e1a" emissive={IRIS_IDLE} emissiveIntensity={0.7} toneMapped={false} />
+          <meshStandardMaterial color="#0a0e1a" emissive={IRIS_IDLE} emissiveIntensity={0.4} toneMapped />
         </mesh>
       </group>
     </group>

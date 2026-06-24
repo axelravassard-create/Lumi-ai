@@ -72,11 +72,12 @@ const PLANS: Plan[] = [
     yearlyNote: 'soit ~12,42 €/mois',
     badge: '🚀 Usage intensif',
     features: [
-      'Tout ce que fait Blumiman, le copilote complet',
-      `Jusqu’à ${DAILY_LIMITS.bluminator} échanges par jour — 4× plus, pour enchaîner sans compter`,
-      'Réponses plus longues : plans détaillés et livrables complets, d’un seul coup',
-      'Le bon choix si tu automatises plusieurs tâches chaque jour',
-      'Tu peux repasser à Blumiman quand tu veux, sans frais',
+      'Tout le copilote Blumiman : tâches à automatiser, outils, plan, boîte à outils, veille et générateurs',
+      `Jusqu’à ${DAILY_LIMITS.bluminator} échanges IA par jour — 4× plus, pour enchaîner sans compter`,
+      'Réponses 2× plus longues : plans complets et livrables prêts à l’emploi, d’un seul coup',
+      'Génère de gros livrables sans coupure (procédures, scripts, modèles détaillés)',
+      'Idéal si tu automatises plusieurs tâches chaque jour',
+      'Repasse à Blumiman quand tu veux, sans frais',
     ],
   },
 ]
