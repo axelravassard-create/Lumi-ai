@@ -62,7 +62,7 @@ export async function createShareCard(role: string, score: number, level: RiskLe
   ctx.textBaseline = 'middle'
   ctx.textAlign = 'left'
   ctx.font = '700 46px "Plus Jakarta Sans Variable", "Plus Jakarta Sans", Inter, sans-serif'
-  ctx.fillText('Lumi', bx + bs + 22, by + bs / 2 + 2)
+  ctx.fillText('Blumi', bx + bs + 22, by + bs / 2 + 2)
 
   // Bloc central
   ctx.textAlign = 'center'
@@ -97,7 +97,7 @@ export async function createShareCard(role: string, score: number, level: RiskLe
   ctx.fillText('Et toi, à combien est ton métier ?', W / 2, 952)
   ctx.fillStyle = 'rgba(255,255,255,0.6)'
   ctx.font = '500 32px Inter, sans-serif'
-  ctx.fillText('Teste gratuitement sur Lumi', W / 2, 1006)
+  ctx.fillText('Teste gratuitement sur Blumi', W / 2, 1006)
 
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b!), 'image/png'))
 }
@@ -108,7 +108,7 @@ export async function shareOrDownloadCard(blob: Blob, text: string) {
   const nav = navigator as Navigator & { canShare?: (d: unknown) => boolean }
   if (nav.canShare?.({ files: [file] }) && navigator.share) {
     try {
-      await navigator.share({ files: [file], text, title: 'Lumi' })
+      await navigator.share({ files: [file], text, title: 'Blumi' })
       return
     } catch {
       /* annulé → on retombe sur le téléchargement */

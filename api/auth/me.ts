@@ -24,6 +24,7 @@ export default async function handler(req: Request): Promise<Response> {
   const email = await kvGet(`sess:${sess}`)
   if (!email) return json({ email: null })
 
-  const luminator = (await kvGet(`luminator:${email}`)) === '1'
-  return json({ email, luminator })
+  const raw = await kvGet(`luminator:${email}`)
+  const tier = raw === 'bluminator' || raw === '1' ? 'bluminator' : raw === 'blumiman' ? 'blumiman' : 'free'
+  return json({ email, tier, luminator: tier !== 'free' })
 }

@@ -23,12 +23,12 @@ interface Scene {
 // Storyboard de la pub : Lumi se présente → annonce le problème → montre qu'il
 // le détecte ; puis Luminator se présente → montre la solution → CTA d'achat.
 const SCENES: Scene[] = [
-  { phase: 'lumi', glasses: false, mood: 'neutral', state: 'idle', speaking: true, kicker: '👋 Bonjour', title: "Moi, c'est Lumi.", sub: "Ton guide face à l'intelligence artificielle.", dur: 2600 },
+  { phase: 'lumi', glasses: false, mood: 'neutral', state: 'idle', speaking: true, kicker: '👋 Bonjour', title: "Moi, c'est Blumi.", sub: "Ton guide face à l'intelligence artificielle.", dur: 2600 },
   { phase: 'lumi', glasses: false, mood: 'concerned', state: 'idle', speaking: false, kicker: 'Le problème', title: "L'IA va transformer ton métier.", sub: 'Des tâches entières vont être automatisées.', dur: 3000 },
   { phase: 'lumi', glasses: false, mood: 'concerned', state: 'thinking', speaking: false, kicker: 'Ce que je fais', title: 'Je détecte ton risque.', sub: "L'exposition de TON métier à l'IA, en 30 secondes.", showScore: true, dur: 3400 },
-  { phase: 'luminator', glasses: true, mood: 'calm', state: 'idle', speaking: true, kicker: '✨ Et voici…', title: 'Luminator.', sub: 'La version qui passe à l\'action.', dur: 2800 },
+  { phase: 'luminator', glasses: true, mood: 'calm', state: 'idle', speaking: true, kicker: '✨ Et voici…', title: 'Blumiman.', sub: 'La version qui passe à l\'action.', dur: 2800 },
   { phase: 'luminator', glasses: true, mood: 'calm', state: 'idle', speaking: false, kicker: 'La solution', title: 'Il automatise ton métier.', sub: 'Outils IA, no-code, modèles prêts — du temps gagné, pour de vrai.', dur: 3200 },
-  { phase: 'luminator', glasses: true, mood: 'calm', state: 'idle', speaking: false, kicker: 'À toi de jouer', title: 'Découvre. Puis agis.', sub: 'Essaie Lumi gratuitement.', cta: true, dur: 3600 },
+  { phase: 'luminator', glasses: true, mood: 'calm', state: 'idle', speaking: false, kicker: 'À toi de jouer', title: 'Découvre. Puis agis.', sub: 'Essaie Blumi gratuitement.', cta: true, dur: 3600 },
 ]
 
 // Scène pub « studio » — à filmer (capture d'écran) puis monter pour les réseaux.
@@ -96,7 +96,7 @@ export function StudioScene({ onBack }: Props) {
             <p className="mt-3 max-w-[16rem] text-lg text-white/85">{scene.sub}</p>
             {scene.cta && (
               <div className="mt-5 rounded-2xl bg-white px-6 py-3 font-display text-lg font-extrabold text-brand-700 shadow-lg">
-                lumi · essaie gratuitement →
+                blumi · essaie gratuitement →
               </div>
             )}
           </div>

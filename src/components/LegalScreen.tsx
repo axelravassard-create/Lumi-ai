@@ -73,7 +73,7 @@ function H({ children }: { children: ReactNode }) {
 function Note() {
   return (
     <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-700">
-      ⚠️ Lumi est un prototype à visée pédagogique. Ces documents sont fournis à titre informatif et doivent être
+      ⚠️ Blumi est un prototype à visée pédagogique. Ces documents sont fournis à titre informatif et doivent être
       complétés/validés (identité de l'éditeur, hébergeur…) avant toute exploitation commerciale.
     </p>
   )
@@ -126,7 +126,7 @@ function Mentions() {
       <div className="space-y-1">
         <H>Propriété intellectuelle</H>
         <p>
-          La marque « Lumi », le personnage, les textes, l'interface et le code de l'application sont protégés. Toute
+          La marque « Blumi », le personnage, les textes, l'interface et le code de l'application sont protégés. Toute
           reproduction non autorisée est interdite. Les analyses sont générées à l'aide du modèle Claude d'Anthropic ;
           les bibliothèques tierces utilisées restent soumises à leurs licences respectives (MIT, Apache-2.0, OFL…).
         </p>
@@ -140,16 +140,16 @@ function Confidentialite() {
     <>
       <Note />
       <p>
-        Cette politique explique quelles données Lumi traite, où elles vont, et comment exercer vos droits. Notre
+        Cette politique explique quelles données Blumi traite, où elles vont, et comment exercer vos droits. Notre
         principe : <strong>le minimum de données, et de la transparence sur ce qui sort de votre appareil.</strong>
       </p>
 
       <div className="space-y-1">
         <H>1. Données stockées sur votre appareil</H>
         <p>
-          Votre profil carrière, l'historique de vos bilans, vos conversations avec Luminator, votre statut d'offre et,
+          Votre profil carrière, l'historique de vos bilans, vos conversations avec Blumiman, votre statut d'offre et,
           le cas échéant, votre clé API personnelle sont enregistrés <strong>localement</strong> dans votre navigateur
-          (localStorage). Ils ne sont pas envoyés à un serveur Lumi — nous n'avons pas de base de données qui les
+          (localStorage). Ils ne sont pas envoyés à un serveur Blumi — nous n'avons pas de base de données qui les
           centralise.
         </p>
       </div>
@@ -157,7 +157,7 @@ function Confidentialite() {
       <div className="space-y-1">
         <H>2. Données transmises à Anthropic (uniquement si vous activez l'IA)</H>
         <p>
-          Lorsque vous lancez une analyse par l'IA, importez un CV ou discutez avec Luminator, les informations
+          Lorsque vous lancez une analyse par l'IA, importez un CV ou discutez avec Blumiman, les informations
           nécessaires (profession, éléments de profil, contenu du CV, messages) sont envoyées au modèle
           <strong> Claude d'Anthropic, PBC</strong> (États-Unis) pour produire la réponse. Ce transfert hors UE implique
           un sous-traitant établi aux États-Unis. En mode démo (sans clé API), <strong>aucune</strong> donnée n'est
@@ -177,7 +177,7 @@ function Confidentialite() {
       <div className="space-y-1">
         <H>4. Cookies</H>
         <p>
-          Lumi n'utilise pas de cookie de suivi publicitaire. Le stockage technique (localStorage) sert uniquement à
+          Blumi n'utilise pas de cookie de suivi publicitaire. Le stockage technique (localStorage) sert uniquement à
           faire fonctionner l'application sur votre appareil.
         </p>
       </div>
@@ -213,8 +213,8 @@ function Cgu() {
       <div className="space-y-1">
         <H>1. Objet</H>
         <p>
-          Lumi est un outil d'information qui estime l'exposition d'un métier à l'automatisation par l'IA et propose des
-          pistes d'évolution. En utilisant Lumi, vous acceptez les présentes conditions.
+          Blumi est un outil d'information qui estime l'exposition d'un métier à l'automatisation par l'IA et propose des
+          pistes d'évolution. En utilisant Blumi, vous acceptez les présentes conditions.
         </p>
       </div>
       <div className="space-y-1">
@@ -234,9 +234,9 @@ function Cgu() {
         </p>
       </div>
       <div className="space-y-1">
-        <H>4. Offre Luminator</H>
+        <H>4. Offre Blumiman</H>
         <p>
-          Dans cette version prototype, l'activation de l'offre « Luminator » est <strong>simulée</strong> et gratuite ;
+          Dans cette version prototype, l'activation de l'offre « Blumiman » est <strong>simulée</strong> et gratuite ;
           aucun paiement réel n'est prélevé. Des conditions de vente distinctes s'appliqueront si un paiement réel est
           mis en place.
         </p>
@@ -251,7 +251,7 @@ function Cgu() {
       <div className="space-y-1">
         <H>6. Responsabilité</H>
         <p>
-          Lumi est fourni « en l'état », sans garantie. Dans les limites permises par la loi, l'éditeur ne saurait être
+          Blumi est fourni « en l'état », sans garantie. Dans les limites permises par la loi, l'éditeur ne saurait être
           tenu responsable des décisions prises sur la base des informations fournies.
         </p>
       </div>

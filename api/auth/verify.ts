@@ -30,7 +30,8 @@ export default async function handler(req: Request): Promise<Response> {
   const sess = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '')
   await kvSetEx(`sess:${sess}`, email, SESSION_TTL)
 
-  const luminator = (await kvGet(`luminator:${email}`)) === '1'
+  const raw = await kvGet(`luminator:${email}`)
+  const tier = raw === 'bluminator' || raw === '1' ? 'bluminator' : raw === 'blumiman' ? 'blumiman' : 'free'
   const cookie = `lumi_session=${sess}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${SESSION_TTL}`
-  return json({ email, luminator }, 200, { 'set-cookie': cookie })
+  return json({ email, tier, luminator: tier !== 'free' }, 200, { 'set-cookie': cookie })
 }

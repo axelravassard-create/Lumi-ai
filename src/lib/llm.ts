@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { Analysis, Recommendation, Skill } from './engine'
+import { getTier, tierName, type Tier } from './entitlement'
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Intégration Claude (Anthropic API)
@@ -67,17 +68,19 @@ export function aiReady(): boolean {
 }
 
 // Garde-fou de coût (mode proxy) : un plafond souple d'actions IA par jour, côté
-// navigateur. Empêche les emballements et l'usage abusif occasionnel. (Ce n'est
-// pas une protection dure — la vraie limite par compte demanderait un stockage
-// serveur ; le proxy plafonne déjà modèle et max_tokens.)
-const DAILY_LIMIT = 80
-const QUOTA_MSG = 'Limite quotidienne d\'utilisation atteinte. Réessaie demain, ou ajoute ta propre clé API dans les réglages.'
+// navigateur, CALIBRÉ SELON LE PALIER (c'est la vraie différence de Bluminator :
+// usage IA étendu pour les gros utilisateurs). Empêche les emballements et l'abus
+// occasionnel. (Pas une protection dure — la vraie limite par compte demanderait
+// un stockage serveur ; le proxy plafonne déjà modèle et max_tokens.)
+const DAILY_LIMITS: Record<Tier, number> = { free: 40, blumiman: 150, bluminator: 600 }
+const QUOTA_MSG =
+  'Tu as atteint ta limite d\'utilisation du jour. Réessaie demain, passe à Bluminator pour un usage étendu, ou ajoute ta propre clé API.'
 
 function consumeQuota(): boolean {
   try {
     const k = 'lumi.ai.quota.' + new Date().toISOString().slice(0, 10)
     const n = parseInt(localStorage.getItem(k) || '0', 10) || 0
-    if (n >= DAILY_LIMIT) return false
+    if (n >= DAILY_LIMITS[getTier()]) return false
     localStorage.setItem(k, String(n + 1))
   } catch {
     return true // localStorage indisponible : on ne bloque pas
@@ -99,7 +102,7 @@ function client(): Anthropic {
   return new Anthropic({ apiKey: 'proxy', baseURL, dangerouslyAllowBrowser: true })
 }
 
-const SYSTEM_PROMPT = `Tu es Lumi, l'analyste IA de l'application "Lumi" qui évalue l'exposition des métiers à l'automatisation par l'IA.
+const SYSTEM_PROMPT = `Tu es Blumi, l'analyste IA de l'application "Blumi" qui évalue l'exposition des métiers à l'automatisation par l'IA.
 
 Ton rôle : transformer des données chiffrées (déjà calculées par l'application) en un discours clair, nuancé et actionnable, en français.
 
@@ -242,7 +245,7 @@ export interface ChatMsg {
   content: string
 }
 
-const LUMINATOR_SYSTEM = `Tu es Luminator, le copilote de carrière ET d'automatisation de l'utilisateur dans l'application Lumi.
+const LUMINATOR_SYSTEM = `Tu es {NAME}, le copilote de carrière ET d'automatisation de l'utilisateur dans l'application Blumi.
 
 Personnalité : chaleureux, encourageant, lucide, très concret et orienté action. Tu tutoies l'utilisateur, comme un mentor de confiance. Humour léger.
 
@@ -342,8 +345,10 @@ interface ChatOptions {
 // pour animer la bouche du personnage. Gère l'outil de mémoire (boucle tool_use).
 export async function streamLuminatorChat(history: ChatMsg[], opts: ChatOptions): Promise<string> {
   const c = client()
+  const persona = tierName(getTier())
   const system =
-    LUMINATOR_SYSTEM + (opts.extraContext ? `\n\n--- Ce que tu sais déjà de l'utilisateur ---\n${opts.extraContext}` : '')
+    LUMINATOR_SYSTEM.replace('{NAME}', persona) +
+    (opts.extraContext ? `\n\n--- Ce que tu sais déjà de l'utilisateur ---\n${opts.extraContext}` : '')
   const messages: Anthropic.MessageParam[] = history.map((m) => ({ role: m.role, content: m.content }))
   let full = ''
 

@@ -37,7 +37,7 @@ export function AccountModal({ onClose }: Props) {
               <div className="min-w-0">
                 <h2 className="font-display text-lg font-bold text-ink-900">Mon compte</h2>
                 <p className="mt-1 truncate text-sm text-ink-500">{acc.email}</p>
-                {acc.luminator && <p className="mt-1 text-sm font-medium text-emerald-600">✨ Abonné Luminator</p>}
+                {acc.luminator && <p className="mt-1 text-sm font-medium text-emerald-600">✨ Abonnement actif</p>}
               </div>
             </div>
             <p className="mt-4 text-sm text-ink-500">

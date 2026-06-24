@@ -18,9 +18,9 @@ export default async function handler(req: Request): Promise<Response> {
   const r = await fetch(`https://api.stripe.com/v1/checkout/sessions/${encodeURIComponent(id)}`, {
     headers: { Authorization: `Bearer ${key}` },
   })
-  const data = (await r.json()) as { status?: string; payment_status?: string }
+  const data = (await r.json()) as { status?: string; payment_status?: string; metadata?: { tier?: string } }
   if (!r.ok) return json({ paid: false }, r.status)
 
   const paid = data.status === 'complete' && (data.payment_status === 'paid' || data.payment_status === 'no_payment_required')
-  return json({ paid: !!paid })
+  return json({ paid: !!paid, tier: data.metadata?.tier || 'blumiman' })
 }

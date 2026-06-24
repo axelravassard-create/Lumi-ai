@@ -3,6 +3,7 @@ import { Avatar } from './Avatar'
 import { streamLuminatorChat, describeError, type ChatMsg } from '../lib/llm'
 import { applyProfilePatch } from '../lib/profile'
 import { addPlanItem } from '../lib/plan'
+import { useBrand } from '../lib/entitlement'
 import { addTool } from '../lib/toolbox'
 
 interface Props {
@@ -14,9 +15,6 @@ interface Props {
   /** Message pré-rempli dans la saisie à l'ouverture (démarrage rapide). */
   initialMessage?: string
 }
-
-const GREETING =
-  "Hey 👋 Je suis Luminator. Dis-moi ton métier, et je te montre quelles tâches tu peux automatiser ou accélérer toi-même — avec des outils simples adaptés à tes compétences."
 
 const STARTERS = [
   'Quelles tâches automatiser dans mon métier ?',
@@ -46,6 +44,8 @@ function saveChat(messages: ChatMsg[]) {
 }
 
 export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext, initialMessage }: Props) {
+  const { name } = useBrand()
+  const greeting = `Hey 👋 Je suis ${name}. Dis-moi ton métier, et je te montre quelles tâches tu peux automatiser ou accélérer toi-même — avec des outils simples adaptés à tes compétences.`
   const [messages, setMessages] = useState<ChatMsg[]>(() => loadChat())
   const [input, setInput] = useState(initialMessage ?? '')
   const [streaming, setStreaming] = useState(false)
@@ -178,7 +178,7 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
             <div className="h-24 w-24">
               <Avatar glasses speaking={streaming} className="h-full w-full" />
             </div>
-            <div className="mt-1.5 font-display text-base font-bold text-ink-900">Luminator</div>
+            <div className="mt-1.5 font-display text-base font-bold text-ink-900">{name}</div>
             <div className="flex items-center gap-1.5 text-xs text-ink-500">
               <span className={`h-1.5 w-1.5 rounded-full ${streaming ? 'animate-pulse bg-brand-500' : 'bg-emerald-500'}`} />
               {streaming ? 'parle…' : 'ton coach de carrière'}
@@ -203,7 +203,7 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
 
         {/* Fil de discussion */}
         <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-          <Bubble role="assistant" text={GREETING} />
+          <Bubble role="assistant" text={greeting} />
           {messages.map((m, i) => (
             <Bubble
               key={i}
@@ -229,7 +229,7 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
 
           {!aiEnabled && (
             <div className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-700">
-              Le chat utilise Claude. Ajoute ta clé API pour discuter avec Luminator —{' '}
+              Le chat utilise Claude. Ajoute ta clé API pour discuter avec {name} —{' '}
               <button onClick={onOpenSettings} className="font-semibold underline">
                 configurer
               </button>
@@ -249,7 +249,7 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Écris à Luminator…"
+            placeholder={`Écris à ${name}…`}
             className="flex-1 rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
           />
           <button

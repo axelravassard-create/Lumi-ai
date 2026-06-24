@@ -1,9 +1,9 @@
 {
-  "name": "lumi",
+  "name": "blumi",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Lumi — Anticipez l'impact de l'IA sur votre métier",
+  "description": "Blumi — Anticipez l'impact de l'IA sur votre métier",
   "license": "UNLICENSED",
   "scripts": {
     "dev": "vite",

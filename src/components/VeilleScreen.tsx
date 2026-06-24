@@ -1,6 +1,7 @@
 import { Logo } from './Logo'
 import { SectorTrendCard } from './SectorTrendCard'
 import { loadProfile } from '../lib/profile'
+import { brandName } from '../lib/entitlement'
 
 interface Props {
   onBack: () => void
@@ -56,7 +57,7 @@ export function VeilleScreen({ onBack, aiEnabled, onOpenSettings, onOpenChat, on
               <div className="card flex flex-col items-start gap-3 bg-gradient-to-br from-brand-50 to-violet-50 p-6 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="font-display font-bold text-ink-900">Passer à l'action</h2>
-                  <p className="mt-1 text-sm text-ink-600">Luminator transforme cette tendance en actions concrètes pour toi.</p>
+                  <p className="mt-1 text-sm text-ink-600">{brandName()} transforme cette tendance en actions concrètes pour toi.</p>
                 </div>
                 <button
                   onClick={() =>
