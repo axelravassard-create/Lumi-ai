@@ -67,7 +67,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
             <span className="text-lg">{analysis.aiEnhanced ? '✦' : 'ℹ️'}</span>
             <span>
               {analysis.aiEnhanced
-                ? 'Résultats estimés par Claude (Opus 4.8), d\'après votre profil et l\'actualité de votre secteur.'
+                ? 'Résultats estimés par Claude, d\'après votre profil et l\'actualité de votre secteur.'
                 : 'Résultats en mode démo (estimation locale). Connectez Claude pour une estimation par l\'IA.'}
             </span>
           </div>
@@ -130,11 +130,11 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
           <div className="card flex flex-col items-center justify-center gap-2 p-8">
             <span className="text-sm font-medium text-ink-500">Risque de remplacement par l'IA</span>
             <RadialGauge score={analysis.score} level={analysis.level} />
-            <span className="mt-1 inline-flex items-center gap-1.5 text-xs text-ink-400" title={analysis.aiEnhanced ? 'Score estimé par le modèle Claude Opus 4.8' : 'Estimation calculée localement (connectez Claude pour une estimation par l\'IA)'}>
+            <span className="mt-1 inline-flex items-center gap-1.5 text-xs text-ink-400" title={analysis.aiEnhanced ? 'Score estimé par le modèle Claude' : 'Estimation calculée localement (connectez Claude pour une estimation par l\'IA)'}>
               {analysis.aiEnhanced ? (
                 <>
                   <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-                  Estimation · Claude Opus 4.8
+                  Estimation · Claude
                 </>
               ) : (
                 <>
@@ -278,7 +278,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
           <div className="card p-6 md:p-8">
             <h2 className="flex items-center gap-2 font-display text-xl font-bold text-ink-900">📚 Méthodologie & sources</h2>
             <p className="mt-2 text-sm leading-relaxed text-ink-600">
-              Le score {analysis.aiEnhanced ? 'est estimé par le modèle Claude Opus 4.8' : 'est calculé localement (mode démo)'}, selon
+              Le score {analysis.aiEnhanced ? 'est estimé par le modèle Claude' : 'est calculé localement (mode démo)'}, selon
               une méthode multi-facteurs (routine, créativité, relationnel, jugement, présence physique…) inspirée des
               travaux de référence ci-dessous. C'est une <strong>estimation indicative</strong> destinée à éclairer la
               réflexion — pas une prédiction certaine.
