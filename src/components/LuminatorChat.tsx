@@ -53,6 +53,15 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
   const [planned, setPlanned] = useState(false)
   const [tooled, setTooled] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  // La zone de saisie grandit avec le texte (jusqu'à ~5 lignes), puis défile.
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = Math.min(el.scrollHeight, 132) + 'px'
+  }, [input])
 
   // Persiste la conversation (mémoire) à chaque évolution.
   useEffect(() => {
@@ -240,17 +249,26 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
 
         {/* Saisie */}
         <form
-          className="flex items-center gap-2 border-t border-ink-100 p-3"
+          className="flex items-end gap-2 border-t border-ink-100 p-3"
           onSubmit={(e) => {
             e.preventDefault()
             send(input)
           }}
         >
-          <input
+          <textarea
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              // Entrée = envoyer ; Maj+Entrée = nouvelle ligne.
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                send(input)
+              }
+            }}
+            rows={1}
             placeholder={`Écris à ${name}…`}
-            className="flex-1 rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+            className="flex-1 resize-none rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm leading-relaxed text-ink-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
           />
           <button
             type="submit"
