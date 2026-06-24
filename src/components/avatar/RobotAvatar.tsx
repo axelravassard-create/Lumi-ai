@@ -229,8 +229,16 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
       saccade.current.x = (Math.random() - 0.5) * 0.5
       saccade.current.y = (Math.random() - 0.5) * 0.3
     }
-    const gx = pointer.active ? THREE.MathUtils.clamp(pointer.x, -1, 1) : Math.sin(t * 0.4) * 0.4 + saccade.current.x
-    const gy = pointer.active ? THREE.MathUtils.clamp(pointer.y, -1, 1) : saccade.current.y
+    let gx = pointer.active ? THREE.MathUtils.clamp(pointer.x, -1, 1) : Math.sin(t * 0.4) * 0.4 + saccade.current.x
+    let gy = pointer.active ? THREE.MathUtils.clamp(pointer.y, -1, 1) : saccade.current.y
+
+    // Bluminator : absorbé par son écran. Il ne suit PAS le curseur — son regard
+    // reste baissé sur l'ordinateur portable posé devant lui, avec un léger
+    // balayage (il « lit ») pour rester vivant.
+    if (laptop) {
+      gx = Math.sin(t * 0.7) * 0.07
+      gy = 0.95 + Math.sin(t * 1.1) * 0.05
+    }
 
     // Réaction « tapote » : étonnement (yeux écarquillés, sourcils levés,
     // bouche ouverte, recul) PUIS joie (plissement + étincelles).
@@ -259,8 +267,10 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     // La tête s'oriente légèrement vers le curseur (et penche en réflexion).
     if (head.current) {
       const sway = reducedMotion ? 0 : Math.sin(t * 0.6) * 0.015
+      // Penche un peu plus la tête vers le bas quand il fixe son écran.
+      const tilt = laptop ? 0.2 : 0
       head.current.rotation.y += (gx * 0.18 + sway - head.current.rotation.y) * Math.min(1, d * 3)
-      head.current.rotation.x += (gy * 0.12 + k * 0.06 - head.current.rotation.x) * Math.min(1, d * 3)
+      head.current.rotation.x += (gy * 0.12 + tilt + k * 0.06 - head.current.rotation.x) * Math.min(1, d * 3)
       head.current.position.y = patBob
       head.current.position.z = recoilZ
       head.current.scale.set(1 + (1 - patSquash), patSquash, 1 + (1 - patSquash))
@@ -544,33 +554,37 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
   )
 }
 
-// Ordinateur portable « Bluminator » : petit, posé devant le buste, écran
-// lumineux (même langage visuel que le regard du personnage). Volontairement
-// modeste — « pas trop imposant ». Pensé pour rester entièrement dans le cadre.
+// Ordinateur portable « Bluminator » : petit, posé devant lui. L'écran lumineux
+// est tourné vers SA tête (pas vers nous) — on voit le dos du capot, et la lueur
+// de l'écran éclaire son menton par en dessous. Volontairement modeste (« pas
+// trop imposant ») et pensé pour rester entièrement dans le cadre.
 function Laptop() {
   const SHELL = '#262c44'
   return (
-    <group position={[0, -1.42, 0.62]} scale={0.6}>
-      {/* Base / clavier, légèrement inclinée vers le spectateur */}
-      <mesh position={[0, -0.16, 0.46]} rotation={[-0.5, 0, 0]}>
+    <group position={[0, -1.55, 0.72]} scale={0.62}>
+      {/* Base / clavier : posée à plat, s'étend vers le spectateur */}
+      <mesh position={[0, -0.1, 0.55]} rotation={[0.08, 0, 0]}>
         <boxGeometry args={[1.5, 0.07, 1.0]} />
         <meshStandardMaterial color={SHELL} roughness={0.4} metalness={0.55} />
       </mesh>
-      {/* Pavé tactile (petit détail) */}
-      <mesh position={[0, -0.12, 0.62]} rotation={[-0.5, 0, 0]}>
-        <boxGeometry args={[0.5, 0.012, 0.34]} />
-        <meshStandardMaterial color="#1b2036" roughness={0.5} metalness={0.4} />
-      </mesh>
-      {/* Capot / écran, incliné vers l'arrière */}
-      <group rotation={[0.3, 0, 0]}>
-        <mesh position={[0, 0.5, -0.02]}>
-          <boxGeometry args={[1.5, 1.0, 0.06]} />
-          <meshStandardMaterial color={SHELL} roughness={0.3} metalness={0.6} />
+      {/* Capot / écran : se dresse côté tête et s'incline vers elle → l'écran lui
+          fait face ; le spectateur voit le dos du capot. */}
+      <group position={[0, 0, 0.06]} rotation={[-0.4, 0, 0]}>
+        {/* Coque (dos, visible par le spectateur) */}
+        <mesh position={[0, 0.55, 0]}>
+          <boxGeometry args={[1.5, 1.05, 0.06]} />
+          <meshStandardMaterial color={SHELL} roughness={0.35} metalness={0.6} />
         </mesh>
-        {/* Dalle lumineuse, tournée vers le spectateur */}
-        <mesh position={[0, 0.5, 0.02]}>
-          <planeGeometry args={[1.3, 0.82]} />
-          <meshStandardMaterial color="#0a0e1a" emissive={IRIS_IDLE} emissiveIntensity={1.25} toneMapped={false} />
+        {/* Dalle lumineuse, tournée vers la TÊTE (−z) → cachée au spectateur,
+            mais sa lueur éclaire le visage par en dessous. */}
+        <mesh position={[0, 0.55, -0.035]} rotation={[0, Math.PI, 0]}>
+          <planeGeometry args={[1.32, 0.86]} />
+          <meshStandardMaterial color="#0a0e1a" emissive={IRIS_IDLE} emissiveIntensity={1.3} toneMapped={false} />
+        </mesh>
+        {/* Petit logo lumineux sur le dos (joli côté spectateur) */}
+        <mesh position={[0, 0.55, 0.035]}>
+          <circleGeometry args={[0.12, 24]} />
+          <meshStandardMaterial color="#0a0e1a" emissive={IRIS_IDLE} emissiveIntensity={0.7} toneMapped={false} />
         </mesh>
       </group>
     </group>

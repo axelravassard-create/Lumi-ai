@@ -62,6 +62,10 @@ pédagogique.
     (`laptop`, composant `Laptop` dans `RobotAvatar.tsx`). Quand `laptop` est actif,
     on **remonte + réduit (scale 0.8) la tête** pour caser l'écran sous le menton
     sans rien couper au bord (préférence user : effets « dans le cadre »).
+    - **Il fixe SON écran, pas nous** : son regard est verrouillé vers le bas (ne
+      suit PAS le curseur — override de `gx`/`gy` + tilt tête quand `laptop`), et
+      la **dalle lumineuse est tournée vers la tête** (−z, cachée au spectateur) ;
+      on voit le dos du capot + un petit logo lumineux, et la lueur éclaire le menton.
 - Props clés (sur `Avatar` et `RobotAvatar`) :
   - `glasses` : lunettes rondes. Si non précisé sur `Avatar`, suit la possession
     d'un palier payant (`useLuminator`).
