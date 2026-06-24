@@ -575,35 +575,36 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
   )
 }
 
-// Ordinateur portable « Bluminator » : petit, posé devant lui. L'écran lumineux
-// est tourné vers SA tête (pas vers nous) — on voit le dos du capot, et la lueur
-// de l'écran éclaire son menton par en dessous. Volontairement modeste (« pas
-// trop imposant ») et pensé pour rester entièrement dans le cadre.
+// Ordinateur portable « Bluminator » : petit, posé devant lui. Orientation d'un
+// VRAI portable vu de l'utilisateur : le clavier est de SON côté (vers son buste)
+// et l'écran s'ouvre vers lui — donc le spectateur voit le DOS du capot (+ logo),
+// et la dalle lumineuse (tournée vers lui) éclaire son visage. Léger 3/4 pour
+// qu'on devine le clavier. Volontairement modeste et gardé dans le cadre.
 function Laptop() {
   const SHELL = '#262c44'
   return (
-    <group position={[0, -1.55, 0.72]} scale={0.62}>
-      {/* Base / clavier : posée à plat, s'étend vers le spectateur */}
-      <mesh position={[0, -0.1, 0.55]} rotation={[0.08, 0, 0]}>
-        <boxGeometry args={[1.5, 0.07, 1.0]} />
+    <group position={[0, -1.5, 0.7]} rotation={[0, 0.22, 0]} scale={0.6}>
+      {/* Clavier : du côté du personnage (−z), légèrement incliné vers lui */}
+      <mesh position={[0, -0.12, -0.42]} rotation={[-0.16, 0, 0]}>
+        <boxGeometry args={[1.55, 0.07, 1.0]} />
         <meshStandardMaterial color={SHELL} roughness={0.4} metalness={0.55} />
       </mesh>
-      {/* Capot / écran : se dresse côté tête et s'incline vers elle → l'écran lui
-          fait face ; le spectateur voit le dos du capot. */}
-      <group position={[0, 0, 0.06]} rotation={[-0.4, 0, 0]}>
+      {/* Capot / écran : se dresse côté spectateur (+z) et s'incline vers le
+          personnage → l'écran lui fait face, on voit le dos du capot. */}
+      <group position={[0, 0, 0.08]} rotation={[0.4, 0, 0]}>
         {/* Coque (dos, visible par le spectateur) */}
-        <mesh position={[0, 0.55, 0]}>
-          <boxGeometry args={[1.5, 1.05, 0.06]} />
+        <mesh position={[0, 0.56, 0]}>
+          <boxGeometry args={[1.55, 1.08, 0.06]} />
           <meshStandardMaterial color={SHELL} roughness={0.35} metalness={0.6} />
         </mesh>
-        {/* Dalle lumineuse, tournée vers la TÊTE (−z) → cachée au spectateur,
-            mais sa lueur éclaire le visage par en dessous. */}
-        <mesh position={[0, 0.55, -0.035]} rotation={[0, Math.PI, 0]}>
-          <planeGeometry args={[1.32, 0.86]} />
+        {/* Dalle lumineuse, tournée vers LUI (−z) → cachée au spectateur ;
+            sa lueur éclaire le visage. */}
+        <mesh position={[0, 0.56, -0.035]} rotation={[0, Math.PI, 0]}>
+          <planeGeometry args={[1.36, 0.9]} />
           <meshStandardMaterial color="#0a0e1a" emissive={IRIS_IDLE} emissiveIntensity={1.3} toneMapped={false} />
         </mesh>
-        {/* Petit logo lumineux sur le dos (joli côté spectateur) */}
-        <mesh position={[0, 0.55, 0.035]}>
+        {/* Petit logo lumineux sur le dos (côté spectateur) */}
+        <mesh position={[0, 0.56, 0.035]}>
           <circleGeometry args={[0.12, 24]} />
           <meshStandardMaterial color="#0a0e1a" emissive={IRIS_IDLE} emissiveIntensity={0.7} toneMapped={false} />
         </mesh>
