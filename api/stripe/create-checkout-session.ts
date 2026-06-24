@@ -51,6 +51,12 @@ export default async function handler(req: Request): Promise<Response> {
   params.append('line_items[0][price]', price)
   params.append('line_items[0][quantity]', '1')
   params.set('allow_promotion_codes', 'true')
+  // Stripe Tax : calcule et applique automatiquement la TVA selon le pays du
+  // client (UE et international). ⚠️ Nécessite d'activer Stripe Tax dans le
+  // dashboard Stripe + une adresse client (collectée ci-dessous).
+  params.set('automatic_tax[enabled]', 'true')
+  params.set('billing_address_collection', 'required')
+  params.set('tax_id_collection[enabled]', 'true')
   if (email) {
     params.set('customer_email', email)
     params.set('metadata[email]', email)

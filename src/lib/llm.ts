@@ -20,6 +20,8 @@ import { Analysis, Recommendation, Skill } from './engine'
 
 const STORAGE_KEY = 'yourcareer.anthropic_key'
 const MODEL = 'claude-opus-4-8'
+// Modèle léger pour les tâches plus simples (extraction, etc.) → moins cher/rapide.
+const MODEL_LIGHT = 'claude-haiku-4-5'
 const PROXY_PATH = '/api/anthropic'
 
 // Une clé serveur est-elle configurée ? Déterminé une fois au chargement via
@@ -454,9 +456,8 @@ export async function extractProfileFromCV(input: { pdfBase64?: string; text?: s
   })
 
   const response = await client().messages.create({
-    model: MODEL,
+    model: MODEL_LIGHT, // extraction structurée = tâche simple → modèle léger (Haiku)
     max_tokens: 2048,
-    thinking: { type: 'adaptive' },
     system: 'Tu extrais des données structurées d\'un CV pour pré-remplir un profil carrière. Sois fidèle au document, ne fabrique aucune information.',
     output_config: { format: { type: 'json_schema', schema: PROFILE_SCHEMA } },
     messages: [{ role: 'user', content }],
@@ -543,12 +544,17 @@ function parseJsonLoose<T>(response: Anthropic.Message): T {
   return JSON.parse(text.slice(start, end + 1)) as T
 }
 
-// Traduit une erreur API en message lisible.
+// Traduit une erreur API en message lisible (panne, surcharge, coupure réseau…).
 export function describeError(err: unknown): string {
   if (err instanceof Error && err.message.includes('Limite quotidienne')) return err.message
   if (err instanceof Anthropic.AuthenticationError) return 'Clé API invalide ou révoquée.'
-  if (err instanceof Anthropic.PermissionDeniedError) return 'Cette clé n\'a pas accès au modèle Claude Opus.'
-  if (err instanceof Anthropic.RateLimitError) return 'Trop de requêtes — réessayez dans un instant.'
-  if (err instanceof Anthropic.APIError) return `Erreur API (${err.status}). Analyse locale utilisée à la place.`
-  return 'Connexion à Claude impossible. Analyse locale utilisée à la place.'
+  if (err instanceof Anthropic.PermissionDeniedError) return 'Accès au modèle refusé pour cette clé.'
+  if (err instanceof Anthropic.RateLimitError) return 'Beaucoup de demandes en ce moment — réessaie dans quelques instants. 🙏'
+  if (err instanceof Anthropic.InternalServerError) return 'Le service IA est momentanément indisponible. Réessaie dans un instant. 🛠️'
+  if (err instanceof Anthropic.APIConnectionError) return 'Connexion au service IA impossible. Vérifie ta connexion et réessaie. 📡'
+  if (err instanceof Anthropic.APIError) {
+    if (err.status && err.status >= 500) return 'Le service IA est saturé pour le moment. Réessaie dans un instant. 🛠️'
+    return `Une erreur est survenue (${err.status}). Réessaie dans un instant.`
+  }
+  return 'Connexion au service IA impossible. Réessaie dans un instant. 📡'
 }
