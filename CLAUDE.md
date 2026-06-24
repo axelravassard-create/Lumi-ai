@@ -12,10 +12,12 @@ pédagogique.
 
 - **Stack** : Vite + React + TypeScript + Tailwind. Avatar 3D via three.js /
   @react-three/fiber / drei / postprocessing. IA via `@anthropic-ai/sdk`.
-- **Modèles Claude** : `claude-opus-4-8` (MODEL, tâches complexes) et
-  `claude-haiku-4-5` (MODEL_LIGHT, tâches simples — ex. extraction de CV). ⚠️ Le
-  web search à filtrage dynamique n'est PAS supporté sur Haiku → la veille
-  sectorielle reste sur Opus. Le proxy n'autorise QUE ces 2 modèles.
+- **Modèles Claude** : `claude-sonnet-4-6` (MODEL, tâches complexes : verdict,
+  comparaison, copilote, veille) et `claude-haiku-4-5` (MODEL_LIGHT, tâches
+  simples — ex. extraction de CV). Choix dicté par le COÛT (cf. section coûts) :
+  Opus était trop cher. Sonnet supporte `web_search_20260209` (≠ Haiku) → la
+  veille sectorielle tourne sur Sonnet. ⚠️ Le proxy n'autorise QUE ces 2 modèles
+  (`ALLOWED_MODELS` dans `api/anthropic/[...path].ts`) — Opus a été retiré.
 - **Accès API (prod)** : par défaut l'app appelle Claude via un **proxy serveur**
   (`api/anthropic/[...path].ts`, Edge function Vercel) qui détient la clé dans la
   variable d'env **`ANTHROPIC_API_KEY`** (à définir dans Vercel) → la clé ne vit
@@ -132,8 +134,9 @@ pédagogique.
 ## Différenciation réelle des paliers (limites appliquées, `src/lib/llm.ts`)
 - **Vraie valeur de Bluminator** = pas du vent, c'est mesurable et appliqué :
   - **`DAILY_LIMITS`** (exporté) = plafond souple d'actions IA / jour, par palier :
-    `free: 30`, `blumiman: 75`, `bluminator: 300` (**exactement 4× Blumiman** →
+    `free: 20`, `blumiman: 50`, `bluminator: 200` (**exactement 4× Blumiman** →
     argument « 4× plus »). Vérifié par `consumeQuota()` ; dépassement → `QUOTA_MSG`.
+    ⚠️ Stocké en localStorage = contournable ; un vrai cap exige un quota serveur.
   - **`CHAT_MAX_TOKENS`** (exporté) = profondeur des réponses du copilote :
     `blumiman: 1024`, `bluminator: 2048` → Bluminator répond plus longuement
     (plans détaillés, livrables complets). Utilisé dans `streamLuminatorChat`.

@@ -15,7 +15,7 @@
 export const config = { runtime: 'edge' }
 
 const ANTHROPIC = 'https://api.anthropic.com'
-const ALLOWED_MODELS = new Set(['claude-opus-4-8', 'claude-haiku-4-5'])
+const ALLOWED_MODELS = new Set(['claude-sonnet-4-6', 'claude-haiku-4-5'])
 const MAX_OUTPUT_TOKENS = 4096
 
 function err(message: string, status: number): Response {
