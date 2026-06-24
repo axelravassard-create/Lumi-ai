@@ -72,7 +72,14 @@ export function aiReady(): boolean {
 // usage IA étendu pour les gros utilisateurs). Empêche les emballements et l'abus
 // occasionnel. (Pas une protection dure — la vraie limite par compte demanderait
 // un stockage serveur ; le proxy plafonne déjà modèle et max_tokens.)
-const DAILY_LIMITS: Record<Tier, number> = { free: 40, blumiman: 150, bluminator: 600 }
+//
+// Bluminator = exactement 4× le quota de Blumiman (argument « ~4× plus »).
+export const DAILY_LIMITS: Record<Tier, number> = { free: 30, blumiman: 75, bluminator: 300 }
+
+// Profondeur des réponses du copilote : Bluminator répond plus longuement (plans
+// complets, vrais livrables en une fois). C'est l'autre vraie différence concrète.
+export const CHAT_MAX_TOKENS: Record<Tier, number> = { free: 1024, blumiman: 1024, bluminator: 2048 }
+
 const QUOTA_MSG =
   'Tu as atteint ta limite d\'utilisation du jour. Réessaie demain, passe à Bluminator pour un usage étendu, ou ajoute ta propre clé API.'
 
@@ -356,7 +363,7 @@ export async function streamLuminatorChat(history: ChatMsg[], opts: ChatOptions)
   for (let guard = 0; guard < 5; guard++) {
     const stream = c.messages.stream({
       model: MODEL,
-      max_tokens: 1024,
+      max_tokens: CHAT_MAX_TOKENS[getTier()],
       system,
       tools: [PROFILE_TOOL, PLAN_TOOL, TOOLBOX_TOOL],
       messages,

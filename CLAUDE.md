@@ -55,9 +55,18 @@ pédagogique.
 
 ## Personnage 3D — `src/components/avatar/RobotAvatar.tsx` (+ `Avatar.tsx`)
 - Yeux qui suivent le curseur, clignements, couleur d'humeur (mood).
+- **3 apparences = 3 paliers** (auto-déduites du tier dans `Avatar`) :
+  - **Blumi** (free) : visage nu.
+  - **Blumiman** (blumiman) : + lunettes rondes (`glasses`).
+  - **Bluminator** (bluminator) : lunettes **+ petit ordinateur portable lumineux**
+    (`laptop`, composant `Laptop` dans `RobotAvatar.tsx`). Quand `laptop` est actif,
+    on **remonte + réduit (scale 0.8) la tête** pour caser l'écran sous le menton
+    sans rien couper au bord (préférence user : effets « dans le cadre »).
 - Props clés (sur `Avatar` et `RobotAvatar`) :
-  - `glasses` : ajoute les lunettes rondes (Luminator). Si non précisé sur `Avatar`,
-    suit la possession (`useLuminator`).
+  - `glasses` : lunettes rondes. Si non précisé sur `Avatar`, suit la possession
+    d'un palier payant (`useLuminator`).
+  - `laptop` : ordinateur portable. Si non précisé sur `Avatar`, vrai seulement
+    pour le palier `bluminator` (`useTier`).
   - `speaking` : anime la bouche (utilisé par le chat).
   - `mood`, `state` ('idle'|'thinking'), `active` (pause du rendu hors écran),
     `forceFallback` (emoji au lieu de la 3D).
@@ -113,12 +122,24 @@ pédagogique.
   + raccourci « Opportunités locales » (exploite `profile.location`).
 - Accès au chat : bouton flottant (FAB) quand `owns`, + bouton sur l'écran Tarifs.
 
+## Différenciation réelle des paliers (limites appliquées, `src/lib/llm.ts`)
+- **Vraie valeur de Bluminator** = pas du vent, c'est mesurable et appliqué :
+  - **`DAILY_LIMITS`** (exporté) = plafond souple d'actions IA / jour, par palier :
+    `free: 30`, `blumiman: 75`, `bluminator: 300` (**exactement 4× Blumiman** →
+    argument « 4× plus »). Vérifié par `consumeQuota()` ; dépassement → `QUOTA_MSG`.
+  - **`CHAT_MAX_TOKENS`** (exporté) = profondeur des réponses du copilote :
+    `blumiman: 1024`, `bluminator: 2048` → Bluminator répond plus longuement
+    (plans détaillés, livrables complets). Utilisé dans `streamLuminatorChat`.
+  - La page Tarifs **affiche les vrais chiffres** (`DAILY_LIMITS.blumiman/.bluminator`)
+    pour rester transparente plutôt que « tout Blumiman en mieux ».
+
 ## Tarifs — `src/components/PricingScreen.tsx`
 - **3 cartes** (tableau `PLANS`) : **Blumi** (gratuit) / **Blumiman** 4,99 €
-  (« ⭐ Le plus populaire ») / **Bluminator** 14,99 € (« 🚀 Usage intensif »).
-  Toggle mensuel / annuel (« 2 mois offerts »). Note honnête : « La plupart des
-  gens choisissent Blumiman ; Bluminator n'a d'intérêt que si tu utilises l'IA
-  très souvent ».
+  (« ⭐ Le choix de la plupart ») / **Bluminator** 14,99 € (« 🚀 Usage intensif »,
+  avatar avec **ordinateur portable**). Toggle mensuel / annuel (« 2 mois offerts »).
+  Copie **concrète et honnête** (chiffres réels, pas de « en mieux » vague). Note de
+  bas de page assumée : « Blumiman suffit à la grande majorité ; ne prends
+  Bluminator que si tu atteins vraiment la limite quotidienne ».
 - `buy(tier)` → si Stripe configuré : `startCheckout(tier, plan)` (Checkout) ;
   sinon **achat simulé** (`setTier(tier)`). `manage()` → `openBillingPortal()`.
   Logique : `src/lib/billing.ts` (`checkBilling`, `startCheckout`,
