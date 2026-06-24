@@ -150,6 +150,11 @@ pédagogique.
   Copie **concrète et honnête** (chiffres réels, pas de « en mieux » vague). Note de
   bas de page assumée : « Blumiman suffit à la grande majorité ; ne prends
   Bluminator que si tu atteins vraiment la limite quotidienne ».
+- **Compte OBLIGATOIRE pour s'abonner** (quand les comptes sont activés) :
+  `needsAccount = account.configured && !account.email`. Si vrai, `buy()` ouvre
+  `AccountModal` au lieu du checkout (+ bannière « Crée ton compte pour t'abonner »).
+  Gardé sur `configured` → tant que KV/Resend ne sont pas posés, le parcours
+  simulé marche encore (sinon l'app serait bloquée).
 - `buy(tier)` → si Stripe configuré : `startCheckout(tier, plan)` (Checkout) ;
   sinon **achat simulé** (`setTier(tier)`). `manage()` → `openBillingPortal()`.
   Logique : `src/lib/billing.ts` (`checkBilling`, `startCheckout`,
@@ -172,9 +177,21 @@ pédagogique.
   (accès Luminator via localStorage / Stripe simulé). Une fois branché, le compte
   devient la **source de vérité** de l'accès Luminator (multi-appareil).
 - Back : Edge functions `api/auth/*` (`request`, `verify`, `me`, `logout`) +
-  helpers `api/_lib/kv.ts` (Upstash/Vercel KV REST) & `api/_lib/email.ts` (Resend).
+  helpers `api/_lib/kv.ts` (Upstash/Vercel KV REST), `api/_lib/email.ts` (Resend) &
+  `api/_lib/session.ts` (`sessionEmail(req)` : cookie → email, partagé).
   Session = cookie httpOnly `lumi_session`. Clés KV : `magic:<token>`, `sess:<id>`,
-  `user:<email>`, `luminator:<email>`, `cust:<stripeCustomer>`.
+  `user:<email>`, `luminator:<email>`, `cust:<stripeCustomer>`, `data:<email>`.
+- **Données utilisateur sur le compte (multi-appareils)** : `api/data.ts`
+  (GET/POST, session-gated) stocke un blob JSON par utilisateur (`data:<email>`).
+  Côté front, `src/lib/sync.ts` synchronise un jeu de clés localStorage
+  (`SYNC_KEYS` : profil, historique, plan, boîte à outils, chat, provenance) —
+  PAS la clé API perso (sensible), ni le palier (serveur fait foi), ni les caches.
+  - `account.ts` `apply()` (login) → `syncOnLogin()` : `pullData()` (serveur→local,
+    recharge 1× si plus récent, drapeau `lumi.synced` anti-boucle) puis `pushData()`
+    (amorce un compte neuf avec les données déjà saisies). Push auto toutes les 15 s
+    + sur `visibilitychange`/`pagehide`.
+  - `logoutAccount()` → `stopSync()` + `clearSyncedData()` (efface les `SYNC_KEYS`
+    de l'appareil ; le serveur garde tout) + `reload()` pour repartir propre.
 - `api/stripe/webhook.ts` : à `checkout.session.completed`, met
   `luminator:<email>` = palier (`'blumiman'` | `'bluminator'`, via metadata) +
   `cust:<customer>`/`stripecust:<email>` ; à `subscription.deleted` repasse en
