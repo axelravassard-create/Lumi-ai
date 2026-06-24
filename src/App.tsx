@@ -314,7 +314,7 @@ export default function App() {
       )}
 
       {view === 'pricing' && (
-        <PricingScreen onBack={() => setView('landing')} onOpenChat={() => openChat()} />
+        <PricingScreen onBack={() => setView('landing')} onOpenChat={() => openChat()} onOpenAccount={() => setAccountOpen(true)} />
       )}
 
       {view === 'legal' && (

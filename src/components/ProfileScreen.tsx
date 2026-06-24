@@ -207,9 +207,9 @@ export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: 
               Vous pouvez tout effacer définitivement en un clic.
             </p>
             <button
-              onClick={() => {
-                if (window.confirm('Supprimer définitivement toutes vos données Blumi sur cet appareil ? Cette action est irréversible.')) {
-                  clearAllLocalData()
+              onClick={async () => {
+                if (window.confirm('Supprimer définitivement toutes vos données Blumi (sur cet appareil et sur votre compte) ? Cette action est irréversible.')) {
+                  await clearAllLocalData()
                   window.location.href = window.location.pathname
                 }
               }}

@@ -4,11 +4,14 @@ import { Avatar } from './Avatar'
 import { useTier, setTier, type Tier } from '../lib/entitlement'
 import { checkBilling, startCheckout, openBillingPortal } from '../lib/billing'
 import { DAILY_LIMITS } from '../lib/llm'
+import { useAccount } from '../lib/account'
 
 interface Props {
   onBack: () => void
   /** Ouvre le chat avec le copilote (proposé une fois l'offre acquise). */
   onOpenChat?: () => void
+  /** Ouvre la fenêtre de compte (connexion obligatoire pour s'abonner). */
+  onOpenAccount?: () => void
 }
 
 type Billing = 'monthly' | 'yearly'
@@ -82,12 +85,17 @@ const PLANS: Plan[] = [
   },
 ]
 
-export function PricingScreen({ onBack, onOpenChat }: Props) {
+export function PricingScreen({ onBack, onOpenChat, onOpenAccount }: Props) {
   const [billing, setBilling] = useState<Billing>('monthly')
   const current = useTier()
+  const account = useAccount()
   const [billingOn, setBillingOn] = useState(false)
   const [buying, setBuying] = useState<PaidTier | null>(null)
   const [err, setErr] = useState<string | null>(null)
+
+  // Compte obligatoire pour s'abonner (quand les comptes sont activés côté
+  // serveur) : l'abonnement ET les données sont liés au compte, pas à l'appareil.
+  const needsAccount = account.configured && !account.email
 
   useEffect(() => {
     checkBilling().then(setBillingOn)
@@ -95,6 +103,10 @@ export function PricingScreen({ onBack, onOpenChat }: Props) {
 
   const buy = async (tk: PaidTier) => {
     setErr(null)
+    if (needsAccount) {
+      onOpenAccount?.()
+      return
+    }
     if (!billingOn) {
       setTier(tk) // prototype : activation immédiate simulée
       return
@@ -158,6 +170,19 @@ export function PricingScreen({ onBack, onOpenChat }: Props) {
             ))}
           </div>
         </section>
+
+        {/* Compte requis pour s'abonner (quand les comptes sont activés) */}
+        {needsAccount && (
+          <div className="animate-fade-up mx-auto mt-8 flex max-w-2xl items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-brand-50/60 px-5 py-4">
+            <p className="text-sm text-ink-700">
+              🔐 <strong>Crée ton compte pour t'abonner</strong> — ton abonnement et tes données (profil,
+              plan, conversations) te suivent alors sur tous tes appareils.
+            </p>
+            <button onClick={() => onOpenAccount?.()} className="btn-primary shrink-0 py-2 text-sm">
+              Créer mon compte
+            </button>
+          </div>
+        )}
 
         {/* Cartes */}
         <section className="animate-fade-up mt-10 grid items-start gap-6 md:grid-cols-3" style={{ animationDelay: '80ms' }}>
@@ -228,7 +253,7 @@ export function PricingScreen({ onBack, onOpenChat }: Props) {
                       disabled={buying !== null}
                       className={`w-full justify-center disabled:opacity-60 ${p.highlight ? 'btn-primary' : 'btn-ghost'}`}
                     >
-                      {buying === p.key ? 'Redirection…' : current === 'blumiman' && p.key === 'bluminator' ? 'Passer à Bluminator' : `Choisir ${p.name}`}
+                      {buying === p.key ? 'Redirection…' : needsAccount ? 'Créer un compte pour s’abonner' : current === 'blumiman' && p.key === 'bluminator' ? 'Passer à Bluminator' : `Choisir ${p.name}`}
                     </button>
                   )}
                 </div>

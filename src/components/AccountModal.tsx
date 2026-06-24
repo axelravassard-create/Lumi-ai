@@ -66,8 +66,11 @@ export function AccountModal({ onClose }: Props) {
             <div className="flex items-start gap-3">
               <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-50 text-xl">🔑</div>
               <div>
-                <h2 className="font-display text-lg font-bold text-ink-900">Se connecter</h2>
-                <p className="mt-1 text-sm text-ink-500">Sans mot de passe — on t'envoie un lien par email.</p>
+                <h2 className="font-display text-lg font-bold text-ink-900">Créer un compte / se connecter</h2>
+                <p className="mt-1 text-sm text-ink-500">
+                  Sans mot de passe — on t'envoie un lien par email. Ton compte garde ton abonnement et tes
+                  données (profil, plan, conversations) sur tous tes appareils.
+                </p>
               </div>
             </div>
             <form onSubmit={submit} className="mt-5">

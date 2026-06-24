@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from 'react'
 import { setTier, type Tier } from './entitlement'
+import { syncOnLogin, stopSync, clearSyncedData } from './sync'
 
 interface AccountState {
   email: string | null
@@ -38,6 +39,10 @@ function apply(data: { email?: string | null; tier?: string; luminator?: boolean
   if (state.email) {
     const tier = (data.tier as Tier) || (data.luminator ? 'blumiman' : 'free')
     setTier(tier)
+    // Compte connecté → ses données suivent l'appareil (profil, historique, plan…).
+    void syncOnLogin()
+  } else {
+    stopSync()
   }
   emit()
 }
@@ -99,8 +104,16 @@ export async function logoutAccount(): Promise<void> {
     /* ignore */
   }
   state = { ...state, email: null, luminator: false }
+  stopSync()
+  clearSyncedData() // les données restent sur le serveur, on nettoie l'appareil
   setTier('free') // déconnexion = on retire l'accès sur cet appareil
   emit()
+  // Recharge pour repartir d'un état propre (les écrans relisent localStorage au montage).
+  try {
+    window.location.reload()
+  } catch {
+    /* ignore */
+  }
 }
 
 export function useAccount(): AccountState {
