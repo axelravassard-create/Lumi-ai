@@ -142,6 +142,18 @@ visée pédagogique.
 - `LICENSE` propriétaire ("UNLICENSED" dans package.json).
 - Messages « données » honnêtes : démo = tout local ; IA = envoi à Anthropic (US).
 
+## Internationalisation (i18n) — en cours
+- **Moteur** : `src/lib/i18n.ts` — léger, sans dépendance. Langues : `fr|en|de|es|zh`.
+  Détection auto via `navigator.languages` → **repli sur `en`** si non couverte.
+  Choix mémorisé (`localStorage` `lumi.lang`). `t('clé')`, `useLang()`, `setLang()`,
+  `<LangSwitcher />` (sélecteur dans la nav).
+- **Traduit (Phase 1)** : toute la **page d'accueil publique** (`LandingPage`, hors
+  `MemberHome`). ⚠️ **Reste en FR (à traduire)** : MemberHome, chat, plan, toolbox,
+  veille, generators, pricing, profil, dashboard, légal, etc. → phases suivantes.
+- Pour ajouter une langue/écran : ajouter les clés dans les 5 dictionnaires de
+  `i18n.ts` et remplacer les littéraux par `t('clé')` (appeler `useLang()` une fois
+  dans le composant).
+
 ## Clés localStorage utilisées
 `yourcareer.profile`, `yourcareer.history`, `yourcareer.anthropic_key`,
 `yourcareer.trend.*`, `lumi.luminator`, `lumi.luminator.chat`,
