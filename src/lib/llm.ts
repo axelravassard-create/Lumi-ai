@@ -20,8 +20,10 @@ import { getTier, tierName, type Tier } from './entitlement'
 // ─────────────────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'yourcareer.anthropic_key'
-const MODEL = 'claude-opus-4-8'
-// Modèle léger pour les tâches plus simples (extraction, etc.) → moins cher/rapide.
+// Tâches complexes (verdict, comparaison, copilote, veille web) → Sonnet :
+// bon rapport intelligence/prix, et compatible web_search_20260209 (≠ Haiku).
+const MODEL = 'claude-sonnet-4-6'
+// Tâches simples (extraction de CV…) → Haiku : 5× moins cher, suffisant.
 const MODEL_LIGHT = 'claude-haiku-4-5'
 const PROXY_PATH = '/api/anthropic'
 
@@ -74,7 +76,8 @@ export function aiReady(): boolean {
 // un stockage serveur ; le proxy plafonne déjà modèle et max_tokens.)
 //
 // Bluminator = exactement 4× le quota de Blumiman (argument « ~4× plus »).
-export const DAILY_LIMITS: Record<Tier, number> = { free: 30, blumiman: 75, bluminator: 300 }
+// Plafonds resserrés (coût Sonnet) tout en restant confortables pour un usage réel.
+export const DAILY_LIMITS: Record<Tier, number> = { free: 20, blumiman: 50, bluminator: 200 }
 
 // Profondeur des réponses du copilote : Bluminator répond plus longuement (plans
 // complets, vrais livrables en une fois). C'est l'autre vraie différence concrète.
