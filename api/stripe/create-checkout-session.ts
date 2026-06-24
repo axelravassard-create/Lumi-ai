@@ -29,13 +29,21 @@ export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return json({ error: 'Méthode non autorisée.' }, 405)
 
   const key = process.env.STRIPE_SECRET_KEY
-  const monthly = process.env.STRIPE_PRICE_ID
-  const yearly = process.env.STRIPE_PRICE_ID_YEARLY
-  if (!key || !monthly) return json({ error: 'Paiement non configuré (STRIPE_SECRET_KEY / STRIPE_PRICE_ID).' }, 503)
+  if (!key) return json({ error: 'Paiement non configuré (STRIPE_SECRET_KEY).' }, 503)
 
   const url = new URL(req.url)
+  const tier = url.searchParams.get('tier') === 'bluminator' ? 'bluminator' : 'blumiman'
   const plan = url.searchParams.get('plan') === 'yearly' ? 'yearly' : 'monthly'
-  const price = plan === 'yearly' && yearly ? yearly : monthly
+
+  // Prix par palier (variables Vercel). Repli mensuel si l'annuel n'est pas défini.
+  const PRICES: Record<string, string | undefined> = {
+    'blumiman:monthly': process.env.STRIPE_PRICE_BLUMIMAN,
+    'blumiman:yearly': process.env.STRIPE_PRICE_BLUMIMAN_YEARLY,
+    'bluminator:monthly': process.env.STRIPE_PRICE_BLUMINATOR,
+    'bluminator:yearly': process.env.STRIPE_PRICE_BLUMINATOR_YEARLY,
+  }
+  const price = PRICES[`${tier}:${plan}`] || PRICES[`${tier}:monthly`]
+  if (!price) return json({ error: `Prix non configuré pour ${tier} (STRIPE_PRICE_${tier.toUpperCase()}).` }, 503)
   const origin = req.headers.get('origin') || url.origin
 
   // Si l'utilisateur est connecté (compte), on relie le paiement à son email →
@@ -57,6 +65,10 @@ export default async function handler(req: Request): Promise<Response> {
   params.set('automatic_tax[enabled]', 'true')
   params.set('billing_address_collection', 'required')
   params.set('tax_id_collection[enabled]', 'true')
+  // On mémorise le palier acheté dans les metadata → le retour et le webhook
+  // sauront quel niveau accorder.
+  params.set('metadata[tier]', tier)
+  params.set('subscription_data[metadata][tier]', tier)
   if (email) {
     params.set('customer_email', email)
     params.set('metadata[email]', email)

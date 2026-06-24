@@ -1,17 +1,21 @@
-# Lumi — Synthèse du projet (mémoire de travail)
+# Blumi — Synthèse du projet (mémoire de travail)
 
 > Ce fichier résume l'état du projet et les décisions prises, pour ne pas avoir à
 > rejouer tout l'historique de conversation. **À lire en priorité** au début d'une
 > session, et **à tenir à jour** quand une décision importante change.
 
 ## Le produit
-**Lumi** est une app web (FR) qui estime l'exposition d'un métier à l'automatisation
-par l'IA, et qui propose un **copilote IA** pour aider l'utilisateur. Prototype à
-visée pédagogique.
+**Blumi** (anciennement « Lumi », renommé car le nom n'était pas utilisé) est une
+app web (FR) qui estime l'exposition d'un métier à l'automatisation par l'IA, et
+qui propose un **copilote IA** pour aider l'utilisateur. Prototype à visée
+pédagogique.
 
 - **Stack** : Vite + React + TypeScript + Tailwind. Avatar 3D via three.js /
   @react-three/fiber / drei / postprocessing. IA via `@anthropic-ai/sdk`.
-- **Modèle Claude utilisé** : `claude-opus-4-8`.
+- **Modèles Claude** : `claude-opus-4-8` (MODEL, tâches complexes) et
+  `claude-haiku-4-5` (MODEL_LIGHT, tâches simples — ex. extraction de CV). ⚠️ Le
+  web search à filtrage dynamique n'est PAS supporté sur Haiku → la veille
+  sectorielle reste sur Opus. Le proxy n'autorise QUE ces 2 modèles.
 - **Accès API (prod)** : par défaut l'app appelle Claude via un **proxy serveur**
   (`api/anthropic/[...path].ts`, Edge function Vercel) qui détient la clé dans la
   variable d'env **`ANTHROPIC_API_KEY`** (à définir dans Vercel) → la clé ne vit
@@ -25,13 +29,29 @@ visée pédagogique.
   - ⚠️ `vercel.json` : le rewrite SPA exclut `/api` (`"/((?!api/).*)"`), sinon les
     fonctions seraient réécrites vers `index.html`.
 
-## Marque : Lumi (gratuit) vs Luminator (payant)
-- **Lumi** = mascotte + nom de l'app (offre gratuite).
-- **Luminator** = offre payante = **même personnage + lunettes rondes**.
-- Possession gérée dans `src/lib/entitlement.ts` (flag `localStorage` `lumi.luminator`).
-  Hooks : `useLuminator()`, `useBrand()` (`{ owns, name }`), `brandName()`.
-- Quand l'offre est acquise, le personnage à lunettes **et le nom « Luminator »**
-  prennent la place de Lumi un peu partout (logo, avatars, verdicts).
+## Marque & paliers — 3 niveaux (`src/lib/entitlement.ts`)
+- **Blumi** (gratuit) = mascotte + nom de l'app (offre gratuite, diagnostic).
+- **Blumiman** (4,99 €/mois) = le copilote = **même personnage + lunettes rondes**.
+  C'est l'offre mise en avant (« ⭐ Le plus populaire »).
+- **Bluminator** (14,99 €/mois) = palier premium pour **gros utilisateurs de l'IA**
+  (usage IA étendu ~4×, réponses plus approfondies, priorité quand le service est
+  saturé). Honnête : « n'a d'intérêt que si tu utilises l'IA très souvent ».
+- **Modèle de données** : `type Tier = 'free' | 'blumiman' | 'bluminator'`.
+  `getTier()`, `ownsPaid()`, `setTier()`, `tierName(t)`, `useTier()`. Stocké en
+  `localStorage` `lumi.tier` (⚠️ NE PAS renommer la clé) + `lumi.luminator`
+  (legacy booléen, maintenu pour compat + migration : ancien `'1'` → `bluminator`).
+  - **Couche de compat** (à garder) : `ownsLuminator()`=`ownsPaid()`,
+    `setLuminator(v)`=`setTier(v?'blumiman':'free')`, `useLuminator()`, `brandName()`
+    (= nom du palier actif, sinon `APP_NAME`='Blumi'), `useBrand()` (`{ owns, name }`).
+- Quand un palier payant est acquis, le personnage à lunettes **et le nom du palier**
+  (Blumiman / Bluminator) prennent la place de Blumi partout (logo, avatars, chat,
+  profil, verdicts) via `useBrand()`/`brandName()`.
+- ⚠️ **Renommage** : ne PAS remplacer aveuglément « Luminator » dans `llm.ts`
+  (identifiants `streamLuminatorChat`, `LUMINATOR_SYSTEM`) ni `LuminatorChat`,
+  `useLuminator`, `LumiSpeech`, `byLumi` (identifiants de code). Idem clés
+  `localStorage` (`lumi.*`, `yourcareer.*`). Seuls les **textes visibles** sont
+  rebrandés. Le persona du chat injecte le nom du palier via `{NAME}` dans
+  `LUMINATOR_SYSTEM` (`.replace('{NAME}', tierName(getTier()))`).
 
 ## Personnage 3D — `src/components/avatar/RobotAvatar.tsx` (+ `Avatar.tsx`)
 - Yeux qui suivent le curseur, clignements, couleur d'humeur (mood).
@@ -65,6 +85,11 @@ visée pédagogique.
   prêts à l'emploi), ciblé sur sa profession + ses compétences. Garde aussi le
   coaching (reconversion, compétences, etc.).
 - **Streaming** (la bouche bouge pendant qu'il parle).
+- **Crash de l'API géré** : `describeError()` (`llm.ts`) traduit les pannes
+  (`InternalServerError`/5xx, `APIConnectionError`, surcharge…) en messages clairs
+  dans le chat (« Le service IA est momentanément indisponible. Réessaie dans un
+  instant. 🛠️ ») au lieu d'une erreur brute. Le `catch` de `LuminatorChat`
+  remplace la bulle par « ⚠️ » + ce message.
 - **Mémoire** : conversation persistée en `localStorage` (`lumi.luminator.chat`).
 - **Profil D'ABORD** : le system prompt demande à Luminator de faire connaissance
   (1-2 questions) avant de guider si le profil est trop maigre. Côté UI, la home
@@ -89,17 +114,26 @@ visée pédagogique.
 - Accès au chat : bouton flottant (FAB) quand `owns`, + bouton sur l'écran Tarifs.
 
 ## Tarifs — `src/components/PricingScreen.tsx`
-- Carte **Lumi** (gratuit) / carte **Luminator** (payant) — chacune avec le perso.
-- « Devenir Luminator » : **paiement Stripe « prêt à brancher »**. Si Stripe est
-  configuré côté serveur → ouvre Stripe Checkout ; sinon → **achat simulé**
-  (`setLuminator(true)`). Logique dans `src/lib/billing.ts` (`checkBilling`,
-  `startCheckout`, `handleCheckoutReturn`) + Edge functions `api/stripe/*`
-  (`status`, `create-checkout-session`, `verify-session`).
-  - Variables Vercel à poser le jour J : `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID`
-    (+ `STRIPE_PRICE_ID_YEARLY` optionnel). Au retour de Stripe, `App.tsx`
-    appelle `handleCheckoutReturn()` qui vérifie le paiement et fait `setLuminator(true)`.
+- **3 cartes** (tableau `PLANS`) : **Blumi** (gratuit) / **Blumiman** 4,99 €
+  (« ⭐ Le plus populaire ») / **Bluminator** 14,99 € (« 🚀 Usage intensif »).
+  Toggle mensuel / annuel (« 2 mois offerts »). Note honnête : « La plupart des
+  gens choisissent Blumiman ; Bluminator n'a d'intérêt que si tu utilises l'IA
+  très souvent ».
+- `buy(tier)` → si Stripe configuré : `startCheckout(tier, plan)` (Checkout) ;
+  sinon **achat simulé** (`setTier(tier)`). `manage()` → `openBillingPortal()`.
+  Logique : `src/lib/billing.ts` (`checkBilling`, `startCheckout`,
+  `handleCheckoutReturn`, `openBillingPortal`) + Edge functions `api/stripe/*`
+  (`status`, `create-checkout-session`, `verify-session`, `portal`, `webhook`).
+- **Stripe Tax (TVA UE/étranger) ACTIVÉ** dans `create-checkout-session.ts` :
+  `automatic_tax.enabled=true`, `billing_address_collection='required'`,
+  `tax_id_collection.enabled=true`. ⚠️ À finaliser côté Dashboard Stripe :
+  activer Stripe Tax + renseigner l'adresse d'origine et les seuils.
+  - **Variables Vercel (prix par palier)** : `STRIPE_SECRET_KEY`,
+    `STRIPE_PRICE_BLUMIMAN`, `STRIPE_PRICE_BLUMIMAN_YEARLY`,
+    `STRIPE_PRICE_BLUMINATOR`, `STRIPE_PRICE_BLUMINATOR_YEARLY`. Au retour de
+    Stripe, `App.tsx` appelle `handleCheckoutReturn()` → `setTier(j.tier)`.
   - ⚠️ Accès stocké en localStorage (proto) → falsifiable / non multi-appareil :
-    pour un vrai produit payant, ajouter des **comptes légers (email)**.
+    pour un vrai produit payant, s'appuyer sur les **comptes (email)** ci-dessous.
 - Argumentaire centré sur la **valeur d'automatisation** (gain de temps).
 
 ## Comptes (lien magique) — « prêt à brancher »
@@ -110,9 +144,12 @@ visée pédagogique.
   helpers `api/_lib/kv.ts` (Upstash/Vercel KV REST) & `api/_lib/email.ts` (Resend).
   Session = cookie httpOnly `lumi_session`. Clés KV : `magic:<token>`, `sess:<id>`,
   `user:<email>`, `luminator:<email>`, `cust:<stripeCustomer>`.
-- `api/stripe/webhook.ts` : à `checkout.session.completed`, met `luminator:<email>='1'`
-  (signature vérifiée via `STRIPE_WEBHOOK_SECRET`). `create-checkout-session` passe
-  l'email du compte connecté (`customer_email` + metadata) → le webhook sait qui créditer.
+- `api/stripe/webhook.ts` : à `checkout.session.completed`, met
+  `luminator:<email>` = palier (`'blumiman'` | `'bluminator'`, via metadata) +
+  `cust:<customer>`/`stripecust:<email>` ; à `subscription.deleted` repasse en
+  `'free'` (signature vérifiée via `STRIPE_WEBHOOK_SECRET`).
+  `create-checkout-session` passe l'email du compte connecté (`customer_email` +
+  metadata `tier`) → le webhook sait qui créditer et à quel palier.
 - Front : `src/lib/account.ts` (`checkAccount`, `requestLoginLink`,
   `completeLoginFromUrl`, `logoutAccount`, `useAccount`) + `AccountModal.tsx`.
   Bouton compte dans la nav (affiché seulement si `account.configured`).

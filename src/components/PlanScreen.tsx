@@ -4,6 +4,7 @@ import { usePlan, addPlanItem, setPlanStatus, removePlanItem, type PlanItem, typ
 import { useToolbox } from '../lib/toolbox'
 import { loadProfile } from '../lib/profile'
 import { automationProgress, progressLabel } from '../lib/score'
+import { brandName } from '../lib/entitlement'
 
 interface Props {
   onBack: () => void
@@ -48,7 +49,7 @@ export function PlanScreen({ onBack, onOpenChat }: Props) {
             <div>
               <h1 className="font-display text-2xl font-extrabold text-ink-900 md:text-3xl">Mon plan d'action</h1>
               <p className="mt-1 text-sm text-ink-500">
-                Les actions concrètes pour automatiser et faire évoluer ton métier. Luminator les ajoute au fil de vos
+                Les actions concrètes pour automatiser et faire évoluer ton métier. {brandName()} les ajoute au fil de vos
                 échanges — coche-les à mesure que tu avances.
               </p>
             </div>
@@ -95,14 +96,14 @@ export function PlanScreen({ onBack, onOpenChat }: Props) {
               <div className="text-4xl">🗂️</div>
               <h2 className="mt-3 font-display text-lg font-bold text-ink-900">Ton plan est vide</h2>
               <p className="mx-auto mt-1 max-w-sm text-sm text-ink-500">
-                Demande à Luminator quoi automatiser dans ton métier : il remplira ton plan d'actions concrètes,
+                Demande à {brandName()} quoi automatiser dans ton métier : il remplira ton plan d'actions concrètes,
                 étape par étape.
               </p>
               <button
                 onClick={() => onOpenChat('Quelles tâches de mon métier puis-je automatiser ? Ajoute-les à mon plan.')}
                 className="btn-primary mx-auto mt-5"
               >
-                💬 Demander à Luminator
+                💬 Demander à {brandName()}
               </button>
             </div>
           ) : (
@@ -128,7 +129,7 @@ export function PlanScreen({ onBack, onOpenChat }: Props) {
                 onClick={() => onOpenChat('Donne-moi la prochaine action concrète pour mon métier et ajoute-la à mon plan.')}
                 className="btn-ghost w-full justify-center"
               >
-                💬 Demander d'autres actions à Luminator
+                💬 Demander d'autres actions à {brandName()}
               </button>
             </div>
           )}

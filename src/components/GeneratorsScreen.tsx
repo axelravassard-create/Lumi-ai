@@ -1,4 +1,5 @@
 import { Logo } from './Logo'
+import { brandName } from '../lib/entitlement'
 
 interface Props {
   onBack: () => void
@@ -66,7 +67,7 @@ export function GeneratorsScreen({ onBack, onOpenChat }: Props) {
         <section className="animate-fade-up pt-10">
           <h1 className="font-display text-2xl font-extrabold text-ink-900 md:text-3xl">Générateurs express</h1>
           <p className="mt-1 text-sm text-ink-500">
-            Des livrables concrets en un clic. Luminator s'appuie sur ton profil pour tout personnaliser.
+            Des livrables concrets en un clic. {brandName()} s'appuie sur ton profil pour tout personnaliser.
           </p>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">

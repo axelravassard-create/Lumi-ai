@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Logo } from './Logo'
 import { useToolbox, addTool, removeTool, type ToolItem } from '../lib/toolbox'
+import { brandName } from '../lib/entitlement'
 
 interface Props {
   onBack: () => void
@@ -37,7 +38,7 @@ export function ToolboxScreen({ onBack, onOpenChat }: Props) {
         <section className="animate-fade-up pt-10">
           <h1 className="font-display text-2xl font-extrabold text-ink-900 md:text-3xl">Ma boîte à outils</h1>
           <p className="mt-1 text-sm text-ink-500">
-            Les outils (IA, no-code, apps) que Luminator te recommande pour ton métier, rangés au même endroit.
+            Les outils (IA, no-code, apps) que {brandName()} te recommande pour ton métier, rangés au même endroit.
           </p>
 
           {/* Ajout manuel rapide */}
@@ -70,13 +71,13 @@ export function ToolboxScreen({ onBack, onOpenChat }: Props) {
               <div className="text-4xl">🧰</div>
               <h2 className="mt-3 font-display text-lg font-bold text-ink-900">Ta boîte est vide</h2>
               <p className="mx-auto mt-1 max-w-sm text-sm text-ink-500">
-                Demande à Luminator quels outils utiliser pour ton métier : il les rangera ici avec leurs liens.
+                Demande à {brandName()} quels outils utiliser pour ton métier : il les rangera ici avec leurs liens.
               </p>
               <button
                 onClick={() => onOpenChat('Quels outils IA ou no-code me recommandes-tu pour mon métier ? Ajoute-les à ma boîte à outils.')}
                 className="btn-primary mx-auto mt-5"
               >
-                💬 Demander à Luminator
+                💬 Demander à {brandName()}
               </button>
             </div>
           ) : (
@@ -88,7 +89,7 @@ export function ToolboxScreen({ onBack, onOpenChat }: Props) {
                 onClick={() => onOpenChat('Recommande-moi d\'autres outils adaptés à mon métier et ajoute-les à ma boîte à outils.')}
                 className="btn-ghost mt-2 w-full justify-center"
               >
-                💬 Demander d'autres outils à Luminator
+                💬 Demander d'autres outils à {brandName()}
               </button>
             </div>
           )}

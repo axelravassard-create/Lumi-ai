@@ -41,8 +41,9 @@ export default async function handler(req: Request): Promise<Response> {
   if (evt.type === 'checkout.session.completed') {
     const s = evt.data?.object || {}
     const email = String(s.customer_details?.email || s.customer_email || s.metadata?.email || '').toLowerCase()
+    const tier = s.metadata?.tier === 'bluminator' ? 'bluminator' : 'blumiman'
     if (email) {
-      await kvSet(`luminator:${email}`, '1')
+      await kvSet(`luminator:${email}`, tier) // stocke le palier ('blumiman'|'bluminator')
       if (s.customer) {
         await kvSet(`cust:${s.customer}`, email) // customer → email (annulation)
         await kvSet(`stripecust:${email}`, s.customer) // email → customer (portail)
@@ -52,7 +53,7 @@ export default async function handler(req: Request): Promise<Response> {
     const sub = evt.data?.object || {}
     let email = String(sub.metadata?.email || '').toLowerCase()
     if (!email && sub.customer) email = (await kvGet(`cust:${sub.customer}`)) || ''
-    if (email) await kvSet(`luminator:${email}`, '0')
+    if (email) await kvSet(`luminator:${email}`, 'free')
   }
 
   return new Response(JSON.stringify({ received: true }), { status: 200, headers: { 'content-type': 'application/json' } })

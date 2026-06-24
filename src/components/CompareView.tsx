@@ -4,6 +4,7 @@ import { ComparisonResult } from '../lib/llm'
 import { useCountUp } from '../lib/ui'
 import { Logo } from './Logo'
 import { Avatar } from './Avatar'
+import { useBrand } from '../lib/entitlement'
 
 interface Props {
   a: Analysis
@@ -16,6 +17,7 @@ const COLOR_A = '#4f46e5' // indigo
 const COLOR_B = '#f59e0b' // amber
 
 export function CompareView({ a, b, comparison, onReset }: Props) {
+  const { name } = useBrand()
   // Comparaison de repli (heuristique) si l'IA n'est pas connectée.
   const fallback = useMemo<ComparisonResult>(() => {
     const safer = a.score <= b.score ? a : b
@@ -72,11 +74,11 @@ export function CompareView({ a, b, comparison, onReset }: Props) {
               <div className="relative h-32 w-32 sm:h-40 sm:w-40">
                 <Avatar state="idle" className="h-full w-full" />
               </div>
-              <span className="pill bg-brand-50 font-bold text-brand-700">Lumi</span>
+              <span className="pill bg-brand-50 font-bold text-brand-700">{name}</span>
             </div>
             <div className="flex-1">
               <h2 className="font-display text-sm font-bold uppercase tracking-wide text-ink-500">
-                {comparison ? 'La comparaison de Lumi' : 'Analyse comparative'}
+                {comparison ? `La comparaison de ${name}` : 'Analyse comparative'}
               </h2>
               <p className="mt-1 text-lg font-medium leading-snug text-ink-900">{result.summary}</p>
               <div className="mt-3 pill bg-emerald-100 text-emerald-700">

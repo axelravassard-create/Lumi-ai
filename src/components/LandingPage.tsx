@@ -158,7 +158,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
               {!reveal && (
                 <button
                   onClick={() => setRevealAnimated(true)}
-                  aria-label="Découvrir Luminator"
+                  aria-label="Découvrir Blumiman"
                   title="Qui est là, derrière ?"
                   className="group absolute right-0 top-0 z-40 h-[56%] w-[44%] cursor-pointer"
                 >
@@ -442,6 +442,7 @@ function MemberHome({
   const profile = loadProfile()
   const plan = usePlan()
   const tools = useToolbox()
+  const { name } = useBrand() // nom du palier du membre (Blumiman / Bluminator)
   const role = profile.role
   const hasRole = !!role?.trim()
   const location = profile.location?.trim()
@@ -467,7 +468,7 @@ function MemberHome({
           Faisons connaissance d'abord
         </h1>
         <p className="animate-fade-up mx-auto mt-3 max-w-md text-ink-500" style={{ animationDelay: '120ms' }}>
-          Plus Luminator connaît ton métier, tes tâches et ton objectif, plus ses conseils d'automatisation sont
+          Plus {name} connaît ton métier, tes tâches et ton objectif, plus ses conseils d'automatisation sont
           précis et utiles. Deux minutes pour un accompagnement vraiment sur-mesure.
         </p>
 
@@ -490,7 +491,7 @@ function MemberHome({
             onClick={() => onOpenChat('Aide-moi à compléter mon profil : pose-moi les questions clés sur mon métier, mon parcours et mon objectif, puis enregistre mes réponses.')}
             className="text-sm text-ink-500 underline-offset-2 hover:text-brand-700 hover:underline"
           >
-            …ou le faire en discutant avec Luminator
+            …ou le faire en discutant avec {name}
           </button>
           {!aiEnabled && (
             <button onClick={onOpenSettings} className="text-xs text-ink-400 underline-offset-2 hover:text-brand-700 hover:underline">
@@ -533,16 +534,16 @@ function MemberHome({
         <h1 className="animate-fade-up mt-6 font-display text-3xl font-extrabold leading-[1.1] tracking-tight text-ink-900 md:text-5xl" style={{ animationDelay: '60ms' }}>
           Gagne du temps.
           <br />
-          <span className="bg-gradient-to-r from-brand-600 to-violet-500 bg-clip-text text-transparent">Luminator automatise ton métier.</span>
+          <span className="bg-gradient-to-r from-brand-600 to-violet-500 bg-clip-text text-transparent">{name} automatise ton métier.</span>
         </h1>
         <p className="animate-fade-up mx-auto mt-4 max-w-xl text-lg text-ink-500" style={{ animationDelay: '120ms' }}>
-          Décris une tâche et Luminator te montre comment la faire plus vite — outils IA, no-code, modèles prêts à
+          Décris une tâche et {name} te montre comment la faire plus vite — outils IA, no-code, modèles prêts à
           l'emploi, adaptés à ton parcours.
         </p>
 
         <div className="animate-fade-up mt-7 flex flex-col items-center gap-2" style={{ animationDelay: '160ms' }}>
           <button onClick={() => onOpenChat()} className="btn-primary px-6 py-3.5 text-base">
-            💬 Discuter avec Luminator
+            💬 Discuter avec {name}
           </button>
           {!aiEnabled && (
             <button onClick={onOpenSettings} className="text-xs text-ink-400 underline-offset-2 hover:text-brand-700 hover:underline">
@@ -618,7 +619,7 @@ function MemberHome({
           <ActionCard
             emoji="⚡"
             title="Automatiser une tâche"
-            desc="Luminator te guide, adapté à ton métier."
+            desc={`${name} te guide, adapté à ton métier.`}
             onClick={() => onOpenChat('Aide-moi à automatiser une tâche précise de mon métier, étape par étape.')}
           />
           <ActionCard

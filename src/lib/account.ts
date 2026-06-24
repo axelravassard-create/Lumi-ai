@@ -7,7 +7,7 @@
 // (entitlement renvoyé par le serveur), et il suit l'utilisateur entre appareils.
 
 import { useEffect, useState } from 'react'
-import { setLuminator } from './entitlement'
+import { setTier, type Tier } from './entitlement'
 
 interface AccountState {
   email: string | null
@@ -25,27 +25,29 @@ export function accountState(): AccountState {
   return state
 }
 
-function apply(data: { email?: string | null; luminator?: boolean; configured?: boolean }) {
+function apply(data: { email?: string | null; tier?: string; luminator?: boolean; configured?: boolean }) {
   state = {
     email: data.email ?? null,
     luminator: !!data.luminator,
     configured: data.configured !== false,
   }
   // Quand un compte est connecté, le serveur fait foi (dans les deux sens) :
-  // on accorde l'accès s'il est abonné, on le retire si le serveur dit non.
+  // on applique son palier exact ; à la déconnexion / serveur=free on retire.
   // Hors compte connecté (email null), on ne touche pas au localStorage (le
   // parcours simulé / retour Stripe le gère).
-  if (state.luminator) setLuminator(true)
-  else if (state.email) setLuminator(false)
+  if (state.email) {
+    const tier = (data.tier as Tier) || (data.luminator ? 'blumiman' : 'free')
+    setTier(tier)
+  }
   emit()
 }
 
-// Récupère la session courante (et le statut Luminator serveur).
+// Récupère la session courante (et le palier serveur).
 export async function checkAccount(): Promise<void> {
   try {
     const r = await fetch('/api/auth/me')
     if (!r.ok) return
-    const j = (await r.json()) as { email?: string | null; luminator?: boolean; configured?: boolean }
+    const j = (await r.json()) as { email?: string | null; tier?: string; luminator?: boolean; configured?: boolean }
     apply(j)
   } catch {
     /* ignore */
@@ -76,9 +78,9 @@ export async function completeLoginFromUrl(): Promise<boolean> {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ token }),
     })
-    const j = (await r.json().catch(() => ({}))) as { email?: string; luminator?: boolean }
+    const j = (await r.json().catch(() => ({}))) as { email?: string; tier?: string; luminator?: boolean }
     if (r.ok && j.email) {
-      apply({ email: j.email, luminator: j.luminator, configured: true })
+      apply({ email: j.email, tier: j.tier, luminator: j.luminator, configured: true })
       ok = true
     }
   } catch {
@@ -97,7 +99,7 @@ export async function logoutAccount(): Promise<void> {
     /* ignore */
   }
   state = { ...state, email: null, luminator: false }
-  setLuminator(false) // déconnexion = on retire l'accès sur cet appareil
+  setTier('free') // déconnexion = on retire l'accès sur cet appareil
   emit()
 }
 

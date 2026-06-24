@@ -21,7 +21,7 @@ import { GeneratorsScreen } from './components/GeneratorsScreen'
 import { StudioScene } from './components/StudioScene'
 import { loadProfile, profileToContext } from './lib/profile'
 import { addBilan } from './lib/history'
-import { useLuminator } from './lib/entitlement'
+import { useLuminator, brandName, APP_NAME } from './lib/entitlement'
 import { handleCheckoutReturn } from './lib/billing'
 import { completeLoginFromUrl, checkAccount } from './lib/account'
 import { AccountModal } from './components/AccountModal'
@@ -86,22 +86,22 @@ export default function App() {
   // Titre d'onglet par vue (clarté + contexte des liens partagés).
   useEffect(() => {
     const titles: Record<View, string> = {
-      landing: "Lumi · Votre métier face à l'IA",
-      analyzing: 'Analyse en cours… · Lumi',
-      dashboard: 'Votre résultat · Lumi',
-      compare: 'Comparaison · Lumi',
-      profile: 'Mon profil · Lumi',
-      pricing: 'Tarifs · Lumi',
-      directory: 'Métiers · Lumi',
-      metier: 'Métier · Lumi',
-      legal: 'Informations légales · Lumi',
-      plan: "Mon plan d'action · Lumi",
-      toolbox: 'Ma boîte à outils · Lumi',
-      veille: 'Veille de mon métier · Lumi',
-      generators: 'Générateurs · Lumi',
-      studio: 'Studio · Lumi',
+      landing: "Blumi · Votre métier face à l'IA",
+      analyzing: 'Analyse en cours… · Blumi',
+      dashboard: 'Votre résultat · Blumi',
+      compare: 'Comparaison · Blumi',
+      profile: 'Mon profil · Blumi',
+      pricing: 'Tarifs · Blumi',
+      directory: 'Métiers · Blumi',
+      metier: 'Métier · Blumi',
+      legal: 'Informations légales · Blumi',
+      plan: "Mon plan d'action · Blumi",
+      toolbox: 'Ma boîte à outils · Blumi',
+      veille: 'Veille de mon métier · Blumi',
+      generators: 'Générateurs · Blumi',
+      studio: 'Studio · Blumi',
     }
-    document.title = titles[view] || 'Lumi'
+    document.title = titles[view] || 'Blumi'
   }, [view])
 
   // Détecte si une clé serveur est configurée → l'IA s'active pour tous sans
@@ -351,13 +351,13 @@ export default function App() {
       {ownsLuminator && !chatOpen && view !== 'analyzing' && view !== 'studio' && view !== 'legal' && (
         <button
           onClick={() => openChat()}
-          aria-label="Discuter avec Luminator"
+          aria-label={`Discuter avec ${brandName()}`}
           className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-brand-600 py-3 pl-3 pr-4 text-sm font-semibold text-white shadow-glow transition hover:bg-brand-700"
         >
           <span className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-white/15">
             <Avatar glasses className="h-full w-full" forceFallback />
           </span>
-          Luminator
+          {brandName()}
         </button>
       )}
 
@@ -392,7 +392,7 @@ function AnalyzingScreen({ label, step }: { label: string; step: number }) {
         <div className="relative mx-auto mb-2 h-56 w-full">
           <Avatar state="thinking" className="h-full w-full" />
         </div>
-        <h2 className="font-display text-xl font-bold text-ink-900">Lumi analyse « {label} »</h2>
+        <h2 className="font-display text-xl font-bold text-ink-900">{APP_NAME} analyse « {label} »</h2>
         <div className="mt-6 space-y-2 text-left">
           {ANALYSIS_STEPS.map((s, i) => (
             <div

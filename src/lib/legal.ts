@@ -41,7 +41,7 @@ export interface LegalInfo {
 // editorName à 'Éditeur particulier (identité connue de l’hébergeur)'.
 export const LEGAL_INFO: LegalInfo = {
   status: 'particulier',
-  brand: 'Lumi',
+  brand: 'Blumi',
   editorName: 'Axel Ravassard',
   publicationDirector: 'Axel Ravassard',
   address: undefined, // facultatif pour un particulier ; obligatoire dès la micro

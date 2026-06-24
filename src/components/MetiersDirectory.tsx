@@ -19,7 +19,7 @@ function riskColor(r: number): string {
 // Annuaire des métiers — page d'atterrissage SEO listant toutes les fiches.
 export function MetiersDirectory({ onBack, onOpenMetier }: Props) {
   useSeo(
-    'Tous les métiers face à l\'IA — risque d\'automatisation | Lumi',
+    'Tous les métiers face à l\'IA — risque d\'automatisation | Blumi',
     'Découvrez le risque de remplacement par l\'intelligence artificielle pour des dizaines de métiers, et comment garder une longueur d\'avance.',
   )
 

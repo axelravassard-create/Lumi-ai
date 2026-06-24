@@ -5,6 +5,7 @@ import { describeError, extractProfileFromCV } from '../lib/llm'
 import { clearAllLocalData } from '../lib/privacy'
 import { Logo } from './Logo'
 import { useCountUp } from '../lib/ui'
+import { brandName } from '../lib/entitlement'
 
 function riskColor(r: number): string {
   if (r < 30) return '#10b981'
@@ -108,7 +109,7 @@ export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: 
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-lg shadow-sm">🤓</span>
               <div className="text-sm">
                 <p className="font-semibold text-brand-800">
-                  Complété par Luminator pendant vos échanges
+                  Complété par {brandName()} pendant vos échanges
                 </p>
                 <p className="mt-0.5 text-ink-600">
                   {lumiLabels.join(', ')}. Vérifiez et ajustez si besoin — c'est votre profil.
@@ -202,12 +203,12 @@ export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: 
           <div className="rounded-2xl border border-rose-100 bg-rose-50/50 p-5">
             <h2 className="font-display text-sm font-bold text-ink-900">Vos données</h2>
             <p className="mt-1 text-sm text-ink-600">
-              Tout ce que Lumi enregistre (profil, historique, conversations, clé API, offre) reste sur cet appareil.
+              Tout ce que Blumi enregistre (profil, historique, conversations, clé API, offre) reste sur cet appareil.
               Vous pouvez tout effacer définitivement en un clic.
             </p>
             <button
               onClick={() => {
-                if (window.confirm('Supprimer définitivement toutes vos données Lumi sur cet appareil ? Cette action est irréversible.')) {
+                if (window.confirm('Supprimer définitivement toutes vos données Blumi sur cet appareil ? Cette action est irréversible.')) {
                   clearAllLocalData()
                   window.location.href = window.location.pathname
                 }
@@ -457,7 +458,7 @@ function Field({ label, hint, mark, children }: { label: string; hint?: string; 
       <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-ink-700">
         {label}
         {hint && <span className="pill bg-brand-50 px-2 py-0.5 text-[10px] text-brand-700">{hint}</span>}
-        {mark && <span className="pill bg-violet-100 px-2 py-0.5 text-[10px] text-violet-700">🤓 Luminator</span>}
+        {mark && <span className="pill bg-violet-100 px-2 py-0.5 text-[10px] text-violet-700">🤓 {brandName()}</span>}
       </label>
       {children}
     </div>
