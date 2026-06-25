@@ -576,7 +576,7 @@ function MemberHome({
           <div className="flex items-end justify-between">
             <div>
               <p className="text-sm font-semibold text-ink-900">Mon avancée automatisation</p>
-              <p className="mt-0.5 text-xs text-ink-500">{progressLabel(progress.score)}</p>
+              <p className="mt-0.5 text-xs text-ink-500">{t(progressLabel(progress.score))}</p>
             </div>
             <span className="font-display text-3xl font-extrabold text-brand-600">{progress.score}%</span>
           </div>

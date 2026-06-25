@@ -5,19 +5,21 @@ import { useToolbox } from '../lib/toolbox'
 import { loadProfile } from '../lib/profile'
 import { automationProgress, progressLabel } from '../lib/score'
 import { brandName } from '../lib/entitlement'
+import { t, useLang } from '../lib/i18n'
 
 interface Props {
   onBack: () => void
   onOpenChat: (message?: string) => void
 }
 
-const COLUMNS: { status: PlanStatus; label: string; emoji: string }[] = [
-  { status: 'todo', label: 'À faire', emoji: '⬜' },
-  { status: 'doing', label: 'En cours', emoji: '🔧' },
-  { status: 'done', label: 'Fait', emoji: '✅' },
+const COLUMNS: { status: PlanStatus; labelKey: string; emoji: string }[] = [
+  { status: 'todo', labelKey: 'plan.col.todo', emoji: '⬜' },
+  { status: 'doing', labelKey: 'plan.col.doing', emoji: '🔧' },
+  { status: 'done', labelKey: 'plan.col.done', emoji: '✅' },
 ]
 
 export function PlanScreen({ onBack, onOpenChat }: Props) {
+  useLang()
   const items = usePlan()
   const tools = useToolbox()
   const [draft, setDraft] = useState('')
@@ -38,7 +40,7 @@ export function PlanScreen({ onBack, onOpenChat }: Props) {
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
               <path d="M5 12h14m-8-6-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Retour
+            {t('common.back')}
           </button>
         </div>
       </header>
@@ -47,14 +49,13 @@ export function PlanScreen({ onBack, onOpenChat }: Props) {
         <section className="animate-fade-up pt-10">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h1 className="font-display text-2xl font-extrabold text-ink-900 md:text-3xl">Mon plan d'action</h1>
+              <h1 className="font-display text-2xl font-extrabold text-ink-900 md:text-3xl">{t('plan.title')}</h1>
               <p className="mt-1 text-sm text-ink-500">
-                Les actions concrètes pour automatiser et faire évoluer ton métier. {brandName()} les ajoute au fil de vos
-                échanges — coche-les à mesure que tu avances.
+                {t('plan.intro').replace('{name}', brandName())}
               </p>
             </div>
             {items.length > 0 && (
-              <span className="pill bg-brand-50 text-brand-700">{done}/{items.length} fait{done > 1 ? 's' : ''}</span>
+              <span className="pill bg-brand-50 text-brand-700">{t('plan.doneCount').replace('{done}', String(done)).replace('{total}', String(items.length))}</span>
             )}
           </div>
 
@@ -62,8 +63,8 @@ export function PlanScreen({ onBack, onOpenChat }: Props) {
           <div className="card mt-5 p-5">
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-sm font-semibold text-ink-900">Mon avancée automatisation</p>
-                <p className="mt-0.5 text-xs text-ink-500">{progressLabel(progress.score)}</p>
+                <p className="text-sm font-semibold text-ink-900">{t('plan.progressTitle')}</p>
+                <p className="mt-0.5 text-xs text-ink-500">{t(progressLabel(progress.score))}</p>
               </div>
               <span className="font-display text-3xl font-extrabold text-brand-600">{progress.score}%</span>
             </div>
@@ -83,38 +84,37 @@ export function PlanScreen({ onBack, onOpenChat }: Props) {
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
-              placeholder="Ajouter une action (ex : automatiser mes relances)…"
+              placeholder={t('plan.addPlaceholder')}
               className="flex-1 rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
             />
             <button type="submit" disabled={!draft.trim()} className="btn-primary px-4 py-2.5 text-sm disabled:opacity-40">
-              Ajouter
+              {t('common.add')}
             </button>
           </form>
 
           {items.length === 0 ? (
             <div className="card mt-6 p-8 text-center">
               <div className="text-4xl">🗂️</div>
-              <h2 className="mt-3 font-display text-lg font-bold text-ink-900">Ton plan est vide</h2>
+              <h2 className="mt-3 font-display text-lg font-bold text-ink-900">{t('plan.emptyTitle')}</h2>
               <p className="mx-auto mt-1 max-w-sm text-sm text-ink-500">
-                Demande à {brandName()} quoi automatiser dans ton métier : il remplira ton plan d'actions concrètes,
-                étape par étape.
+                {t('plan.emptyDesc').replace('{name}', brandName())}
               </p>
               <button
-                onClick={() => onOpenChat('Quelles tâches de mon métier puis-je automatiser ? Ajoute-les à mon plan.')}
+                onClick={() => onOpenChat(t('plan.promptAutomate'))}
                 className="btn-primary mx-auto mt-5"
               >
-                💬 Demander à {brandName()}
+                {t('common.askName').replace('{name}', brandName())}
               </button>
             </div>
           ) : (
             <div className="mt-6 space-y-6">
-              {COLUMNS.map(({ status, label, emoji }) => {
+              {COLUMNS.map(({ status, labelKey, emoji }) => {
                 const col = items.filter((i) => i.status === status)
                 if (col.length === 0) return null
                 return (
                   <div key={status}>
                     <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-ink-400">
-                      {emoji} {label} · {col.length}
+                      {emoji} {t(labelKey)} · {col.length}
                     </h2>
                     <div className="space-y-2">
                       {col.map((item) => (
@@ -126,10 +126,10 @@ export function PlanScreen({ onBack, onOpenChat }: Props) {
               })}
 
               <button
-                onClick={() => onOpenChat('Donne-moi la prochaine action concrète pour mon métier et ajoute-la à mon plan.')}
+                onClick={() => onOpenChat(t('plan.promptNext'))}
                 className="btn-ghost w-full justify-center"
               >
-                💬 Demander d'autres actions à {brandName()}
+                {t('plan.askMore').replace('{name}', brandName())}
               </button>
             </div>
           )}
@@ -145,7 +145,7 @@ function PlanCard({ item }: { item: PlanItem }) {
     <div className={`card flex items-start gap-3 p-4 ${item.status === 'done' ? 'opacity-70' : ''}`}>
       <button
         onClick={() => setPlanStatus(item.id, next[item.status])}
-        title="Changer le statut"
+        title={t('plan.changeStatus')}
         className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full border text-xs transition ${
           item.status === 'done'
             ? 'border-emerald-500 bg-emerald-500 text-white'
@@ -162,7 +162,7 @@ function PlanCard({ item }: { item: PlanItem }) {
       </div>
       <button
         onClick={() => removePlanItem(item.id)}
-        aria-label="Supprimer"
+        aria-label={t('common.delete')}
         className="shrink-0 rounded-full p-1 text-ink-300 transition hover:bg-ink-50 hover:text-rose-500"
       >
         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
