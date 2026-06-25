@@ -28,24 +28,19 @@ export interface LegalInfo {
   updated: string
 }
 
-// Pré-rempli pour un particulier (offre actuellement gratuite).
-// À vérifier / compléter :
-//  - editorName / publicationDirector : confirme l'orthographe.
-//  - address : facultative pour un particulier (voir note ci-dessous), mais
-//    OBLIGATOIRE dès le passage en micro-entreprise.
-//
-// 💡 Régime « particulier non professionnel » (LCEN art. 6 III 2) : tant que le
-// site est gratuit et non professionnel, tu PEUX ne pas afficher ton nom/adresse
-// publiquement, à condition d'avoir communiqué ton identité à l'hébergeur (Vercel,
-// via ton compte). Dans ce cas, ne publie que l'hébergeur + un contact, et passe
-// editorName à 'Éditeur particulier (identité connue de l’hébergeur)'.
+// Micro-entreprise (créée). Reste à compléter :
+//  - siret : le numéro SIRET de la micro-entreprise (14 chiffres). Tant qu'il est
+//    `undefined`, la ligne SIRET ne s'affiche pas dans les mentions légales
+//    (LegalScreen masque la ligne si le SIRET manque). ⚠️ À renseigner : le SIRET
+//    est OBLIGATOIRE sur les mentions légales d'une micro-entreprise.
+//  - address / editorName / publicationDirector : vérifie l'orthographe.
 export const LEGAL_INFO: LegalInfo = {
-  status: 'particulier',
+  status: 'micro',
   brand: 'Blumi',
   editorName: 'Axel Ravassard',
   publicationDirector: 'Axel Ravassard',
-  address: undefined, // facultatif pour un particulier ; obligatoire dès la micro
-  siret: undefined,
+  address: '16 bis Avenue des Monts d’Or, 69890 La Tour-de-Salvagny, France',
+  siret: undefined, // ⚠️ À COMPLÉTER : SIRET de la micro-entreprise (14 chiffres)
   rcs: undefined,
   legalForm: undefined,
   capital: undefined,

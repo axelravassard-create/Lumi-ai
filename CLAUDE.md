@@ -219,9 +219,11 @@ pédagogique.
   liens dans le footer.
 - **Infos légales centralisées dans `src/lib/legal.ts`** (`LEGAL_INFO`) : un seul
   endroit à compléter (nom éditeur, SIRET…). `status` ∈ `particulier|micro|societe`
-  → les mentions s'adaptent. **Défaut : `particulier`** (le plus simple tant que
-  l'app est gratuite ; passer en `micro` le jour d'un vrai paiement Luminator).
-  Champs `[à compléter]` = nom/prénom + directeur de publication.
+  → les mentions s'adaptent. **Statut actuel : `micro`** (micro-entreprise créée ;
+  éditeur Axel Ravassard, adresse 16 bis Avenue des Monts d'Or, 69890 La
+  Tour-de-Salvagny). ⚠️ **Reste à renseigner : le `siret`** (14 chiffres) — tant
+  qu'il est `undefined`, `LegalScreen` masque la ligne SIRET, mais il est
+  OBLIGATOIRE pour une micro-entreprise.
 - **Polices auto-hébergées** via `@fontsource/inter` + `@fontsource-variable/plus-jakarta-sans`
   (plus de requête Google Fonts). Famille display = `Plus Jakarta Sans Variable`.
 - `LICENSE` propriétaire ("UNLICENSED" dans package.json).
