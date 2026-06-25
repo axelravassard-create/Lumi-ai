@@ -240,8 +240,11 @@ pédagogique.
   l'**écran d'analyse** (`AnalyzingScreen`, `analyzing.*`), le **tableau de bord**
   (`Dashboard`, `dash.*`) et la page **Tarifs** (`PricingScreen`, `pricing.*` — les
   paliers sont construits depuis l'i18n via `PLAN_META` + `PLAN_TEXT`, quota injecté
-  par `{n}`). ⚠️ **Reste en FR (à traduire)** : MemberHome, chat, plan, toolbox,
-  veille, generators, profil, légal, etc. → phases suivantes.
+  par `{n}`) et l'écran **Profil** (`ProfileScreen`, `prof.*` + `opt.*`). ⚠️ Les
+  options des `<Select>` du profil restent STOCKÉES en français (le moteur
+  `engine.ts`/`llm.ts` les matche exactement) ; seul l'AFFICHAGE est traduit via
+  `OPTION_LABELS` (valeur FR → clé i18n). ⚠️ **Reste en FR (à traduire)** :
+  MemberHome, chat, plan, toolbox, veille, generators, légal, etc.
 - Pour ajouter une langue/écran : ajouter les clés dans les 5 dictionnaires de
   `i18n.ts` et remplacer les littéraux par `t('clé')` (appeler `useLang()` une fois
   dans le composant).
