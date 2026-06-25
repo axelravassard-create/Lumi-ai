@@ -5,6 +5,7 @@ import { applyProfilePatch } from '../lib/profile'
 import { addPlanItem } from '../lib/plan'
 import { useBrand } from '../lib/entitlement'
 import { addTool } from '../lib/toolbox'
+import { t, useLang } from '../lib/i18n'
 
 interface Props {
   onClose: () => void
@@ -16,11 +17,7 @@ interface Props {
   initialMessage?: string
 }
 
-const STARTERS = [
-  'Quelles tâches automatiser dans mon métier ?',
-  'Quels outils IA / no-code pour moi ?',
-  'Comment gagner du temps cette semaine ?',
-]
+const STARTER_KEYS = ['chat.starter0', 'chat.starter1', 'chat.starter2']
 
 // Mémoire de la conversation : conservée d'une session à l'autre.
 const STORAGE_KEY = 'lumi.luminator.chat'
@@ -45,7 +42,8 @@ function saveChat(messages: ChatMsg[]) {
 
 export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext, initialMessage }: Props) {
   const { name } = useBrand()
-  const greeting = `Hey 👋 Je suis ${name}. Dis-moi ton métier, et je te montre quelles tâches tu peux automatiser ou accélérer toi-même — avec des outils simples adaptés à tes compétences.`
+  useLang() // re-render au changement de langue
+  const greeting = t('chat.greeting').replace('{name}', name)
   const [messages, setMessages] = useState<ChatMsg[]>(() => loadChat())
   const [input, setInput] = useState(initialMessage ?? '')
   const [streaming, setStreaming] = useState(false)
@@ -165,8 +163,8 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
             {messages.length > 0 && (
               <button
                 onClick={newChat}
-                title="Nouvelle conversation"
-                aria-label="Nouvelle conversation"
+                title={t('chat.newConv')}
+                aria-label={t('chat.newConv')}
                 className="grid h-9 w-9 place-items-center rounded-full text-ink-400 transition hover:bg-ink-50 hover:text-ink-700"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
@@ -177,7 +175,7 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
             )}
             <button
               onClick={onClose}
-              aria-label="Fermer le chat"
+              aria-label={t('chat.close')}
               className="grid h-9 w-9 place-items-center rounded-full text-ink-400 transition hover:bg-ink-50 hover:text-ink-700"
             >
               ✕
@@ -190,22 +188,22 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
             <div className="mt-1.5 font-display text-base font-bold text-ink-900">{name}</div>
             <div className="flex items-center gap-1.5 text-xs text-ink-500">
               <span className={`h-1.5 w-1.5 rounded-full ${streaming ? 'animate-pulse bg-brand-500' : 'bg-emerald-500'}`} />
-              {streaming ? 'parle…' : 'ton coach de carrière'}
+              {streaming ? t('chat.speaking') : t('chat.coach')}
             </div>
           </div>
           {noted && (
             <div className="absolute left-1/2 top-2 -translate-x-1/2 animate-fade-in rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
-              🧠 noté sur ton profil
+              {t('chat.noted')}
             </div>
           )}
           {planned && !noted && (
             <div className="absolute left-1/2 top-2 -translate-x-1/2 animate-fade-in rounded-full bg-brand-50 px-2.5 py-1 text-[11px] font-medium text-brand-700">
-              ✅ ajouté à ton plan
+              {t('chat.planned')}
             </div>
           )}
           {tooled && !noted && !planned && (
             <div className="absolute left-1/2 top-2 -translate-x-1/2 animate-fade-in rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-medium text-violet-700">
-              🧰 ajouté à ta boîte à outils
+              {t('chat.tooled')}
             </div>
           )}
         </header>
@@ -224,23 +222,26 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
 
           {messages.length === 0 && (
             <div className="flex flex-wrap gap-2 pt-1">
-              {STARTERS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => send(s)}
-                  className="rounded-full border border-ink-200 bg-white px-3 py-1.5 text-xs text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
-                >
-                  {s}
-                </button>
-              ))}
+              {STARTER_KEYS.map((k) => {
+                const s = t(k)
+                return (
+                  <button
+                    key={k}
+                    onClick={() => send(s)}
+                    className="rounded-full border border-ink-200 bg-white px-3 py-1.5 text-xs text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
+                  >
+                    {s}
+                  </button>
+                )
+              })}
             </div>
           )}
 
           {!aiEnabled && (
             <div className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-700">
-              Le chat utilise Claude. Ajoute ta clé API pour discuter avec {name} —{' '}
+              {t('chat.needKey').replace('{name}', name)}{' '}
               <button onClick={onOpenSettings} className="font-semibold underline">
-                configurer
+                {t('chat.configure')}
               </button>
               .
             </div>
@@ -267,13 +268,13 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
               }
             }}
             rows={1}
-            placeholder={`Écris à ${name}…`}
+            placeholder={t('chat.placeholder').replace('{name}', name)}
             className="flex-1 resize-none rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm leading-relaxed text-ink-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
           />
           <button
             type="submit"
             disabled={!input.trim() || streaming}
-            aria-label="Envoyer"
+            aria-label={t('chat.send')}
             className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-600 text-white transition hover:bg-brand-700 disabled:opacity-40"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
@@ -321,10 +322,10 @@ function Bubble({ role, text, typing }: { role: 'user' | 'assistant'; text: stri
       {showActions && (
         <div className="mt-1 flex gap-3 pl-1 text-[11px] text-ink-400">
           <button onClick={() => navigator.clipboard?.writeText(text)} className="transition hover:text-brand-700">
-            Copier
+            {t('chat.copy')}
           </button>
           <button onClick={() => downloadMarkdown(text)} className="transition hover:text-brand-700">
-            Télécharger
+            {t('chat.download')}
           </button>
         </div>
       )}
