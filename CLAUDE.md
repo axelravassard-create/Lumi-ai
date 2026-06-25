@@ -236,10 +236,12 @@ pédagogique.
   EXCLUSIVEMENT en <langue> » dans les prompts (verdict, comparaison, copilote, veille)
   → l'IA répond dans la langue de l'app, pas en FR par défaut. (Extraction de CV
   exclue : elle lit le CV tel quel.)
-- **Traduit** : toute la **page d'accueil publique** (`LandingPage`, hors `MemberHome`)
-  + l'**écran d'analyse** (`AnalyzingScreen`, clés `analyzing.*`). ⚠️ **Reste en FR
-  (à traduire)** : MemberHome, chat, plan, toolbox, veille, generators, pricing,
-  profil, dashboard, légal, etc. → phases suivantes.
+- **Traduit** : toute la **page d'accueil publique** (`LandingPage`, hors `MemberHome`),
+  l'**écran d'analyse** (`AnalyzingScreen`, `analyzing.*`), le **tableau de bord**
+  (`Dashboard`, `dash.*`) et la page **Tarifs** (`PricingScreen`, `pricing.*` — les
+  paliers sont construits depuis l'i18n via `PLAN_META` + `PLAN_TEXT`, quota injecté
+  par `{n}`). ⚠️ **Reste en FR (à traduire)** : MemberHome, chat, plan, toolbox,
+  veille, generators, profil, légal, etc. → phases suivantes.
 - Pour ajouter une langue/écran : ajouter les clés dans les 5 dictionnaires de
   `i18n.ts` et remplacer les littéraux par `t('clé')` (appeler `useLang()` une fois
   dans le composant).

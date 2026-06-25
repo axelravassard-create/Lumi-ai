@@ -11,6 +11,7 @@ import { Avatar } from './Avatar'
 import { LumiSpeech } from './LumiSpeech'
 import { moodFromScore, lumiReaction } from '../lib/lumi'
 import { useBrand } from '../lib/entitlement'
+import { t, useLang } from '../lib/i18n'
 
 interface Props {
   analysis: Analysis
@@ -44,6 +45,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
   const current = useCountUp(analysis.currentRisk, 1300)
   const [showShare, setShowShare] = useState(false)
   const { name } = useBrand()
+  useLang() // re-render au changement de langue
 
   return (
     <div className="min-h-screen pb-20">
@@ -55,7 +57,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
               <path d="M5 12h14m-8-6-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Nouvelle analyse
+            {t('dash.new')}
           </button>
         </div>
       </header>
@@ -66,9 +68,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
           <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${analysis.aiEnhanced ? 'border-brand-200 bg-brand-50 text-brand-800' : 'border-ink-200 bg-white text-ink-600'}`}>
             <span className="text-lg">{analysis.aiEnhanced ? '✦' : 'ℹ️'}</span>
             <span>
-              {analysis.aiEnhanced
-                ? 'Résultats estimés par Claude, d\'après votre profil et l\'actualité de votre secteur.'
-                : 'Résultats en mode démo (estimation locale). Connectez Claude pour une estimation par l\'IA.'}
+              {analysis.aiEnhanced ? t('dash.aiBanner') : t('dash.demoBanner')}
             </span>
           </div>
         </section>
@@ -87,14 +87,14 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
             </div>
             {!analysis.exact && (
               <span className="pill bg-ink-100 text-ink-500" title="Métier estimé par approximation">
-                profil estimé
+                {t('dash.estProfile')}
               </span>
             )}
             <button onClick={() => setShowShare(true)} className="btn-ghost ml-auto py-2 text-sm">
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
                 <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              Partager
+              {t('dash.share')}
             </button>
           </div>
         </section>
@@ -110,9 +110,9 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
             </div>
             <div className={`relative flex-1 self-stretch rounded-2xl border-l-4 p-5 ${theme.bg}`} style={{ borderColor: theme.hex }}>
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="font-display text-sm font-bold uppercase tracking-wide text-ink-500">Le verdict de {name}</h2>
+                <h2 className="font-display text-sm font-bold uppercase tracking-wide text-ink-500">{t('dash.verdict').replace('{name}', name)}</h2>
                 {analysis.aiEnhanced && (
-                  <span className="pill bg-emerald-100 text-emerald-700">✦ rédigé par Claude</span>
+                  <span className="pill bg-emerald-100 text-emerald-700">{t('dash.byClaude')}</span>
                 )}
               </div>
               {/* Lumi réagit selon le score, en s'écrivant à l'écran */}
@@ -128,32 +128,32 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
         {/* Bloc principal : jauge + métriques */}
         <section className="animate-fade-up mt-6 grid gap-6 lg:grid-cols-[320px_1fr]" style={{ animationDelay: '120ms' }}>
           <div className="card flex flex-col items-center justify-center gap-2 p-8">
-            <span className="text-sm font-medium text-ink-500">Risque de remplacement par l'IA</span>
+            <span className="text-sm font-medium text-ink-500">{t('dash.riskTitle')}</span>
             <RadialGauge score={analysis.score} level={analysis.level} />
-            <span className="mt-1 inline-flex items-center gap-1.5 text-xs text-ink-400" title={analysis.aiEnhanced ? 'Score estimé par le modèle Claude' : 'Estimation calculée localement (connectez Claude pour une estimation par l\'IA)'}>
+            <span className="mt-1 inline-flex items-center gap-1.5 text-xs text-ink-400" title={analysis.aiEnhanced ? t('dash.scoreClaudeTitle') : t('dash.scoreLocalTitle')}>
               {analysis.aiEnhanced ? (
                 <>
                   <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-                  Estimation · Claude
+                  {t('dash.estClaude')}
                 </>
               ) : (
                 <>
                   <span className="h-1.5 w-1.5 rounded-full bg-ink-300" />
-                  Estimation locale · mode démo
+                  {t('dash.estLocal')}
                 </>
               )}
             </span>
             {analysis.personalized && (
-              <span className="pill bg-violet-100 text-violet-700" title="Score ajusté selon votre profil (diplôme, école, expérience, maîtrise de l'IA)">
-                👤 Ajusté selon votre profil
+              <span className="pill bg-violet-100 text-violet-700" title={t('dash.adjustedTitle')}>
+                {t('dash.adjusted')}
               </span>
             )}
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <MetricCard label="Déjà automatisable" value={`${Math.round(current)}%`} hint="à date · en hausse ↑" accent={theme.hex} />
-            <MetricCard label={`Projection ${HORIZON_YEAR}`} value={`${Math.round(risk2040)}%`} hint="potentiel à terme" accent={theme.hex} />
-            <MetricCard label="Résilience humaine" value={`${Math.round(resilience)}%`} hint="part difficile à automatiser" accent="#10b981" />
+            <MetricCard label={t('dash.metricNow')} value={`${Math.round(current)}%`} hint={t('dash.metricNowHint')} accent={theme.hex} />
+            <MetricCard label={t('dash.metricProj').replace('{year}', String(HORIZON_YEAR))} value={`${Math.round(risk2040)}%`} hint={t('dash.metricProjHint')} accent={theme.hex} />
+            <MetricCard label={t('dash.metricResil')} value={`${Math.round(resilience)}%`} hint={t('dash.metricResilHint')} accent="#10b981" />
           </div>
         </section>
 
@@ -162,11 +162,11 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
           <div className="card p-6 md:p-8">
             <div className="flex flex-wrap items-end justify-between gap-2">
               <div>
-                <h2 className="font-display text-xl font-bold text-ink-900">Progression du risque</h2>
-                <p className="text-sm text-ink-500">Part estimée des tâches automatisables, de {BASE_YEAR} à {HORIZON_YEAR}.</p>
+                <h2 className="font-display text-xl font-bold text-ink-900">{t('dash.progTitle')}</h2>
+                <p className="text-sm text-ink-500">{t('dash.progSub').replace('{base}', String(BASE_YEAR)).replace('{horizon}', String(HORIZON_YEAR))}</p>
               </div>
               <span className={`pill ${theme.chip}`}>
-                {analysis.riskIn2040 > analysis.currentRisk ? '↑' : '→'} +{Math.max(0, analysis.riskIn2040 - analysis.currentRisk)} pts d'ici {HORIZON_YEAR}
+                {analysis.riskIn2040 > analysis.currentRisk ? '↑' : '→'} {t('dash.progDelta').replace('{pts}', String(Math.max(0, analysis.riskIn2040 - analysis.currentRisk))).replace('{year}', String(HORIZON_YEAR))}
               </span>
             </div>
             <div className="mt-4">
@@ -183,29 +183,29 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
         {/* Décomposition par tâche + profil de compétences */}
         <section className="animate-fade-up mt-6 grid gap-6 lg:grid-cols-2" style={{ animationDelay: '220ms' }}>
           <div className="card p-6 md:p-8">
-            <h2 className="font-display text-xl font-bold text-ink-900">Décomposition par type de tâche</h2>
-            <p className="text-sm text-ink-500">Ce que l'IA peut prendre en charge, activité par activité.</p>
+            <h2 className="font-display text-xl font-bold text-ink-900">{t('dash.tasksTitle')}</h2>
+            <p className="text-sm text-ink-500">{t('dash.tasksSub')}</p>
             <div className="mt-6 space-y-4">
-              {analysis.tasks.map((t, i) => (
-                <TaskBar key={t.label} label={t.label} risk={t.risk} delay={i * 80} />
+              {analysis.tasks.map((task, i) => (
+                <TaskBar key={task.label} label={task.label} risk={task.risk} delay={i * 80} />
               ))}
             </div>
           </div>
 
           <div className="card p-6 md:p-8">
-            <h2 className="font-display text-xl font-bold text-ink-900">Vos atouts face à l'IA</h2>
-            <p className="text-sm text-ink-500">Les dimensions humaines qui vous protègent.</p>
+            <h2 className="font-display text-xl font-bold text-ink-900">{t('dash.assetsTitle')}</h2>
+            <p className="text-sm text-ink-500">{t('dash.assetsSub')}</p>
             <div className="mt-6 space-y-4">
-              <FactorRow label="🎨 Créativité & conception" value={analysis.profession.factors.creativity} />
-              <FactorRow label="❤️ Relation & empathie" value={analysis.profession.factors.empathy} />
-              <FactorRow label="🧠 Jugement & décision" value={analysis.profession.factors.judgment} />
-              <FactorRow label="🤝 Relationnel & influence" value={analysis.profession.factors.social} />
-              <FactorRow label="🔧 Présence physique & terrain" value={analysis.profession.factors.physical} />
+              <FactorRow label={t('dash.factorCreativity')} value={analysis.profession.factors.creativity} />
+              <FactorRow label={t('dash.factorEmpathy')} value={analysis.profession.factors.empathy} />
+              <FactorRow label={t('dash.factorJudgment')} value={analysis.profession.factors.judgment} />
+              <FactorRow label={t('dash.factorSocial')} value={analysis.profession.factors.social} />
+              <FactorRow label={t('dash.factorPhysical')} value={analysis.profession.factors.physical} />
             </div>
 
             {analysis.personalAssets && analysis.personalAssets.length > 0 && (
               <div className="mt-6 border-t border-ink-100 pt-5">
-                <h3 className="flex items-center gap-2 text-sm font-bold text-violet-700">👤 Vos atouts personnels</h3>
+                <h3 className="flex items-center gap-2 text-sm font-bold text-violet-700">{t('dash.personalAssets')}</h3>
                 <div className="mt-3 space-y-4">
                   {analysis.personalAssets.map((a) => (
                     <FactorRow key={a.label} label={a.label} value={a.value} />
@@ -219,7 +219,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
         {/* Plan d'action */}
         <section className="animate-fade-up mt-6" style={{ animationDelay: '280ms' }}>
           <div className="flex items-center gap-2">
-            <h2 className="font-display text-xl font-bold text-ink-900">Comment garder une longueur d'avance</h2>
+            <h2 className="font-display text-xl font-bold text-ink-900">{t('dash.planTitle')}</h2>
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {analysis.recommendations.map((r) => (
@@ -235,8 +235,8 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
         {/* Compétences d'avenir */}
         <section className="animate-fade-up mt-6" style={{ animationDelay: '320ms' }}>
           <div className="card bg-gradient-to-br from-ink-900 to-brand-900 p-6 text-white md:p-8">
-            <h2 className="font-display text-xl font-bold">🚀 Compétences d'avenir à développer</h2>
-            <p className="text-sm text-white/60">Priorisées pour votre profil par notre moteur.</p>
+            <h2 className="font-display text-xl font-bold">{t('dash.skillsTitle')}</h2>
+            <p className="text-sm text-white/60">{t('dash.skillsSub')}</p>
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               {analysis.skills.map((s) => (
                 <div key={s.name} className="flex gap-4 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
@@ -254,8 +254,8 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
         {/* Pistes de reconversion */}
         {analysis.pivots.length > 0 && (
           <section className="animate-fade-up mt-6" style={{ animationDelay: '360ms' }}>
-            <h2 className="font-display text-xl font-bold text-ink-900">Métiers plus résilients à explorer</h2>
-            <p className="text-sm text-ink-500">Des trajectoires d'évolution avec une moindre exposition à l'IA.</p>
+            <h2 className="font-display text-xl font-bold text-ink-900">{t('dash.pivotsTitle')}</h2>
+            <p className="text-sm text-ink-500">{t('dash.pivotsSub')}</p>
             <div className="mt-4 grid gap-4 sm:grid-cols-3">
               {analysis.pivots.map((p) => (
                 <div key={p.label} className="card flex items-center gap-4 p-5">
@@ -264,7 +264,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
                     <h3 className="truncate font-semibold text-ink-900">{p.label}</h3>
                     <div className="mt-1 flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full" style={{ background: riskColor(p.risk) }} />
-                      <span className="text-xs text-ink-500">risque {p.risk}%</span>
+                      <span className="text-xs text-ink-500">{t('dash.riskPct').replace('{x}', String(p.risk))}</span>
                     </div>
                   </div>
                 </div>
@@ -276,12 +276,9 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
         {/* Méthodologie & sources */}
         <section className="animate-fade-up mt-6" style={{ animationDelay: '380ms' }}>
           <div className="card p-6 md:p-8">
-            <h2 className="flex items-center gap-2 font-display text-xl font-bold text-ink-900">📚 Méthodologie & sources</h2>
+            <h2 className="flex items-center gap-2 font-display text-xl font-bold text-ink-900">{t('dash.methoTitle')}</h2>
             <p className="mt-2 text-sm leading-relaxed text-ink-600">
-              Le score {analysis.aiEnhanced ? 'est estimé par le modèle Claude' : 'est calculé localement (mode démo)'}, selon
-              une méthode multi-facteurs (routine, créativité, relationnel, jugement, présence physique…) inspirée des
-              travaux de référence ci-dessous. C'est une <strong>estimation indicative</strong> destinée à éclairer la
-              réflexion — pas une prédiction certaine.
+              {t('dash.methoBody').replace('{state}', analysis.aiEnhanced ? t('dash.methoClaude') : t('dash.methoLocal'))}
             </p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {REFERENCES.map((r) => (
@@ -310,15 +307,14 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
         <section className="animate-fade-up mt-10 text-center" style={{ animationDelay: '400ms' }}>
           <div className="flex flex-wrap justify-center gap-3">
             <button onClick={onOpenProfile} className="btn-primary">
-              📈 Compléter mon profil & suivre dans le temps
+              {t('dash.ctaProfile')}
             </button>
             <button onClick={onReset} className="btn-ghost">
-              Analyser un autre métier
+              {t('dash.ctaAnother')}
             </button>
           </div>
           <p className="mx-auto mt-6 max-w-xl text-xs text-ink-400">
-            Estimations générées par un modèle heuristique à visée pédagogique. Elles ne constituent
-            pas une prédiction certaine ni un conseil en orientation professionnelle.
+            {t('dash.disclaimer')}
           </p>
         </section>
       </main>
