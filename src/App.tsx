@@ -22,6 +22,7 @@ import { StudioScene } from './components/StudioScene'
 import { loadProfile, profileToContext } from './lib/profile'
 import { addBilan } from './lib/history'
 import { useLuminator, brandName, APP_NAME } from './lib/entitlement'
+import { t } from './lib/i18n'
 import { handleCheckoutReturn } from './lib/billing'
 import { completeLoginFromUrl, checkAccount } from './lib/account'
 import { AccountModal } from './components/AccountModal'
@@ -392,11 +393,13 @@ function AnalyzingScreen({ label, step }: { label: string; step: number }) {
         <div className="relative mx-auto mb-2 h-56 w-full">
           <Avatar state="thinking" className="h-full w-full" />
         </div>
-        <h2 className="font-display text-xl font-bold text-ink-900">{APP_NAME} analyse « {label} »</h2>
+        <h2 className="font-display text-xl font-bold text-ink-900">
+          {t('analyzing.title').replace('{name}', APP_NAME).replace('{job}', label)}
+        </h2>
         <div className="mt-6 space-y-2 text-left">
-          {ANALYSIS_STEPS.map((s, i) => (
+          {ANALYSIS_STEPS.map((_, i) => (
             <div
-              key={s}
+              key={i}
               className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-sm transition-all duration-300 ${
                 i <= step ? 'bg-white text-ink-800 shadow-sm' : 'text-ink-300'
               }`}
@@ -410,7 +413,7 @@ function AnalyzingScreen({ label, step }: { label: string; step: number }) {
               ) : (
                 <span className="h-4 w-4 rounded-full border-2 border-ink-100" />
               )}
-              {s}
+              {t(`analyzing.step${i}`)}
             </div>
           ))}
         </div>

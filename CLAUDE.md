@@ -232,9 +232,14 @@ pédagogique.
   Détection auto via `navigator.languages` → **repli sur `en`** si non couverte.
   Choix mémorisé (`localStorage` `lumi.lang`). `t('clé')`, `useLang()`, `setLang()`,
   `<LangSwitcher />` (sélecteur dans la nav).
-- **Traduit (Phase 1)** : toute la **page d'accueil publique** (`LandingPage`, hors
-  `MemberHome`). ⚠️ **Reste en FR (à traduire)** : MemberHome, chat, plan, toolbox,
-  veille, generators, pricing, profil, dashboard, légal, etc. → phases suivantes.
+- **IA multilingue** : `langDirective()` (`llm.ts`, via `getLang()`) injecte « réponds
+  EXCLUSIVEMENT en <langue> » dans les prompts (verdict, comparaison, copilote, veille)
+  → l'IA répond dans la langue de l'app, pas en FR par défaut. (Extraction de CV
+  exclue : elle lit le CV tel quel.)
+- **Traduit** : toute la **page d'accueil publique** (`LandingPage`, hors `MemberHome`)
+  + l'**écran d'analyse** (`AnalyzingScreen`, clés `analyzing.*`). ⚠️ **Reste en FR
+  (à traduire)** : MemberHome, chat, plan, toolbox, veille, generators, pricing,
+  profil, dashboard, légal, etc. → phases suivantes.
 - Pour ajouter une langue/écran : ajouter les clés dans les 5 dictionnaires de
   `i18n.ts` et remplacer les littéraux par `t('clé')` (appeler `useLang()` une fois
   dans le composant).
