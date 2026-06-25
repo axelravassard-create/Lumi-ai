@@ -439,6 +439,7 @@ function MemberHome({
   onOpenVeille: () => void
   onOpenGenerators: () => void
 }) {
+  useLang()
   const profile = loadProfile()
   const plan = usePlan()
   const tools = useToolbox()
@@ -460,22 +461,21 @@ function MemberHome({
         <div className="animate-fade-in -mt-2 flex justify-center">
           <div className="relative max-w-sm rounded-2xl border border-brand-200 bg-white px-4 py-2.5 text-sm text-ink-700 shadow-card">
             <span className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-brand-200 bg-white" />
-            <LumiSpeech text="Avant de t'aider, j'ai besoin de bien te connaître 🙂 Parle-moi de ton métier et de ton parcours — ensuite je personnalise tout." />
+            <LumiSpeech text={t('mh.knowSpeech')} />
           </div>
         </div>
 
         <h1 className="animate-fade-up mt-6 font-display text-2xl font-extrabold leading-tight tracking-tight text-ink-900 md:text-4xl" style={{ animationDelay: '60ms' }}>
-          Faisons connaissance d'abord
+          {t('mh.knowTitle')}
         </h1>
         <p className="animate-fade-up mx-auto mt-3 max-w-md text-ink-500" style={{ animationDelay: '120ms' }}>
-          Plus {name} connaît ton métier, tes tâches et ton objectif, plus ses conseils d'automatisation sont
-          précis et utiles. Deux minutes pour un accompagnement vraiment sur-mesure.
+          {t('mh.knowDesc').replace('{name}', name)}
         </p>
 
         {/* Jauge de complétude */}
         <div className="animate-fade-up mx-auto mt-6 max-w-sm" style={{ animationDelay: '160ms' }}>
           <div className="flex items-center justify-between text-xs text-ink-400">
-            <span>Profil complété</span>
+            <span>{t('mh.profileCompleted')}</span>
             <span className="font-semibold text-brand-600">{pct}%</span>
           </div>
           <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-ink-100">
@@ -485,17 +485,17 @@ function MemberHome({
 
         <div className="animate-fade-up mt-7 flex flex-col items-center gap-3" style={{ animationDelay: '200ms' }}>
           <button onClick={onOpenProfile} className="btn-primary px-6 py-3.5 text-base">
-            🧭 Compléter mon profil
+            {t('mh.completeProfile')}
           </button>
           <button
-            onClick={() => onOpenChat('Aide-moi à compléter mon profil : pose-moi les questions clés sur mon métier, mon parcours et mon objectif, puis enregistre mes réponses.')}
+            onClick={() => onOpenChat(t('mh.completePrompt'))}
             className="text-sm text-ink-500 underline-offset-2 hover:text-brand-700 hover:underline"
           >
-            …ou le faire en discutant avec {name}
+            {t('mh.orChat').replace('{name}', name)}
           </button>
           {!aiEnabled && (
             <button onClick={onOpenSettings} className="text-xs text-ink-400 underline-offset-2 hover:text-brand-700 hover:underline">
-              Connecte ta clé API Claude pour discuter
+              {t('mh.connectKey')}
             </button>
           )}
         </div>
@@ -504,12 +504,10 @@ function MemberHome({
   }
 
   const STARTERS = [
-    'Quelles tâches de mon métier puis-je automatiser ?',
-    'Un outil IA pour me faire gagner du temps',
-    'Crée-moi un modèle / template réutilisable',
-    location
-      ? `Formations & opportunités près de ${location} ?`
-      : 'Quelles formations pour faire évoluer mon métier ?',
+    t('mh.starter0'),
+    t('mh.starter1'),
+    t('mh.starter2'),
+    location ? t('mh.starter3Loc').replace('{location}', location) : t('mh.starter3'),
   ]
 
   return (
@@ -524,37 +522,36 @@ function MemberHome({
             <LumiSpeech
               text={
                 hasRole
-                  ? `Content de te revoir 👋 On automatise quoi dans ton métier de ${role} aujourd'hui ?`
-                  : "Content de te revoir 👋 On automatise quoi aujourd'hui ?"
+                  ? t('mh.greetRole').replace('{role}', role as string)
+                  : t('mh.greet')
               }
             />
           </div>
         </div>
 
         <h1 className="animate-fade-up mt-6 font-display text-3xl font-extrabold leading-[1.1] tracking-tight text-ink-900 md:text-5xl" style={{ animationDelay: '60ms' }}>
-          Gagne du temps.
+          {t('mh.heroLine1')}
           <br />
-          <span className="bg-gradient-to-r from-brand-600 to-violet-500 bg-clip-text text-transparent">{name} automatise ton métier.</span>
+          <span className="bg-gradient-to-r from-brand-600 to-violet-500 bg-clip-text text-transparent">{t('mh.heroLine2').replace('{name}', name)}</span>
         </h1>
         <p className="animate-fade-up mx-auto mt-4 max-w-xl text-lg text-ink-500" style={{ animationDelay: '120ms' }}>
-          Décris une tâche et {name} te montre comment la faire plus vite — outils IA, no-code, modèles prêts à
-          l'emploi, adaptés à ton parcours.
+          {t('mh.heroDesc').replace('{name}', name)}
         </p>
 
         <div className="animate-fade-up mt-7 flex flex-col items-center gap-2" style={{ animationDelay: '160ms' }}>
           <button onClick={() => onOpenChat()} className="btn-primary px-6 py-3.5 text-base">
-            💬 Discuter avec {name}
+            {t('mh.chatCta').replace('{name}', name)}
           </button>
           {!aiEnabled && (
             <button onClick={onOpenSettings} className="text-xs text-ink-400 underline-offset-2 hover:text-brand-700 hover:underline">
-              Connecte ta clé API Claude pour discuter
+              {t('mh.connectKey')}
             </button>
           )}
         </div>
 
         {/* Démarrages rapides : ouvrent le chat avec la question pré-remplie */}
         <div className="animate-fade-up mt-8" style={{ animationDelay: '200ms' }}>
-          <p className="text-sm text-ink-400">Idées rapides :</p>
+          <p className="text-sm text-ink-400">{t('mh.quickIdeas')}</p>
           <div className="mt-3 flex flex-wrap justify-center gap-2">
             {STARTERS.map((s) => (
               <button
@@ -575,7 +572,7 @@ function MemberHome({
         <button onClick={onOpenPlan} className="card w-full p-5 text-left transition hover:shadow-glow">
           <div className="flex items-end justify-between">
             <div>
-              <p className="text-sm font-semibold text-ink-900">Mon avancée automatisation</p>
+              <p className="text-sm font-semibold text-ink-900">{t('mh.progressTitle')}</p>
               <p className="mt-0.5 text-xs text-ink-500">{t(progressLabel(progress.score))}</p>
             </div>
             <span className="font-display text-3xl font-extrabold text-brand-600">{progress.score}%</span>
@@ -584,7 +581,11 @@ function MemberHome({
             <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-violet-500 transition-all" style={{ width: `${Math.max(progress.score, 3)}%` }} />
           </div>
           <p className="mt-2 text-xs text-ink-400">
-            {progress.done}/{progress.total} action{progress.total > 1 ? 's' : ''} faite{progress.done > 1 ? 's' : ''} · {progress.tools} outil{progress.tools > 1 ? 's' : ''} · profil {progress.profilePct}% — voir mon plan →
+            {t('mh.progressFooter')
+              .replace('{done}', String(progress.done))
+              .replace('{total}', String(progress.total))
+              .replace('{tools}', String(progress.tools))
+              .replace('{pct}', String(progress.profilePct))}
           </p>
         </button>
       </section>
@@ -594,56 +595,56 @@ function MemberHome({
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <ActionCard
             emoji="🗂️"
-            title="Mon plan d'action"
-            desc="Tes actions à automatiser, suivies pas à pas."
+            title={t('mh.cardPlanTitle')}
+            desc={t('mh.cardPlanDesc')}
             onClick={onOpenPlan}
           />
           <ActionCard
             emoji="🧰"
-            title="Ma boîte à outils"
-            desc="Les outils recommandés pour ton métier, avec leurs liens."
+            title={t('mh.cardToolboxTitle')}
+            desc={t('mh.cardToolboxDesc')}
             onClick={onOpenToolbox}
           />
           <ActionCard
             emoji="✨"
-            title="Générateurs express"
-            desc="CV, pitch, audit d'auto… des livrables en 1 clic."
+            title={t('mh.cardGenTitle')}
+            desc={t('mh.cardGenDesc')}
             onClick={onOpenGenerators}
           />
           <ActionCard
             emoji="🌐"
-            title="Veille de mon métier"
-            desc="Ce qui bouge cette semaine + quoi en faire."
+            title={t('mh.cardVeilleTitle')}
+            desc={t('mh.cardVeilleDesc')}
             onClick={onOpenVeille}
           />
           <ActionCard
             emoji="⚡"
-            title="Automatiser une tâche"
-            desc={`${name} te guide, adapté à ton métier.`}
-            onClick={() => onOpenChat('Aide-moi à automatiser une tâche précise de mon métier, étape par étape.')}
+            title={t('mh.cardAutoTitle')}
+            desc={t('mh.cardAutoDesc').replace('{name}', name)}
+            onClick={() => onOpenChat(t('mh.cardAutoPrompt'))}
           />
           <ActionCard
             emoji="🧭"
-            title="Mon profil & parcours"
-            desc="Plus il te connaît, mieux il cible ses conseils."
+            title={t('mh.cardProfileTitle')}
+            desc={t('mh.cardProfileDesc')}
             onClick={onOpenProfile}
           />
           <ActionCard
             emoji="📍"
-            title="Opportunités locales"
-            desc="Formations & pistes près de chez toi."
+            title={t('mh.cardLocalTitle')}
+            desc={t('mh.cardLocalDesc')}
             onClick={() =>
               onOpenChat(
                 location
-                  ? `Quelles formations, aides et opportunités près de ${location} pour mon métier ?`
-                  : 'Quelles formations et opportunités pour faire évoluer mon métier ? (je peux préciser ma ville)'
+                  ? t('mh.cardLocalPromptLoc').replace('{location}', location)
+                  : t('mh.cardLocalPrompt')
               )
             }
           />
           <ActionCard
             emoji="📈"
-            title="Refaire le point"
-            desc="Mets à jour ton exposition à l'IA dans le temps."
+            title={t('mh.cardRepointTitle')}
+            desc={t('mh.cardRepointDesc')}
             onClick={() => (hasRole ? onAnalyze(role) : onOpenProfile())}
           />
         </div>
