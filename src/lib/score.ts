@@ -29,9 +29,10 @@ export function automationProgress(plan: PlanItem[], profile: CareerProfile, too
 }
 
 // Petit message d'encouragement selon le niveau.
+// Renvoie une CLÉ i18n (le composant appelle t() dessus) → libellé multilingue.
 export function progressLabel(score: number): string {
-  if (score >= 80) return 'Tu prends une vraie longueur d\'avance 🚀'
-  if (score >= 50) return 'Belle dynamique — continue sur ta lancée 💪'
-  if (score >= 20) return 'C\'est lancé ! Coche tes actions pour progresser ✨'
-  return 'Démarre ton plan pour faire grimper ton score 🌱'
+  if (score >= 80) return 'score.band3'
+  if (score >= 50) return 'score.band2'
+  if (score >= 20) return 'score.band1'
+  return 'score.band0'
 }
