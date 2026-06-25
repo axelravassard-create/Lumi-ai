@@ -5,6 +5,7 @@ import { useTier, setTier, type Tier } from '../lib/entitlement'
 import { checkBilling, startCheckout, openBillingPortal } from '../lib/billing'
 import { DAILY_LIMITS } from '../lib/llm'
 import { useAccount } from '../lib/account'
+import { t, useLang } from '../lib/i18n'
 
 interface Props {
   onBack: () => void
@@ -17,78 +18,35 @@ interface Props {
 type Billing = 'monthly' | 'yearly'
 type PaidTier = 'blumiman' | 'bluminator'
 
-interface Plan {
+// Données structurelles des paliers (les TEXTES viennent de l'i18n, cf. buildPlan).
+interface PlanMeta {
   key: Tier
   name: string
   glasses: boolean
   laptop?: boolean
-  tagline: string
   monthly: string
   yearly: string
-  yearlyNote?: string
   highlight?: boolean
-  badge?: string
-  features: string[]
 }
 
-const PLANS: Plan[] = [
-  {
-    key: 'free',
-    name: 'Blumi',
-    glasses: false,
-    tagline: 'Mesure l’exposition de ton métier à l’IA.',
-    monthly: '0 €',
-    yearly: '0 €',
-    features: [
-      'Ton score de remplaçabilité par l’IA, métier par métier',
-      'Verdict clair + projection 2026 → 2040',
-      'Tendance de ton secteur, mise à jour chaque semaine',
-      'Profil carrière et comparateur de métiers',
-    ],
-  },
-  {
-    key: 'blumiman',
-    name: 'Blumiman',
-    glasses: true,
-    tagline: 'Le copilote qui automatise les tâches de ton métier.',
-    monthly: '4,99 €',
-    yearly: '49 €',
-    yearlyNote: 'soit ~4,08 €/mois',
-    highlight: true,
-    badge: '⭐ Le choix de la plupart',
-    features: [
-      'Repère les tâches de ton métier automatisables — et te montre, pas à pas, comment t’y prendre',
-      'Outils IA, no-code et modèles prêts à l’emploi, choisis pour ton métier',
-      'Plan d’action, boîte à outils, veille et générateurs de livrables',
-      'Se souvient de ton parcours : chaque réponse est taillée pour toi',
-      `Jusqu’à ${DAILY_LIMITS.blumiman} échanges avec le copilote par jour — large pour un usage régulier`,
-    ],
-  },
-  {
-    key: 'bluminator',
-    name: 'Bluminator',
-    glasses: true,
-    laptop: true,
-    tagline: 'Pour qui automatise tous les jours.',
-    monthly: '14,99 €',
-    yearly: '149 €',
-    yearlyNote: 'soit ~12,42 €/mois',
-    badge: '🚀 Usage intensif',
-    features: [
-      'Tout le copilote Blumiman : tâches à automatiser, outils, plan, boîte à outils, veille et générateurs',
-      `Jusqu’à ${DAILY_LIMITS.bluminator} échanges IA par jour — 4× plus, pour enchaîner sans compter`,
-      'Réponses 2× plus longues : plans complets et livrables prêts à l’emploi, d’un seul coup',
-      'Génère de gros livrables sans coupure (procédures, scripts, modèles détaillés)',
-      'Idéal si tu automatises plusieurs tâches chaque jour',
-      'Repasse à Blumiman quand tu veux, sans frais',
-    ],
-  },
+const PLAN_META: PlanMeta[] = [
+  { key: 'free', name: 'Blumi', glasses: false, monthly: '0 €', yearly: '0 €' },
+  { key: 'blumiman', name: 'Blumiman', glasses: true, monthly: '4,99 €', yearly: '49 €', highlight: true },
+  { key: 'bluminator', name: 'Bluminator', glasses: true, laptop: true, monthly: '14,99 €', yearly: '149 €' },
 ]
+
+// Préfixe i18n + nombre de features + quota injecté ({n}) par palier.
+const PLAN_TEXT: Record<Tier, { prefix: string; featureCount: number; limit?: number }> = {
+  free: { prefix: 'pricing.free', featureCount: 4 },
+  blumiman: { prefix: 'pricing.bm', featureCount: 5, limit: DAILY_LIMITS.blumiman },
+  bluminator: { prefix: 'pricing.bn', featureCount: 6, limit: DAILY_LIMITS.bluminator },
+}
 
 export function PricingScreen({ onBack, onOpenChat, onOpenAccount }: Props) {
   const [billing, setBilling] = useState<Billing>('monthly')
   const current = useTier()
   const account = useAccount()
+  useLang() // re-render au changement de langue
   const [billingOn, setBillingOn] = useState(false)
   const [buying, setBuying] = useState<PaidTier | null>(null)
   const [err, setErr] = useState<string | null>(null)
@@ -129,6 +87,20 @@ export function PricingScreen({ onBack, onOpenChat, onOpenAccount }: Props) {
     }
   }
 
+  // Construit le contenu textuel (traduit) d'un palier.
+  const buildPlan = (m: PlanMeta) => {
+    const cfg = PLAN_TEXT[m.key]
+    const features = Array.from({ length: cfg.featureCount }, (_, i) =>
+      t(`${cfg.prefix}.f${i}`).replace('{n}', String(cfg.limit ?? '')),
+    )
+    return {
+      tagline: t(`${cfg.prefix}.tagline`),
+      badge: m.key === 'free' ? undefined : t(`${cfg.prefix}.badge`),
+      yearlyNote: m.key === 'free' ? undefined : t(`${cfg.prefix}.yearlyNote`),
+      features,
+    }
+  }
+
   return (
     <div className="min-h-screen pb-20">
       <header className="sticky top-0 z-20 border-b border-ink-100 bg-white/80 backdrop-blur-xl">
@@ -138,26 +110,26 @@ export function PricingScreen({ onBack, onOpenChat, onOpenAccount }: Props) {
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
               <path d="M5 12h14m-8-6-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Retour
+            {t('pricing.back')}
           </button>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-6">
         <section className="animate-fade-up pt-12 text-center md:pt-16">
-          <span className="pill mx-auto bg-brand-50 text-brand-700">💳 Tarifs</span>
+          <span className="pill mx-auto bg-brand-50 text-brand-700">{t('pricing.tag')}</span>
           <h1 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-ink-900 md:text-5xl">
-            Blumi évalue. Blumiman passe à l’action.
+            {t('pricing.heading')}
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-lg text-ink-500">
-            Le gratuit évalue ton métier face à l’IA. Le copilote automatise ce qui peut l’être, pour te faire gagner des heures.
+            {t('pricing.sub')}
           </p>
 
           {/* Bascule mensuel / annuel */}
           <div className="mt-8 inline-flex items-center gap-1 rounded-2xl border border-ink-200 bg-white p-1">
             {([
-              ['monthly', 'Mensuel'],
-              ['yearly', 'Annuel'],
+              ['monthly', t('pricing.monthly')],
+              ['yearly', t('pricing.yearly')],
             ] as const).map(([b, label]) => (
               <button
                 key={b}
@@ -165,7 +137,7 @@ export function PricingScreen({ onBack, onOpenChat, onOpenAccount }: Props) {
                 className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${billing === b ? 'bg-brand-600 text-white shadow' : 'text-ink-600 hover:text-brand-700'}`}
               >
                 {label}
-                {b === 'yearly' && <span className="ml-1.5 text-[10px] text-emerald-500">2 mois offerts</span>}
+                {b === 'yearly' && <span className="ml-1.5 text-[10px] text-emerald-500">{t('pricing.twoMonthsFree')}</span>}
               </button>
             ))}
           </div>
@@ -175,18 +147,18 @@ export function PricingScreen({ onBack, onOpenChat, onOpenAccount }: Props) {
         {needsAccount && (
           <div className="animate-fade-up mx-auto mt-8 flex max-w-2xl items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-brand-50/60 px-5 py-4">
             <p className="text-sm text-ink-700">
-              🔐 <strong>Crée ton compte pour t'abonner</strong> — ton abonnement et tes données (profil,
-              plan, conversations) te suivent alors sur tous tes appareils.
+              🔐 <strong>{t('pricing.needAccountTitle')}</strong> {t('pricing.needAccountDesc')}
             </p>
             <button onClick={() => onOpenAccount?.()} className="btn-primary shrink-0 py-2 text-sm">
-              Créer mon compte
+              {t('pricing.createAccount')}
             </button>
           </div>
         )}
 
         {/* Cartes */}
         <section className="animate-fade-up mt-10 grid items-start gap-6 md:grid-cols-3" style={{ animationDelay: '80ms' }}>
-          {PLANS.map((p) => {
+          {PLAN_META.map((p) => {
+            const txt = buildPlan(p)
             const isCurrent = current === p.key
             const price = billing === 'monthly' ? p.monthly : p.yearly
             return (
@@ -194,24 +166,24 @@ export function PricingScreen({ onBack, onOpenChat, onOpenAccount }: Props) {
                 key={p.key}
                 className={`card relative flex flex-col p-7 ${p.highlight ? 'border-2 border-brand-300 shadow-glow' : ''}`}
               >
-                {p.badge && (
+                {txt.badge && (
                   <span className={`absolute -top-3 left-1/2 -translate-x-1/2 pill shadow ${p.highlight ? 'bg-brand-600 text-white' : 'bg-ink-900 text-white'}`}>
-                    {p.badge}
+                    {txt.badge}
                   </span>
                 )}
                 <Avatar className="mx-auto h-24 w-24" glasses={p.glasses} laptop={!!p.laptop} />
                 <h2 className={`mt-2 font-display text-xl font-bold ${p.highlight ? 'text-brand-700' : 'text-ink-900'}`}>{p.name}</h2>
-                <p className="mt-1 text-sm text-ink-500">{p.tagline}</p>
+                <p className="mt-1 text-sm text-ink-500">{txt.tagline}</p>
                 <div className="mt-5 flex items-end gap-1">
                   <span className="font-display text-4xl font-extrabold text-ink-900">{price}</span>
-                  {p.key !== 'free' && <span className="mb-1 text-sm text-ink-500">{billing === 'monthly' ? '/ mois' : '/ an'}</span>}
+                  {p.key !== 'free' && <span className="mb-1 text-sm text-ink-500">{billing === 'monthly' ? t('pricing.perMonth') : t('pricing.perYear')}</span>}
                 </div>
-                {p.key !== 'free' && billing === 'yearly' && p.yearlyNote && (
-                  <span className="text-xs text-emerald-600">{p.yearlyNote}</span>
+                {p.key !== 'free' && billing === 'yearly' && txt.yearlyNote && (
+                  <span className="text-xs text-emerald-600">{txt.yearlyNote}</span>
                 )}
 
                 <ul className="mt-6 flex-1 space-y-3 text-sm">
-                  {p.features.map((f) => (
+                  {txt.features.map((f) => (
                     <Feature key={f} text={f} highlight={p.key !== 'free'} />
                   ))}
                 </ul>
@@ -221,31 +193,31 @@ export function PricingScreen({ onBack, onOpenChat, onOpenAccount }: Props) {
                   {isCurrent ? (
                     <>
                       <div className="flex items-center justify-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-                        ✨ Ton offre actuelle
+                        {t('pricing.current')}
                       </div>
                       {p.key !== 'free' && onOpenChat && (
                         <button onClick={onOpenChat} className="btn-primary mt-3 w-full justify-center">
-                          💬 Discuter avec {p.name}
+                          {t('pricing.chatWith').replace('{name}', p.name)}
                         </button>
                       )}
                       {p.key !== 'free' && (
                         billingOn ? (
                           <button onClick={manage} className="btn-ghost mt-3 w-full justify-center text-sm">
-                            Gérer / résilier
+                            {t('pricing.manage')}
                           </button>
                         ) : (
                           <button
                             onClick={() => setTier('free')}
                             className="mt-2 w-full text-center text-xs text-ink-400 underline-offset-2 hover:text-ink-600 hover:underline"
                           >
-                            Revenir au gratuit
+                            {t('pricing.backToFree')}
                           </button>
                         )
                       )}
                     </>
                   ) : p.key === 'free' ? (
                     <button onClick={onBack} className="btn-ghost w-full justify-center">
-                      Commencer gratuitement
+                      {t('pricing.startFree')}
                     </button>
                   ) : (
                     <button
@@ -253,7 +225,7 @@ export function PricingScreen({ onBack, onOpenChat, onOpenAccount }: Props) {
                       disabled={buying !== null}
                       className={`w-full justify-center disabled:opacity-60 ${p.highlight ? 'btn-primary' : 'btn-ghost'}`}
                     >
-                      {buying === p.key ? 'Redirection…' : needsAccount ? 'Créer un compte pour s’abonner' : current === 'blumiman' && p.key === 'bluminator' ? 'Passer à Bluminator' : `Choisir ${p.name}`}
+                      {buying === p.key ? t('pricing.redirecting') : needsAccount ? t('pricing.createToSubscribe') : current === 'blumiman' && p.key === 'bluminator' ? t('pricing.upgrade') : t('pricing.choose').replace('{name}', p.name)}
                     </button>
                   )}
                 </div>
@@ -266,15 +238,14 @@ export function PricingScreen({ onBack, onOpenChat, onOpenAccount }: Props) {
 
         {/* Réassurance */}
         <section className="animate-fade-up mt-10 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-ink-500" style={{ animationDelay: '160ms' }}>
-          <span>✅ Sans engagement, résiliable à tout moment</span>
-          <span>🔒 Données sur ton appareil — analyses IA envoyées à Anthropic (États-Unis)</span>
-          <span>🚫 Aucune revente de données</span>
+          <span>{t('pricing.reassure1')}</span>
+          <span>{t('pricing.reassure2')}</span>
+          <span>{t('pricing.reassure3')}</span>
         </section>
 
         <p className="animate-fade-up mx-auto mt-8 max-w-2xl text-center text-xs text-ink-400" style={{ animationDelay: '220ms' }}>
-          {billingOn ? '🔒 Paiement sécurisé via Stripe.' : 'Prototype : paiement simulé (activation immédiate).'}{' '}
-          On te le dit franchement : <strong className="text-ink-500">Blumiman suffit à la grande majorité</strong>.
-          Ne prends Bluminator que si tu atteins vraiment la limite quotidienne — sinon tu paierais pour rien.
+          {billingOn ? t('pricing.payStripe') : t('pricing.paySimulated')}{' '}
+          {t('pricing.honest')}
         </p>
       </main>
     </div>
