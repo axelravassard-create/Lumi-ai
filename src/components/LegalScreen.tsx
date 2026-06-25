@@ -1,6 +1,7 @@
 import { ReactNode } from 'react'
 import { Logo } from './Logo'
 import { LEGAL_INFO } from '../lib/legal'
+import { t, useLang } from '../lib/i18n'
 
 export type LegalDoc = 'mentions' | 'confidentialite' | 'cgu'
 
@@ -14,8 +15,9 @@ const CONTACT = LEGAL_INFO.contact
 const UPDATED = LEGAL_INFO.updated
 
 export function LegalScreen({ doc, onBack, onOpen }: Props) {
+  useLang()
   const title =
-    doc === 'mentions' ? 'Mentions légales' : doc === 'confidentialite' ? 'Politique de confidentialité' : "Conditions d'utilisation"
+    doc === 'mentions' ? t('legal.title.mentions') : doc === 'confidentialite' ? t('legal.title.confid') : t('legal.title.cgu')
 
   return (
     <div className="min-h-screen pb-20">
@@ -26,7 +28,7 @@ export function LegalScreen({ doc, onBack, onOpen }: Props) {
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
               <path d="M5 12h14m-8-6-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Retour
+            {t('legal.back')}
           </button>
         </div>
       </header>
@@ -34,7 +36,7 @@ export function LegalScreen({ doc, onBack, onOpen }: Props) {
       <main className="mx-auto max-w-3xl px-6">
         <section className="animate-fade-up pt-10">
           <h1 className="font-display text-2xl font-extrabold text-ink-900 md:text-3xl">{title}</h1>
-          <p className="mt-1 text-sm text-ink-400">Dernière mise à jour : {UPDATED}</p>
+          <p className="mt-1 text-sm text-ink-400">{t('legal.updated').replace('{date}', UPDATED)}</p>
 
           <div className="card mt-6 space-y-5 p-6 text-sm leading-relaxed text-ink-700">
             {doc === 'mentions' && <Mentions />}
@@ -45,9 +47,9 @@ export function LegalScreen({ doc, onBack, onOpen }: Props) {
           {/* Navigation entre les documents légaux */}
           <nav className="mt-6 flex flex-wrap gap-2 text-sm">
             {([
-              ['mentions', 'Mentions légales'],
-              ['confidentialite', 'Confidentialité'],
-              ['cgu', "Conditions d'utilisation"],
+              ['mentions', t('legal.nav.mentions')],
+              ['confidentialite', t('legal.nav.confid')],
+              ['cgu', t('legal.nav.cgu')],
             ] as [LegalDoc, string][]).map(([d, label]) => (
               <button
                 key={d}
@@ -70,11 +72,25 @@ function H({ children }: { children: ReactNode }) {
   return <h2 className="font-display text-base font-bold text-ink-900">{children}</h2>
 }
 
+function Section({ titleKey, bodyKey }: { titleKey: string; bodyKey: string }) {
+  return (
+    <div className="space-y-1">
+      <H>{t(titleKey)}</H>
+      <p>{t(bodyKey)}</p>
+    </div>
+  )
+}
+
+function MailLink() {
+  return (
+    <a className="text-brand-700 underline" href={`mailto:${CONTACT}`}>{CONTACT}</a>
+  )
+}
+
 function Note() {
   return (
     <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-700">
-      ⚠️ Blumi est un prototype à visée pédagogique. Ces documents sont fournis à titre informatif et doivent être
-      complétés/validés (identité de l'éditeur, hébergeur…) avant toute exploitation commerciale.
+      {t('legal.note')}
     </p>
   )
 }
@@ -85,52 +101,48 @@ function Mentions() {
     <>
       <Note />
       <div className="space-y-1">
-        <H>Éditeur du site</H>
+        <H>{t('legal.m.editorTitle')}</H>
         <p>
-          {i.brand} — {i.status === 'societe' ? 'site édité par' : 'site édité par'}{' '}
+          {i.brand} — {t('legal.m.editedBy')}{' '}
           <strong>{i.editorName}</strong>
           {i.status === 'societe' && i.legalForm ? <>, {i.legalForm}</> : null}
-          {i.status === 'societe' && i.capital ? <> au capital de {i.capital}</> : null}.
+          {i.status === 'societe' && i.capital ? <>{t('legal.m.capital').replace('{capital}', i.capital)}</> : null}.
           {i.address ? (
             <>
               <br />
-              Adresse : {i.address}.
+              {t('legal.m.addressLine').replace('{address}', i.address)}
             </>
           ) : null}
           {i.status === 'micro' && i.siret ? (
             <>
               <br />
-              Micro-entreprise immatriculée — SIRET : <strong>{i.siret}</strong>.
+              {t('legal.m.siretMicro').replace('{siret}', i.siret)}
             </>
           ) : null}
           {i.status === 'societe' ? (
             <>
               <br />
-              SIRET : <strong>{i.siret ?? '[à compléter]'}</strong> — RCS : <strong>{i.rcs ?? '[à compléter]'}</strong>.
+              {t('legal.m.siretSociete').replace('{siret}', i.siret ?? '[à compléter]').replace('{rcs}', i.rcs ?? '[à compléter]')}
             </>
           ) : null}
           <br />
-          Contact : <a className="text-brand-700 underline" href={`mailto:${CONTACT}`}>{CONTACT}</a>
+          {t('legal.m.contactLabel')}<MailLink />
         </p>
       </div>
       <div className="space-y-1">
-        <H>Directeur de la publication</H>
+        <H>{t('legal.m.directorTitle')}</H>
         <p>{i.publicationDirector ?? i.editorName}.</p>
       </div>
       <div className="space-y-1">
-        <H>Hébergement</H>
+        <H>{t('legal.m.hostTitle')}</H>
         <p>
-          Le site est hébergé par <strong>{i.host.name}</strong>, {i.host.address} — {i.host.url}.
+          {t('legal.m.hostBody')
+            .replace('{name}', i.host.name)
+            .replace('{address}', i.host.address)
+            .replace('{url}', i.host.url)}
         </p>
       </div>
-      <div className="space-y-1">
-        <H>Propriété intellectuelle</H>
-        <p>
-          La marque « Blumi », le personnage, les textes, l'interface et le code de l'application sont protégés. Toute
-          reproduction non autorisée est interdite. Les analyses sont générées à l'aide du modèle Claude d'Anthropic ;
-          les bibliothèques tierces utilisées restent soumises à leurs licences respectives (MIT, Apache-2.0, OFL…).
-        </p>
-      </div>
+      <Section titleKey="legal.m.ipTitle" bodyKey="legal.m.ipBody" />
     </>
   )
 }
@@ -139,69 +151,19 @@ function Confidentialite() {
   return (
     <>
       <Note />
-      <p>
-        Cette politique explique quelles données Blumi traite, où elles vont, et comment exercer vos droits. Notre
-        principe : <strong>le minimum de données, et de la transparence sur ce qui sort de votre appareil.</strong>
-      </p>
-
+      <p>{t('legal.c.intro')}</p>
+      <Section titleKey="legal.c.s1Title" bodyKey="legal.c.s1Body" />
+      <Section titleKey="legal.c.s2Title" bodyKey="legal.c.s2Body" />
+      <Section titleKey="legal.c.s3Title" bodyKey="legal.c.s3Body" />
+      <Section titleKey="legal.c.s4Title" bodyKey="legal.c.s4Body" />
       <div className="space-y-1">
-        <H>1. Données stockées sur votre appareil</H>
+        <H>{t('legal.c.s5Title')}</H>
         <p>
-          Votre profil carrière, l'historique de vos bilans, vos conversations avec Blumiman, votre statut d'offre et,
-          le cas échéant, votre clé API personnelle sont enregistrés <strong>localement</strong> dans votre navigateur
-          (localStorage). Ils ne sont pas envoyés à un serveur Blumi — nous n'avons pas de base de données qui les
-          centralise.
+          {t('legal.c.s5Body')}
+          <MailLink />.
         </p>
       </div>
-
-      <div className="space-y-1">
-        <H>2. Données transmises à Anthropic (uniquement si vous activez l'IA)</H>
-        <p>
-          Lorsque vous lancez une analyse par l'IA, importez un CV ou discutez avec Blumiman, les informations
-          nécessaires (profession, éléments de profil, contenu du CV, messages) sont envoyées au modèle
-          <strong> Claude d'Anthropic, PBC</strong> (États-Unis) pour produire la réponse. Ce transfert hors UE implique
-          un sous-traitant établi aux États-Unis. En mode démo (sans clé API), <strong>aucune</strong> donnée n'est
-          transmise : tout est calculé localement. Évitez de saisir des données sensibles que vous ne souhaitez pas
-          transmettre.
-        </p>
-      </div>
-
-      <div className="space-y-1">
-        <H>3. Mesure d'audience</H>
-        <p>
-          Nous utilisons <strong>Vercel Analytics</strong> pour mesurer la fréquentation de façon agrégée. Cette mesure
-          est sans cookie publicitaire. Nous ne vendons ni ne louons vos données à des tiers.
-        </p>
-      </div>
-
-      <div className="space-y-1">
-        <H>4. Cookies</H>
-        <p>
-          Blumi n'utilise pas de cookie de suivi publicitaire. Le stockage technique (localStorage) sert uniquement à
-          faire fonctionner l'application sur votre appareil.
-        </p>
-      </div>
-
-      <div className="space-y-1">
-        <H>5. Vos droits</H>
-        <p>
-          Comme vos données vivent sur votre appareil, vous gardez le contrôle : vous pouvez à tout moment les
-          <strong> supprimer depuis l'écran « Mon profil »</strong> (bouton « Supprimer toutes mes données ») ou en
-          vidant le stockage de votre navigateur. Pour toute question relative à vos données (accès, rectification,
-          effacement, opposition), écrivez à{' '}
-          <a className="text-brand-700 underline" href={`mailto:${CONTACT}`}>{CONTACT}</a>.
-        </p>
-      </div>
-
-      <div className="space-y-1">
-        <H>6. Sécurité</H>
-        <p>
-          Par défaut, les appels à l'IA passent par un <strong>serveur intermédiaire (proxy)</strong> qui détient la clé
-          d'accès : celle-ci n'est jamais exposée dans votre navigateur. Si vous choisissez de fournir votre propre clé
-          API, elle reste stockée localement dans votre navigateur et appelle directement Anthropic — dans ce cas,
-          ne l'utilisez que sur un appareil de confiance et révoquez-la depuis la console Anthropic en cas de doute.
-        </p>
-      </div>
+      <Section titleKey="legal.c.s6Title" bodyKey="legal.c.s6Body" />
     </>
   )
 }
@@ -210,56 +172,17 @@ function Cgu() {
   return (
     <>
       <Note />
+      <Section titleKey="legal.g.s1Title" bodyKey="legal.g.s1Body" />
+      <Section titleKey="legal.g.s2Title" bodyKey="legal.g.s2Body" />
+      <Section titleKey="legal.g.s3Title" bodyKey="legal.g.s3Body" />
+      <Section titleKey="legal.g.s4Title" bodyKey="legal.g.s4Body" />
+      <Section titleKey="legal.g.s5Title" bodyKey="legal.g.s5Body" />
+      <Section titleKey="legal.g.s6Title" bodyKey="legal.g.s6Body" />
       <div className="space-y-1">
-        <H>1. Objet</H>
+        <H>{t('legal.g.s7Title')}</H>
         <p>
-          Blumi est un outil d'information qui estime l'exposition d'un métier à l'automatisation par l'IA et propose des
-          pistes d'évolution. En utilisant Blumi, vous acceptez les présentes conditions.
-        </p>
-      </div>
-      <div className="space-y-1">
-        <H>2. Nature des résultats — pas un conseil professionnel</H>
-        <p>
-          Les scores, projections et recommandations sont <strong>indicatifs</strong> et peuvent comporter des erreurs,
-          y compris lorsqu'ils sont générés par l'IA. Ils ne constituent pas un conseil professionnel, juridique,
-          financier ou d'orientation, et n'engagent aucune garantie de résultat. Vos décisions restent les vôtres.
-        </p>
-      </div>
-      <div className="space-y-1">
-        <H>3. Utilisation de l'IA</H>
-        <p>
-          Les fonctionnalités d'IA s'appuient sur le modèle Claude d'Anthropic et sont soumises à ses conditions. Elles
-          sont fournies via un accès géré par l'éditeur ; un usage raisonnable et de bonne foi est attendu. Si vous
-          utilisez votre propre clé API, vous êtes responsable de son usage et des coûts associés.
-        </p>
-      </div>
-      <div className="space-y-1">
-        <H>4. Offre Blumiman</H>
-        <p>
-          Dans cette version prototype, l'activation de l'offre « Blumiman » est <strong>simulée</strong> et gratuite ;
-          aucun paiement réel n'est prélevé. Des conditions de vente distinctes s'appliqueront si un paiement réel est
-          mis en place.
-        </p>
-      </div>
-      <div className="space-y-1">
-        <H>5. Propriété intellectuelle</H>
-        <p>
-          L'application, sa marque, son personnage et son contenu sont protégés. Vous ne pouvez pas les copier ou les
-          réutiliser sans autorisation. Vous conservez la propriété des contenus que vous saisissez.
-        </p>
-      </div>
-      <div className="space-y-1">
-        <H>6. Responsabilité</H>
-        <p>
-          Blumi est fourni « en l'état », sans garantie. Dans les limites permises par la loi, l'éditeur ne saurait être
-          tenu responsable des décisions prises sur la base des informations fournies.
-        </p>
-      </div>
-      <div className="space-y-1">
-        <H>7. Contact</H>
-        <p>
-          Pour toute question :{' '}
-          <a className="text-brand-700 underline" href={`mailto:${CONTACT}`}>{CONTACT}</a>.
+          {t('legal.g.s7Body')}
+          <MailLink />.
         </p>
       </div>
     </>

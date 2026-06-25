@@ -250,10 +250,13 @@ pédagogique.
   **modules membres** : plan (`PlanScreen`, `plan.*`), boîte à outils
   (`ToolboxScreen`, `tb.*`), générateurs (`GeneratorsScreen`, `gen.*`), veille
   (`VeilleScreen`, `veille.*`) + la carte de tendance sectorielle
-  (`SectorTrendCard`, `str.*`, réutilisée dans Dashboard/Veille/MemberHome) et
+  (`SectorTrendCard`, `str.*`, réutilisée dans Dashboard/Veille/MemberHome),
   l'**accueil membre** (`MemberHome` dans `LandingPage`, `mh.*` : étape « faisons
   connaissance », hero, démarrages rapides, jauge d'avancée, cartes raccourcis +
-  leurs prompts). ⚠️ **Reste en FR (à traduire)** : légal (`LegalScreen`), etc.
+  leurs prompts) et les **pages légales** (`LegalScreen`, `legal.*` : mentions,
+  confidentialité, CGU — textes traduits à l'identique, liens mailto conservés ;
+  ⚠️ traduction littérale d'un texte légal FR, à faire valider juridiquement par
+  pays avant exploitation). ✅ **Tous les écrans sont désormais traduits.**
 - Pour ajouter une langue/écran : ajouter les clés dans les 5 dictionnaires de
   `i18n.ts` et remplacer les littéraux par `t('clé')` (appeler `useLang()` une fois
   dans le composant).
