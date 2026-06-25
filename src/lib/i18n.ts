@@ -145,6 +145,12 @@ const fr: Dict = {
   'footer.mentions': 'Mentions légales',
   'footer.privacyLink': 'Confidentialité',
   'footer.cgu': 'Conditions d’utilisation',
+  'analyzing.title': '{name} analyse « {job} »',
+  'analyzing.step0': 'Identification du métier…',
+  'analyzing.step1': 'Cartographie des tâches…',
+  'analyzing.step2': 'Évaluation des 7 facteurs d’exposition…',
+  'analyzing.step3': 'Projection 2026 → 2040…',
+  'analyzing.step4': 'Génération du plan d’action…',
 }
 
 const en: Dict = {
@@ -211,6 +217,12 @@ const en: Dict = {
   'footer.mentions': 'Legal notice',
   'footer.privacyLink': 'Privacy',
   'footer.cgu': 'Terms of use',
+  'analyzing.title': '{name} is analyzing “{job}”',
+  'analyzing.step0': 'Identifying the profession…',
+  'analyzing.step1': 'Mapping the tasks…',
+  'analyzing.step2': 'Assessing the 7 exposure factors…',
+  'analyzing.step3': 'Projection 2026 → 2040…',
+  'analyzing.step4': 'Generating your action plan…',
 }
 
 const de: Dict = {
@@ -277,6 +289,12 @@ const de: Dict = {
   'footer.mentions': 'Impressum',
   'footer.privacyLink': 'Datenschutz',
   'footer.cgu': 'Nutzungsbedingungen',
+  'analyzing.title': '{name} analysiert „{job}“',
+  'analyzing.step0': 'Beruf wird erkannt…',
+  'analyzing.step1': 'Aufgaben werden erfasst…',
+  'analyzing.step2': 'Die 7 Risikofaktoren werden bewertet…',
+  'analyzing.step3': 'Projektion 2026 → 2040…',
+  'analyzing.step4': 'Aktionsplan wird erstellt…',
 }
 
 const es: Dict = {
@@ -343,6 +361,12 @@ const es: Dict = {
   'footer.mentions': 'Aviso legal',
   'footer.privacyLink': 'Privacidad',
   'footer.cgu': 'Términos de uso',
+  'analyzing.title': '{name} analiza «{job}»',
+  'analyzing.step0': 'Identificando la profesión…',
+  'analyzing.step1': 'Mapeando las tareas…',
+  'analyzing.step2': 'Evaluando los 7 factores de exposición…',
+  'analyzing.step3': 'Proyección 2026 → 2040…',
+  'analyzing.step4': 'Generando tu plan de acción…',
 }
 
 const zh: Dict = {
@@ -409,6 +433,12 @@ const zh: Dict = {
   'footer.mentions': '法律声明',
   'footer.privacyLink': '隐私',
   'footer.cgu': '使用条款',
+  'analyzing.title': '{name} 正在分析“{job}”',
+  'analyzing.step0': '正在识别职业…',
+  'analyzing.step1': '正在梳理工作任务…',
+  'analyzing.step2': '正在评估 7 项暴露因素…',
+  'analyzing.step3': '预测 2026 → 2040…',
+  'analyzing.step4': '正在生成你的行动计划…',
 }
 
 const MESSAGES: Record<Lang, Dict> = { fr, en, de, es, zh }

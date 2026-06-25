@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { Analysis, Recommendation, Skill } from './engine'
 import { getTier, tierName, type Tier } from './entitlement'
+import { getLang } from './i18n'
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Intégration Claude (Anthropic API)
@@ -26,6 +27,21 @@ const MODEL = 'claude-sonnet-4-6'
 // Tâches simples (extraction de CV…) → Haiku : 5× moins cher, suffisant.
 const MODEL_LIGHT = 'claude-haiku-4-5'
 const PROXY_PATH = '/api/anthropic'
+
+// Langue de réponse de l'IA = langue choisie dans l'app (i18n). Sans cette
+// directive, le modèle répondrait toujours en français même si l'interface est
+// en anglais/allemand/etc. — incohérent pour un public international.
+const LANG_NAME: Record<string, string> = {
+  fr: 'français',
+  en: 'anglais',
+  de: 'allemand',
+  es: 'espagnol',
+  zh: 'chinois (mandarin simplifié)',
+}
+function langDirective(): string {
+  const name = LANG_NAME[getLang()] || 'anglais'
+  return `\n\nLANGUE DE RÉPONSE : réponds EXCLUSIVEMENT en ${name}, quelle que soit la langue de la question ou des données fournies. Tous les textes que tu génères (verdict, conseils, messages, livrables) doivent être rédigés dans cette langue.`
+}
 
 // Une clé serveur est-elle configurée ? Déterminé une fois au chargement via
 // l'endpoint /api/anthropic-status (qui ne révèle jamais la clé elle-même).
@@ -199,7 +215,7 @@ export async function generateNarrative(a: Analysis, extraContext?: string): Pro
     model: MODEL,
     max_tokens: 2048,
     thinking: { type: 'adaptive' },
-    system: SYSTEM_PROMPT,
+    system: SYSTEM_PROMPT + langDirective(),
     output_config: { format: { type: 'json_schema', schema: NARRATIVE_SCHEMA } },
     messages: [
       {
@@ -237,7 +253,7 @@ export async function generateComparison(a: Analysis, b: Analysis): Promise<Comp
     model: MODEL,
     max_tokens: 1536,
     thinking: { type: 'adaptive' },
-    system: SYSTEM_PROMPT,
+    system: SYSTEM_PROMPT + langDirective(),
     output_config: { format: { type: 'json_schema', schema: COMPARISON_SCHEMA } },
     messages: [
       {
@@ -358,6 +374,7 @@ export async function streamLuminatorChat(history: ChatMsg[], opts: ChatOptions)
   const persona = tierName(getTier())
   const system =
     LUMINATOR_SYSTEM.replace('{NAME}', persona) +
+    langDirective() +
     (opts.extraContext ? `\n\n--- Ce que tu sais déjà de l'utilisateur ---\n${opts.extraContext}` : '')
   const messages: Anthropic.MessageParam[] = history.map((m) => ({ role: m.role, content: m.content }))
   let full = ''
@@ -509,7 +526,7 @@ Puis renvoie UNIQUEMENT un objet JSON valide (aucun texte autour, pas de balises
   "signals": ["3 à 4 développements récents et concrets"],
   "sources": [{"title": "titre court de la source", "url": "https://lien-exact-de-la-source"}]
 }
-La "direction" décrit l'évolution de la pression de l'IA sur le secteur. Dans "sources", mets 2 à 4 liens RÉELS issus de tes recherches (URLs exactes, pas inventées). Appuie-toi sur tes recherches, n'invente rien. Réponds en français.`,
+La "direction" décrit l'évolution de la pression de l'IA sur le secteur. Dans "sources", mets 2 à 4 liens RÉELS issus de tes recherches (URLs exactes, pas inventées). Appuie-toi sur tes recherches, n'invente rien.${langDirective()}`,
     },
   ]
 
