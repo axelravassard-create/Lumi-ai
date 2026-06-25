@@ -6,12 +6,30 @@ import { clearAllLocalData } from '../lib/privacy'
 import { Logo } from './Logo'
 import { useCountUp } from '../lib/ui'
 import { brandName } from '../lib/entitlement'
+import { t, useLang, getLang } from '../lib/i18n'
 
 function riskColor(r: number): string {
   if (r < 30) return '#10b981'
   if (r < 55) return '#f59e0b'
   if (r < 75) return '#f97316'
   return '#ef4444'
+}
+
+// Les options des <Select> sont STOCKÉES en français (le moteur engine.ts les
+// matche exactement) ; on n'en traduit que l'AFFICHAGE via cette table.
+const OPTION_LABELS: Record<string, string> = {
+  "Moins d'1 an": 'opt.exp.lt1', '1–3 ans': 'opt.exp.1_3', '3–7 ans': 'opt.exp.3_7', '7–15 ans': 'opt.exp.7_15', 'Plus de 15 ans': 'opt.exp.gt15',
+  'Débutant·e': 'opt.lvl.beg', 'Confirmé·e': 'opt.lvl.conf', 'Senior': 'opt.lvl.senior', 'Manager / Direction': 'opt.lvl.mgr',
+  'Salarié·e': 'opt.st.employee', 'Indépendant·e': 'opt.st.freelance', 'En recherche': 'opt.st.searching', 'Étudiant·e': 'opt.st.student', 'En reconversion': 'opt.st.reconv',
+  'Sans diplôme / CAP / BEP': 'opt.edu.none', 'Bac': 'opt.edu.bac', 'Bac+2 / Bac+3': 'opt.edu.bac23', 'Bac+5 (Master)': 'opt.edu.bac5', 'Doctorat / Grande école': 'opt.edu.phd',
+  'Établissement très sélectif (top)': 'opt.school.top', 'Établissement reconnu': 'opt.school.known', 'Établissement standard': 'opt.school.standard', 'Formation courte / autodidacte': 'opt.school.short',
+  'Avancée — au quotidien': 'opt.ai.adv', 'Intermédiaire': 'opt.ai.inter', 'Débutante': 'opt.ai.beg', 'Aucune': 'opt.ai.none',
+  'Évoluer dans mon métier': 'opt.goal.evolve', 'Me reconvertir': 'opt.goal.reconv', 'Sécuriser mon poste': 'opt.goal.secure', 'Entreprendre': 'opt.goal.entrepr',
+  'Curieux·se / enthousiaste': 'opt.app.pos', 'Neutre': 'opt.app.neutral', 'Plutôt réticent·e': 'opt.app.neg',
+}
+function optLabel(v: string): string {
+  const k = OPTION_LABELS[v]
+  return k ? t(k) : v
 }
 
 interface Props {
@@ -22,6 +40,7 @@ interface Props {
 }
 
 export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: Props) {
+  useLang() // re-render au changement de langue
   const [profile, setProfile] = useState<CareerProfile>(() => loadProfile())
   const [history, setHistory] = useState<BilanRecord[]>(() => loadHistory())
 
@@ -68,24 +87,22 @@ export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: 
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
               <path d="M5 12h14m-8-6-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Retour
+            {t('prof.back')}
           </button>
         </div>
       </header>
 
       <main className="mx-auto max-w-3xl px-6">
         <section className="animate-fade-up pt-10">
-          <h1 className="font-display text-2xl font-extrabold text-ink-900 md:text-3xl">Mon profil carrière</h1>
+          <h1 className="font-display text-2xl font-extrabold text-ink-900 md:text-3xl">{t('prof.title')}</h1>
           <p className="mt-1 text-ink-500">
-            Plus votre profil est complet, plus le suivi et les conseils de l'IA sont précis.
-            Il est enregistré <strong>localement</strong> sur cet appareil ; il n'est transmis à Anthropic (Claude)
-            que lorsque vous lancez une analyse ou un chat par l'IA.
+            {t('prof.intro')}
           </p>
 
           {/* Jauge de complétude */}
           <div className="card mt-6 p-5">
             <div className="flex items-center justify-between text-sm">
-              <span className="font-semibold text-ink-700">Profil complété</span>
+              <span className="font-semibold text-ink-700">{t('prof.completed')}</span>
               <span className="font-display text-lg font-extrabold text-brand-700">{Math.round(animated)}%</span>
             </div>
             <div className="mt-2 h-3 overflow-hidden rounded-full bg-ink-100">
@@ -95,24 +112,20 @@ export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: 
               />
             </div>
             <p className="mt-2 text-xs text-ink-400">
-              {pct < 40
-                ? 'Continuez : ajoutez vos tâches et compétences pour un bilan vraiment personnalisé.'
-                : pct < 80
-                  ? 'Beau profil ! Encore quelques champs pour un suivi optimal.'
-                  : 'Profil au top — l\'IA dispose de tout pour vous accompagner finement. 🎯'}
+              {pct < 40 ? t('prof.gaugeLow') : pct < 80 ? t('prof.gaugeMid') : t('prof.gaugeHigh')}
             </p>
           </div>
 
-          {/* Ce que Luminator a complété pendant vos échanges */}
+          {/* Ce que le copilote a complété pendant vos échanges */}
           {lumiLabels.length > 0 && (
             <div className="mt-4 flex items-start gap-3 rounded-2xl border border-brand-100 bg-brand-50/60 p-4">
               <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white text-lg shadow-sm">🤓</span>
               <div className="text-sm">
                 <p className="font-semibold text-brand-800">
-                  Complété par {brandName()} pendant vos échanges
+                  {t('prof.filledBy').replace('{name}', brandName())}
                 </p>
                 <p className="mt-0.5 text-ink-600">
-                  {lumiLabels.join(', ')}. Vérifiez et ajustez si besoin — c'est votre profil.
+                  {t('prof.filledByDesc').replace('{labels}', lumiLabels.join(', '))}
                 </p>
               </div>
             </div>
@@ -126,60 +139,60 @@ export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: 
         <HistorySection history={history} onClear={() => { clearHistory(); setHistory([]) }} />
 
         {/* Couche 1 — base */}
-        <Section title="L'essentiel" emoji="🪪" delay={80}>
-          <Field label="Métier actuel" hint="indispensable" mark={byLumi('role')}>
-            <input className="inp" value={profile.role} onChange={(e) => set('role', e.target.value)} placeholder="Ex : développeur web" />
+        <Section title={t('prof.sec1')} emoji="🪪" delay={80}>
+          <Field label={t('prof.f.role')} hint={t('prof.hint.required')} mark={byLumi('role')}>
+            <input className="inp" value={profile.role} onChange={(e) => set('role', e.target.value)} placeholder={t('prof.ph.role')} />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Secteur d'activité" mark={byLumi('sector')}>
-              <input className="inp" value={profile.sector} onChange={(e) => set('sector', e.target.value)} placeholder="Ex : banque, santé…" />
+            <Field label={t('prof.f.sector')} mark={byLumi('sector')}>
+              <input className="inp" value={profile.sector} onChange={(e) => set('sector', e.target.value)} placeholder={t('prof.ph.sector')} />
             </Field>
-            <Field label="Localisation" mark={byLumi('location')}>
-              <input className="inp" value={profile.location} onChange={(e) => set('location', e.target.value)} placeholder="Ex : Lyon, France" />
+            <Field label={t('prof.f.location')} mark={byLumi('location')}>
+              <input className="inp" value={profile.location} onChange={(e) => set('location', e.target.value)} placeholder={t('prof.ph.location')} />
             </Field>
-            <Select label="Expérience" value={profile.experience} onChange={(v) => set('experience', v)} mark={byLumi('experience')}
+            <Select label={t('prof.f.experience')} value={profile.experience} onChange={(v) => set('experience', v)} mark={byLumi('experience')}
               options={['Moins d\'1 an', '1–3 ans', '3–7 ans', '7–15 ans', 'Plus de 15 ans']} />
-            <Select label="Niveau" value={profile.level} onChange={(v) => set('level', v)} mark={byLumi('level')}
+            <Select label={t('prof.f.level')} value={profile.level} onChange={(v) => set('level', v)} mark={byLumi('level')}
               options={['Débutant·e', 'Confirmé·e', 'Senior', 'Manager / Direction']} />
-            <Select label="Statut" value={profile.status} onChange={(v) => set('status', v)} mark={byLumi('status')}
+            <Select label={t('prof.f.status')} value={profile.status} onChange={(v) => set('status', v)} mark={byLumi('status')}
               options={['Salarié·e', 'Indépendant·e', 'En recherche', 'Étudiant·e', 'En reconversion']} />
-            <Select label="Niveau de diplôme" value={profile.educationLevel} onChange={(v) => set('educationLevel', v)}
+            <Select label={t('prof.f.educationLevel')} value={profile.educationLevel} onChange={(v) => set('educationLevel', v)}
               options={['Sans diplôme / CAP / BEP', 'Bac', 'Bac+2 / Bac+3', 'Bac+5 (Master)', 'Doctorat / Grande école']} />
-            <Select label="Sélectivité de la formation" value={profile.schoolPrestige} onChange={(v) => set('schoolPrestige', v)}
+            <Select label={t('prof.f.schoolPrestige')} value={profile.schoolPrestige} onChange={(v) => set('schoolPrestige', v)}
               options={['Établissement très sélectif (top)', 'Établissement reconnu', 'Établissement standard', 'Formation courte / autodidacte']} />
           </div>
-          <p className="mt-1 text-xs text-ink-400">Le niveau et la sélectivité de votre formation affinent l'estimation de votre risque personnel.</p>
+          <p className="mt-1 text-xs text-ink-400">{t('prof.eduNote')}</p>
         </Section>
 
         {/* Couche 2 — carburant de l'IA */}
-        <Section title="Ce que vous faites vraiment" emoji="⚙️" delay={140}>
-          <TagField label="Tâches du quotidien" hint="le plus important" mark={byLumi('tasks')} value={profile.tasks} onChange={(v) => set('tasks', v)}
-            placeholder="Ex : revue de code, support client… (Entrée pour ajouter)" />
-          <TagField label="Compétences techniques" mark={byLumi('hardSkills')} value={profile.hardSkills} onChange={(v) => set('hardSkills', v)}
-            placeholder="Ex : Python, Excel, Photoshop…" />
-          <TagField label="Compétences humaines" mark={byLumi('softSkills')} value={profile.softSkills} onChange={(v) => set('softSkills', v)}
-            placeholder="Ex : pédagogie, négociation…" />
-          <Field label="Formation & diplômes" mark={byLumi('education')}>
+        <Section title={t('prof.sec2')} emoji="⚙️" delay={140}>
+          <TagField label={t('prof.f.tasks')} hint={t('prof.hint.mostImportant')} mark={byLumi('tasks')} value={profile.tasks} onChange={(v) => set('tasks', v)}
+            placeholder={t('prof.ph.tasks')} />
+          <TagField label={t('prof.f.hardSkills')} mark={byLumi('hardSkills')} value={profile.hardSkills} onChange={(v) => set('hardSkills', v)}
+            placeholder={t('prof.ph.hardSkills')} />
+          <TagField label={t('prof.f.softSkills')} mark={byLumi('softSkills')} value={profile.softSkills} onChange={(v) => set('softSkills', v)}
+            placeholder={t('prof.ph.softSkills')} />
+          <Field label={t('prof.f.education')} mark={byLumi('education')}>
             <textarea className="inp min-h-[64px]" value={profile.education} onChange={(e) => set('education', e.target.value)}
-              placeholder="Diplômes, certifications, formations suivies…" />
+              placeholder={t('prof.ph.education')} />
           </Field>
-          <TagField label="Postes précédents" mark={byLumi('pastRoles')} value={profile.pastRoles} onChange={(v) => set('pastRoles', v)}
-            placeholder="Ex : technicien support, chef de projet junior…" />
-          <Select label="Maîtrise des outils d'IA" value={profile.aiSkill} onChange={(v) => set('aiSkill', v)} mark={byLumi('aiSkill')}
+          <TagField label={t('prof.f.pastRoles')} mark={byLumi('pastRoles')} value={profile.pastRoles} onChange={(v) => set('pastRoles', v)}
+            placeholder={t('prof.ph.pastRoles')} />
+          <Select label={t('prof.f.aiSkill')} value={profile.aiSkill} onChange={(v) => set('aiSkill', v)} mark={byLumi('aiSkill')}
             options={['Avancée — au quotidien', 'Intermédiaire', 'Débutante', 'Aucune']} />
         </Section>
 
         {/* Couche 3 — aspirations & contraintes */}
-        <Section title="Vos aspirations" emoji="🧭" delay={200}>
+        <Section title={t('prof.sec3')} emoji="🧭" delay={200}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Select label="Objectif de carrière" value={profile.goal} onChange={(v) => set('goal', v)} mark={byLumi('goal')}
+            <Select label={t('prof.f.goal')} value={profile.goal} onChange={(v) => set('goal', v)} mark={byLumi('goal')}
               options={['Évoluer dans mon métier', 'Me reconvertir', 'Sécuriser mon poste', 'Entreprendre']} />
-            <Select label="Rapport à l'IA et au changement" value={profile.aiAppetite} onChange={(v) => set('aiAppetite', v)} mark={byLumi('aiAppetite')}
+            <Select label={t('prof.f.aiAppetite')} value={profile.aiAppetite} onChange={(v) => set('aiAppetite', v)} mark={byLumi('aiAppetite')}
               options={['Curieux·se / enthousiaste', 'Neutre', 'Plutôt réticent·e']} />
           </div>
-          <Field label="Contraintes" mark={byLumi('constraints')}>
+          <Field label={t('prof.f.constraints')} mark={byLumi('constraints')}>
             <textarea className="inp min-h-[64px]" value={profile.constraints} onChange={(e) => set('constraints', e.target.value)}
-              placeholder="Ex : peu mobile géographiquement, peu de temps pour me former, salaire à préserver…" />
+              placeholder={t('prof.ph.constraints')} />
           </Field>
         </Section>
 
@@ -190,32 +203,31 @@ export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: 
             disabled={!profile.role.trim()}
             className="btn-primary"
           >
-            Lancer mon bilan personnalisé
+            {t('prof.cta')}
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
               <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
-          {!profile.role.trim() && <span className="text-xs text-ink-400">Renseignez au moins votre métier pour lancer le bilan.</span>}
+          {!profile.role.trim() && <span className="text-xs text-ink-400">{t('prof.ctaHint')}</span>}
         </section>
 
         {/* Confidentialité — droit à l'effacement */}
         <section className="animate-fade-up mt-10" style={{ animationDelay: '300ms' }}>
           <div className="rounded-2xl border border-rose-100 bg-rose-50/50 p-5">
-            <h2 className="font-display text-sm font-bold text-ink-900">Vos données</h2>
+            <h2 className="font-display text-sm font-bold text-ink-900">{t('prof.data.title')}</h2>
             <p className="mt-1 text-sm text-ink-600">
-              Tout ce que Blumi enregistre (profil, historique, conversations, clé API, offre) reste sur cet appareil.
-              Vous pouvez tout effacer définitivement en un clic.
+              {t('prof.data.desc')}
             </p>
             <button
               onClick={async () => {
-                if (window.confirm('Supprimer définitivement toutes vos données Blumi (sur cet appareil et sur votre compte) ? Cette action est irréversible.')) {
+                if (window.confirm(t('prof.data.confirm'))) {
                   await clearAllLocalData()
                   window.location.href = window.location.pathname
                 }
               }}
               className="mt-3 rounded-xl border border-rose-300 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-600 hover:text-white"
             >
-              Supprimer toutes mes données
+              {t('prof.data.delete')}
             </button>
           </div>
         </section>
@@ -241,7 +253,7 @@ function CVImport({ aiEnabled, onOpenSettings, onExtracted }: { aiEnabled: boole
       onExtracted(extracted)
       const filled = Object.values(extracted).filter((v) => (Array.isArray(v) ? v.length : String(v).trim())).length
       setStatus('done')
-      setMessage(`Profil pré-rempli depuis votre CV — ${filled} champ${filled > 1 ? 's' : ''} détecté${filled > 1 ? 's' : ''}. Vérifiez et ajustez ci-dessous.`)
+      setMessage(t('prof.cv.filled').replace('{n}', String(filled)))
     } catch (e) {
       setStatus('error')
       setMessage(describeError(e))
@@ -252,7 +264,7 @@ function CVImport({ aiEnabled, onOpenSettings, onExtracted }: { aiEnabled: boole
     if (!file) return
     if (file.size > 8 * 1024 * 1024) {
       setStatus('error')
-      setMessage('Fichier trop volumineux (max 8 Mo).')
+      setMessage(t('prof.cv.tooBig'))
       return
     }
     const reader = new FileReader()
@@ -270,22 +282,22 @@ function CVImport({ aiEnabled, onOpenSettings, onExtracted }: { aiEnabled: boole
         <div className="flex items-start gap-3">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-white/10 text-xl">📄</span>
           <div className="min-w-0 flex-1">
-            <h2 className="font-display text-lg font-bold">Pré-remplir depuis mon CV</h2>
+            <h2 className="font-display text-lg font-bold">{t('prof.cv.title')}</h2>
             <p className="mt-1 text-sm text-white/60">
-              Importez votre CV : Claude le lit et remplit votre profil en quelques secondes.
+              {t('prof.cv.desc')}
               <span className="mt-1 block text-xs text-white/40">
-                Votre CV est transmis à Anthropic (Claude) pour lecture. N'importez pas d'informations que vous ne souhaitez pas partager.
+                {t('prof.cv.privacy')}
               </span>
             </p>
 
             {!aiEnabled ? (
               <button onClick={onOpenSettings} className="btn-primary mt-4 py-2.5 text-sm">
-                Connecter l'IA Claude pour activer l'import
+                {t('prof.cv.connect')}
               </button>
             ) : status === 'loading' ? (
               <div className="mt-4 flex items-center gap-3 text-sm text-white/80">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                Claude lit votre CV…
+                {t('prof.cv.reading')}
               </div>
             ) : (
               <>
@@ -298,13 +310,13 @@ function CVImport({ aiEnabled, onOpenSettings, onExtracted }: { aiEnabled: boole
                     onChange={(e) => onFile(e.target.files?.[0])}
                   />
                   <button onClick={() => fileRef.current?.click()} className="btn-primary py-2.5 text-sm">
-                    📎 Choisir un PDF
+                    {t('prof.cv.choosePdf')}
                   </button>
                   <button
                     onClick={() => setShowPaste((s) => !s)}
                     className="rounded-2xl border border-white/20 px-4 py-2.5 text-sm font-semibold text-white/80 transition hover:bg-white/10"
                   >
-                    ou coller le texte
+                    {t('prof.cv.orPaste')}
                   </button>
                 </div>
 
@@ -313,7 +325,7 @@ function CVImport({ aiEnabled, onOpenSettings, onExtracted }: { aiEnabled: boole
                     <textarea
                       value={text}
                       onChange={(e) => setText(e.target.value)}
-                      placeholder="Collez ici le texte de votre CV ou de votre profil LinkedIn…"
+                      placeholder={t('prof.cv.pastePlaceholder')}
                       className="min-h-[100px] w-full rounded-xl border border-white/20 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-white/40"
                     />
                     <button
@@ -321,7 +333,7 @@ function CVImport({ aiEnabled, onOpenSettings, onExtracted }: { aiEnabled: boole
                       disabled={!text.trim()}
                       className="btn-primary mt-2 py-2.5 text-sm disabled:opacity-40"
                     >
-                      Analyser le texte
+                      {t('prof.cv.analyzeText')}
                     </button>
                   </div>
                 )}
@@ -340,11 +352,14 @@ function CVImport({ aiEnabled, onOpenSettings, onExtracted }: { aiEnabled: boole
   )
 }
 
+const LOCALES: Record<string, string> = { fr: 'fr-FR', en: 'en-US', de: 'de-DE', es: 'es-ES', zh: 'zh-CN' }
+
 function HistorySection({ history, onClear }: { history: BilanRecord[]; onClear: () => void }) {
+  const loc = LOCALES[getLang()] || 'en-US'
   const fmt = (iso: string) =>
-    new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) +
+    new Date(iso).toLocaleDateString(loc, { day: '2-digit', month: 'short' }) +
     ' · ' +
-    new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    new Date(iso).toLocaleTimeString(loc, { hour: '2-digit', minute: '2-digit' })
 
   const first = history[0]
   const last = history[history.length - 1]
@@ -356,28 +371,28 @@ function HistorySection({ history, onClear }: { history: BilanRecord[]; onClear:
         <div className="flex items-center justify-between">
           <div>
             <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ink-900">
-              <span>📈</span> Historique de vos bilans
+              <span>📈</span> {t('prof.hist.title')}
             </h2>
-            <p className="mt-0.5 text-xs text-ink-400">Part de votre métier déjà automatisable, à chaque bilan — elle évolue dans le temps.</p>
+            <p className="mt-0.5 text-xs text-ink-400">{t('prof.hist.sub')}</p>
           </div>
           {history.length > 0 && (
             <button onClick={onClear} className="text-xs font-medium text-ink-400 hover:text-rose-600">
-              Effacer
+              {t('prof.hist.clear')}
             </button>
           )}
         </div>
 
         {history.length === 0 ? (
           <p className="mt-3 rounded-xl bg-ink-50 px-4 py-6 text-center text-sm text-ink-500">
-            Lancez votre premier bilan pour démarrer le suivi de votre carrière dans le temps. 🚀
+            {t('prof.hist.empty')}
           </p>
         ) : (
           <>
             <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-              <span className="text-ink-500">{history.length} bilan{history.length > 1 ? 's' : ''} enregistré{history.length > 1 ? 's' : ''}</span>
+              <span className="text-ink-500">{t('prof.hist.count').replace('{n}', String(history.length))}</span>
               {history.length > 1 && (
                 <span className={`pill ${delta > 0 ? 'bg-rose-100 text-rose-700' : delta < 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-ink-100 text-ink-600'}`}>
-                  {delta > 0 ? '↑' : delta < 0 ? '↓' : '→'} {delta > 0 ? '+' : ''}{delta} pts depuis le 1er bilan
+                  {delta > 0 ? '↑' : delta < 0 ? '↓' : '→'} {t('prof.hist.delta').replace('{delta}', `${delta > 0 ? '+' : ''}${delta}`)}
                 </span>
               )}
             </div>
@@ -469,9 +484,9 @@ function Select({ label, value, onChange, options, mark }: { label: string; valu
   return (
     <Field label={label} mark={mark}>
       <select className="inp" value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value="">— Choisir —</option>
+        <option value="">{t('prof.choose')}</option>
         {options.map((o) => (
-          <option key={o} value={o}>{o}</option>
+          <option key={o} value={o}>{optLabel(o)}</option>
         ))}
       </select>
     </Field>
