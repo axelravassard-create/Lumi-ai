@@ -423,6 +423,17 @@ const fr: Dict = {
   'veille.actionDesc': '{name} transforme cette tendance en actions concrètes pour toi.',
   'veille.actionBtn': '💬 Que faire cette semaine ?',
   'veille.prompt': 'Au vu des dernières tendances IA de mon secteur ({sector}), donne-moi 2 à 3 actions concrètes à mener maintenant et ajoute-les à mon plan d’action.',
+  'str.dir.up': 'Pression IA en hausse',
+  'str.dir.stable': 'Pression IA stable',
+  'str.dir.down': 'Pression IA en baisse',
+  'str.title': '🌐 Tendance de votre secteur',
+  'str.subtitle': 'Secteur : {sector} · actualisé chaque semaine',
+  'str.demo': 'Connectez l’IA Claude pour suivre l’actualité de votre secteur, recherchée et synthétisée chaque semaine.',
+  'str.activate': 'Activer le suivi de tendance',
+  'str.loading': 'Claude recherche l’actualité du secteur…',
+  'str.sources': 'Sources',
+  'str.updated': 'Mis à jour le {date}',
+  'str.refresh': 'Rafraîchir',
 }
 
 const en: Dict = {
@@ -767,6 +778,17 @@ const en: Dict = {
   'veille.actionDesc': '{name} turns this trend into concrete actions for you.',
   'veille.actionBtn': '💬 What to do this week?',
   'veille.prompt': 'Given the latest AI trends in my sector ({sector}), give me 2–3 concrete actions to take now and add them to my action plan.',
+  'str.dir.up': 'AI pressure rising',
+  'str.dir.stable': 'AI pressure stable',
+  'str.dir.down': 'AI pressure easing',
+  'str.title': '🌐 Your sector’s trend',
+  'str.subtitle': 'Sector: {sector} · updated every week',
+  'str.demo': 'Connect Claude AI to follow your sector’s news, researched and summarized every week.',
+  'str.activate': 'Enable trend tracking',
+  'str.loading': 'Claude is researching your sector’s news…',
+  'str.sources': 'Sources',
+  'str.updated': 'Updated on {date}',
+  'str.refresh': 'Refresh',
 }
 
 const de: Dict = {
@@ -1111,6 +1133,17 @@ const de: Dict = {
   'veille.actionDesc': '{name} verwandelt diesen Trend in konkrete Aktionen für dich.',
   'veille.actionBtn': '💬 Was diese Woche tun?',
   'veille.prompt': 'Angesichts der neuesten KI-Trends in meiner Branche ({sector}), gib mir 2–3 konkrete Aktionen, die ich jetzt angehen kann, und füge sie meinem Aktionsplan hinzu.',
+  'str.dir.up': 'KI-Druck steigt',
+  'str.dir.stable': 'KI-Druck stabil',
+  'str.dir.down': 'KI-Druck lässt nach',
+  'str.title': '🌐 Trend Ihrer Branche',
+  'str.subtitle': 'Branche: {sector} · wöchentlich aktualisiert',
+  'str.demo': 'Verbinden Sie Claude-KI, um die Neuigkeiten Ihrer Branche zu verfolgen, jede Woche recherchiert und zusammengefasst.',
+  'str.activate': 'Trend-Verfolgung aktivieren',
+  'str.loading': 'Claude recherchiert die Neuigkeiten der Branche…',
+  'str.sources': 'Quellen',
+  'str.updated': 'Aktualisiert am {date}',
+  'str.refresh': 'Aktualisieren',
 }
 
 const es: Dict = {
@@ -1455,6 +1488,17 @@ const es: Dict = {
   'veille.actionDesc': '{name} convierte esta tendencia en acciones concretas para ti.',
   'veille.actionBtn': '💬 ¿Qué hacer esta semana?',
   'veille.prompt': 'Dadas las últimas tendencias de IA en mi sector ({sector}), dame 2–3 acciones concretas para emprender ahora y añádelas a mi plan de acción.',
+  'str.dir.up': 'Presión de la IA en aumento',
+  'str.dir.stable': 'Presión de la IA estable',
+  'str.dir.down': 'Presión de la IA a la baja',
+  'str.title': '🌐 Tendencia de tu sector',
+  'str.subtitle': 'Sector: {sector} · actualizado cada semana',
+  'str.demo': 'Conecta la IA Claude para seguir la actualidad de tu sector, investigada y resumida cada semana.',
+  'str.activate': 'Activar el seguimiento de tendencias',
+  'str.loading': 'Claude está investigando la actualidad del sector…',
+  'str.sources': 'Fuentes',
+  'str.updated': 'Actualizado el {date}',
+  'str.refresh': 'Actualizar',
 }
 
 const zh: Dict = {
@@ -1799,6 +1843,17 @@ const zh: Dict = {
   'veille.actionDesc': '{name} 把这一趋势转化为针对你的具体行动。',
   'veille.actionBtn': '💬 这周该做什么？',
   'veille.prompt': '根据我所在行业（{sector}）最新的 AI 趋势，给我 2–3 个现在可以采取的具体行动，并加入我的行动计划。',
+  'str.dir.up': 'AI 压力上升',
+  'str.dir.stable': 'AI 压力稳定',
+  'str.dir.down': 'AI 压力下降',
+  'str.title': '🌐 你所在行业的趋势',
+  'str.subtitle': '行业：{sector} · 每周更新',
+  'str.demo': '连接 Claude AI，跟踪你所在行业的动态，每周检索并汇总。',
+  'str.activate': '启用趋势跟踪',
+  'str.loading': 'Claude 正在检索该行业的动态…',
+  'str.sources': '来源',
+  'str.updated': '更新于 {date}',
+  'str.refresh': '刷新',
 }
 
 const MESSAGES: Record<Lang, Dict> = { fr, en, de, es, zh }
