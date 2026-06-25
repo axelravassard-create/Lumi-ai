@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { SectorTrend, generateSectorTrend, describeError } from '../lib/llm'
 import { loadCachedTrend, saveTrend } from '../lib/trends'
+import { t, useLang, getLang } from '../lib/i18n'
 
 interface Props {
   sector: string
@@ -8,14 +9,17 @@ interface Props {
   onOpenSettings: () => void
 }
 
-const DIRECTION: Record<SectorTrend['direction'], { label: string; icon: string; cls: string }> = {
-  hausse: { label: 'Pression IA en hausse', icon: '↑', cls: 'bg-rose-100 text-rose-700' },
-  stable: { label: 'Pression IA stable', icon: '→', cls: 'bg-amber-100 text-amber-700' },
-  baisse: { label: 'Pression IA en baisse', icon: '↓', cls: 'bg-emerald-100 text-emerald-700' },
+const DIRECTION: Record<SectorTrend['direction'], { labelKey: string; icon: string; cls: string }> = {
+  hausse: { labelKey: 'str.dir.up', icon: '↑', cls: 'bg-rose-100 text-rose-700' },
+  stable: { labelKey: 'str.dir.stable', icon: '→', cls: 'bg-amber-100 text-amber-700' },
+  baisse: { labelKey: 'str.dir.down', icon: '↓', cls: 'bg-emerald-100 text-emerald-700' },
 }
+
+const LOCALES: Record<string, string> = { fr: 'fr-FR', en: 'en-US', de: 'de-DE', es: 'es-ES', zh: 'zh-CN' }
 
 // Carte « Tendance de votre secteur » : note hebdomadaire fondée sur l'actualité.
 export function SectorTrendCard({ sector, aiEnabled, onOpenSettings }: Props) {
+  useLang()
   const [trend, setTrend] = useState<SectorTrend | null>(null)
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [error, setError] = useState('')
@@ -54,18 +58,18 @@ export function SectorTrendCard({ sector, aiEnabled, onOpenSettings }: Props) {
   }, [sector, aiEnabled])
 
   const fmtDate = (iso: string) =>
-    new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    new Date(iso).toLocaleDateString(LOCALES[getLang()] || 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })
 
   return (
     <div className="card p-6 md:p-8">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="flex items-center gap-2 font-display text-xl font-bold text-ink-900">🌐 Tendance de votre secteur</h2>
-          <p className="text-sm text-ink-500">Secteur : {sector} · actualisé chaque semaine</p>
+          <h2 className="flex items-center gap-2 font-display text-xl font-bold text-ink-900">{t('str.title')}</h2>
+          <p className="text-sm text-ink-500">{t('str.subtitle').replace('{sector}', sector)}</p>
         </div>
         {trend && (
           <span className={`pill ${DIRECTION[trend.direction].cls}`}>
-            {DIRECTION[trend.direction].icon} {DIRECTION[trend.direction].label}
+            {DIRECTION[trend.direction].icon} {t(DIRECTION[trend.direction].labelKey)}
           </span>
         )}
       </div>
@@ -74,10 +78,10 @@ export function SectorTrendCard({ sector, aiEnabled, onOpenSettings }: Props) {
       {!aiEnabled && !trend && (
         <div className="mt-4 rounded-2xl bg-ink-50 p-5 text-center">
           <p className="text-sm text-ink-600">
-            Connectez l'IA Claude pour suivre l'actualité de votre secteur, recherchée et synthétisée chaque semaine.
+            {t('str.demo')}
           </p>
           <button onClick={onOpenSettings} className="btn-primary mt-3 py-2.5 text-sm">
-            Activer le suivi de tendance
+            {t('str.activate')}
           </button>
         </div>
       )}
@@ -86,7 +90,7 @@ export function SectorTrendCard({ sector, aiEnabled, onOpenSettings }: Props) {
       {status === 'loading' && (
         <div className="mt-4 flex items-center gap-3 text-sm text-ink-500">
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600" />
-          Claude recherche l'actualité du secteur…
+          {t('str.loading')}
         </div>
       )}
 
@@ -112,7 +116,7 @@ export function SectorTrendCard({ sector, aiEnabled, onOpenSettings }: Props) {
           )}
           {trend.sources && trend.sources.length > 0 && (
             <div className="mt-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">Sources</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">{t('str.sources')}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {trend.sources.map((s, i) => (
                   <a
@@ -130,10 +134,10 @@ export function SectorTrendCard({ sector, aiEnabled, onOpenSettings }: Props) {
           )}
 
           <div className="mt-4 flex items-center gap-3 text-xs text-ink-400">
-            <span>Mis à jour le {fmtDate(trend.updatedAt)}</span>
+            <span>{t('str.updated').replace('{date}', fmtDate(trend.updatedAt))}</span>
             {aiEnabled && (
               <button onClick={() => fetchTrend(true)} className="font-medium text-brand-600 hover:text-brand-800" disabled={status === 'loading'}>
-                Rafraîchir
+                {t('str.refresh')}
               </button>
             )}
           </div>
