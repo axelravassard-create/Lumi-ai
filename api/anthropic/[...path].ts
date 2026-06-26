@@ -12,17 +12,60 @@
 // plafond de max_tokens — pour qu'une requête trafiquée ne fasse pas exploser la
 // facture. (Un quota par utilisateur robuste nécessiterait un stockage type KV.)
 
+import { kvConfigured, kvGet, kvIncr, kvExpire } from '../_lib/kv'
+import { sessionEmail } from '../_lib/session'
+
 export const config = { runtime: 'edge' }
 
 const ANTHROPIC = 'https://api.anthropic.com'
 const ALLOWED_MODELS = new Set(['claude-sonnet-4-6', 'claude-haiku-4-5'])
 const MAX_OUTPUT_TOKENS = 4096
 
+// Quota quotidien d'appels IA, par palier. ⚠️ Garder en phase avec
+// `DAILY_LIMITS` dans src/lib/llm.ts (affiché sur la page Tarifs). C'est ICI
+// que se fait la VRAIE limite (serveur, infalsifiable) ; le localStorage côté
+// client n'est qu'un pré-contrôle d'UX. Bluminator = 4× Blumiman.
+const DAILY_LIMITS: Record<string, number> = { free: 10, blumiman: 25, bluminator: 100 }
+const QUOTA_TEXT =
+  'Tu as atteint ta limite d\'utilisation du jour (quota_exceeded). Réessaie demain, passe à un palier supérieur pour un usage étendu, ou ajoute ta propre clé API.'
+
 function err(message: string, status: number): Response {
   return new Response(JSON.stringify({ type: 'error', error: { type: 'api_error', message } }), {
     status,
     headers: { 'content-type': 'application/json' },
   })
+}
+
+// Palier de l'utilisateur connecté (sinon 'free'). Source de vérité : le KV
+// (`luminator:<email>`, posé par le webhook Stripe). Legacy '1' → bluminator.
+async function tierFor(email: string | null): Promise<keyof typeof DAILY_LIMITS> {
+  if (!email) return 'free'
+  const raw = await kvGet(`luminator:${email}`)
+  if (raw === 'bluminator' || raw === '1') return 'bluminator'
+  if (raw === 'blumiman') return 'blumiman'
+  return 'free'
+}
+
+// Identifiant pour le compteur : email si connecté, sinon IP (anonyme).
+function clientId(req: Request, email: string | null): string {
+  if (email) return `u:${email}`
+  const fwd = req.headers.get('x-forwarded-for') || ''
+  const ip = fwd.split(',')[0].trim() || req.headers.get('x-real-ip') || 'anon'
+  return `ip:${ip}`
+}
+
+// Vraie limite serveur : incrémente un compteur jour/utilisateur en KV et
+// renvoie une 429 si le plafond du palier est dépassé. Inerte si KV absent
+// (l'app retombe alors sur le pré-contrôle localStorage, non bloquant).
+async function quotaExceeded(req: Request): Promise<boolean> {
+  if (!kvConfigured()) return false
+  const email = await sessionEmail(req)
+  const tier = await tierFor(email)
+  const day = new Date().toISOString().slice(0, 10)
+  const qkey = `quota:${clientId(req, email)}:${day}`
+  const count = await kvIncr(qkey)
+  if (count === 1) await kvExpire(qkey, 172800) // ~2 jours, nettoyage auto
+  return count > DAILY_LIMITS[tier]
 }
 
 export default async function handler(req: Request): Promise<Response> {
@@ -50,6 +93,15 @@ export default async function handler(req: Request): Promise<Response> {
       }
     } catch {
       /* corps non-JSON : on laisse passer tel quel */
+    }
+
+    // Vraie limite serveur (KV) — uniquement sur la création de message (pas le
+    // comptage de tokens, dont le path est /v1/messages/count_tokens).
+    if (await quotaExceeded(req)) {
+      return new Response(
+        JSON.stringify({ type: 'error', error: { type: 'quota_exceeded', message: QUOTA_TEXT } }),
+        { status: 429, headers: { 'content-type': 'application/json' } }
+      )
     }
   }
 

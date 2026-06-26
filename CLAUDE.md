@@ -133,10 +133,19 @@ pédagogique.
 
 ## Différenciation réelle des paliers (limites appliquées, `src/lib/llm.ts`)
 - **Vraie valeur de Bluminator** = pas du vent, c'est mesurable et appliqué :
-  - **`DAILY_LIMITS`** (exporté) = plafond souple d'actions IA / jour, par palier :
-    `free: 20`, `blumiman: 50`, `bluminator: 200` (**exactement 4× Blumiman** →
-    argument « 4× plus »). Vérifié par `consumeQuota()` ; dépassement → `QUOTA_MSG`.
-    ⚠️ Stocké en localStorage = contournable ; un vrai cap exige un quota serveur.
+  - **`DAILY_LIMITS`** = plafond d'actions IA / jour, par palier :
+    `free: 10`, `blumiman: 25`, `bluminator: 100` (**exactement 4× Blumiman** →
+    argument « 4× plus »). Resserrés vs l'origine (20/50/200) car le coût Sonnet
+    est ~2-3,5 cts/message → un usage max devait rester soutenable.
+  - ✅ **VRAIE limite serveur (infalsifiable)** : appliquée dans le **proxy**
+    (`api/anthropic/[...path].ts`, fn `quotaExceeded`) via un compteur jour/
+    utilisateur en **KV** (`quota:<u:email|ip:…>:<YYYY-MM-DD>`, INCR + EXPIRE 2 j).
+    Palier lu sur `luminator:<email>` (sinon `free`), identité = session (email)
+    ou IP. Dépassement → **429** `{type:'quota_exceeded'}` → `describeError` →
+    `QUOTA_MSG`. ⚠️ `DAILY_LIMITS` est dupliqué dans le proxy ET `llm.ts` — les
+    garder EN PHASE. Le `consumeQuota()` localStorage de `llm.ts` n'est plus qu'un
+    **pré-contrôle d'UX** (instantané, contournable) ; le serveur fait foi.
+    Inerte si KV absent (retombe sur le pré-contrôle non bloquant).
   - **`CHAT_MAX_TOKENS`** (exporté) = profondeur des réponses du copilote :
     `blumiman: 1024`, `bluminator: 2048` → Bluminator répond plus longuement
     (plans détaillés, livrables complets). Utilisé dans `streamLuminatorChat`.
