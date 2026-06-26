@@ -223,7 +223,7 @@ export function PricingScreen({ onBack, onOpenChat, onOpenAccount }: Props) {
                     <button
                       onClick={() => buy(p.key as PaidTier)}
                       disabled={buying !== null}
-                      className={`w-full justify-center disabled:opacity-60 ${p.highlight ? 'btn-primary' : 'btn-ghost'}`}
+                      className="btn-primary w-full justify-center disabled:opacity-60"
                     >
                       {buying === p.key ? t('pricing.redirecting') : needsAccount ? t('pricing.createToSubscribe') : current === 'blumiman' && p.key === 'bluminator' ? t('pricing.upgrade') : t('pricing.choose').replace('{name}', p.name)}
                     </button>
