@@ -4,11 +4,15 @@
 // héberge la page de paiement (aucune donnée de carte ne passe par nous).
 //
 // Variables d'environnement Vercel attendues :
-//  - STRIPE_SECRET_KEY     : clé secrète Stripe (sk_live_… / sk_test_…)
-//  - STRIPE_PRICE_ID       : id du prix mensuel (price_…)
-//  - STRIPE_PRICE_ID_YEARLY: (optionnel) id du prix annuel
+//  - STRIPE_SECRET_KEY            : clé secrète Stripe (sk_live_… / sk_test_…)
+//  - STRIPE_PRICE_BLUMIMAN        : id du prix mensuel Blumiman (price_…)
+//  - STRIPE_PRICE_BLUMIMAN_YEARLY : (optionnel) prix annuel Blumiman
+//  - STRIPE_PRICE_BLUMINATOR        : id du prix mensuel Bluminator
+//  - STRIPE_PRICE_BLUMINATOR_YEARLY : (optionnel) prix annuel Bluminator
+//  - STRIPE_TAX_ENABLED           : (optionnel) 'true' pour activer Stripe Tax
+//                                   (TVA). DÉSACTIVÉ par défaut (franchise de TVA).
 //
-// Tant que STRIPE_SECRET_KEY / STRIPE_PRICE_ID ne sont pas définis, l'endpoint
+// Tant que STRIPE_SECRET_KEY / le prix du palier ne sont pas définis, l'endpoint
 // renvoie 503 et le front retombe sur l'achat simulé du prototype.
 
 import { kvConfigured, kvGet } from '../_lib/kv'
@@ -59,12 +63,16 @@ export default async function handler(req: Request): Promise<Response> {
   params.append('line_items[0][price]', price)
   params.append('line_items[0][quantity]', '1')
   params.set('allow_promotion_codes', 'true')
-  // Stripe Tax : calcule et applique automatiquement la TVA selon le pays du
-  // client (UE et international). ⚠️ Nécessite d'activer Stripe Tax dans le
-  // dashboard Stripe + une adresse client (collectée ci-dessous).
-  params.set('automatic_tax[enabled]', 'true')
-  params.set('billing_address_collection', 'required')
-  params.set('tax_id_collection[enabled]', 'true')
+  // TVA : DÉSACTIVÉE par défaut. Une micro-entreprise en franchise de TVA
+  // (art. 293 B du CGI) ne facture PAS de TVA → on ne doit pas activer Stripe Tax.
+  // Le jour où tu dépasses les seuils de franchise : poser STRIPE_TAX_ENABLED=true
+  // dans Vercel ET activer Stripe Tax dans le dashboard Stripe (adresse d'origine,
+  // seuils). Cela rétablit le calcul automatique de TVA + la collecte d'adresse.
+  if (process.env.STRIPE_TAX_ENABLED === 'true') {
+    params.set('automatic_tax[enabled]', 'true')
+    params.set('billing_address_collection', 'required')
+    params.set('tax_id_collection[enabled]', 'true')
+  }
   // On mémorise le palier acheté dans les metadata → le retour et le webhook
   // sauront quel niveau accorder.
   params.set('metadata[tier]', tier)
