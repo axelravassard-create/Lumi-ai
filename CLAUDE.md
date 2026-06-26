@@ -169,10 +169,15 @@ pédagogique.
   Logique : `src/lib/billing.ts` (`checkBilling`, `startCheckout`,
   `handleCheckoutReturn`, `openBillingPortal`) + Edge functions `api/stripe/*`
   (`status`, `create-checkout-session`, `verify-session`, `portal`, `webhook`).
-- **Stripe Tax (TVA UE/étranger) ACTIVÉ** dans `create-checkout-session.ts` :
-  `automatic_tax.enabled=true`, `billing_address_collection='required'`,
-  `tax_id_collection.enabled=true`. ⚠️ À finaliser côté Dashboard Stripe :
-  activer Stripe Tax + renseigner l'adresse d'origine et les seuils.
+- **Stripe Tax (TVA) DÉSACTIVÉ par défaut** dans `create-checkout-session.ts` :
+  la micro-entreprise est en **franchise de TVA** (art. 293 B du CGI → pas de TVA
+  facturée). Le bloc `automatic_tax`/`billing_address_collection`/`tax_id_collection`
+  est gardé derrière `process.env.STRIPE_TAX_ENABLED === 'true'` (off par défaut).
+  ⚠️ Le jour où tu dépasses les seuils de franchise : poser `STRIPE_TAX_ENABLED=true`
+  dans Vercel **et** activer Stripe Tax dans le dashboard (adresse d'origine, seuils).
+  - **`status.ts`** = `enabled` si `STRIPE_SECRET_KEY` + au moins un
+    `STRIPE_PRICE_BLUMIMAN`/`STRIPE_PRICE_BLUMINATOR` (⚠️ ne PAS revenir à l'ancien
+    `STRIPE_PRICE_ID` qui n'existe pas — c'était un bug).
   - **Variables Vercel (prix par palier)** : `STRIPE_SECRET_KEY`,
     `STRIPE_PRICE_BLUMIMAN`, `STRIPE_PRICE_BLUMIMAN_YEARLY`,
     `STRIPE_PRICE_BLUMINATOR`, `STRIPE_PRICE_BLUMINATOR_YEARLY`. Au retour de
