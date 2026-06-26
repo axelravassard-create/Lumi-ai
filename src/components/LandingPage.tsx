@@ -36,17 +36,20 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
   const [mode, setMode] = useState<Mode>('single')
   const [value, setValue] = useState('')
   const [valueB, setValueB] = useState('')
-  const { owns, name } = useBrand()
+  const { owns } = useBrand()
   const account = useAccount()
   useLang() // re-render au changement de langue
-  // Luminator avance à la place de Lumi au clic sur sa silhouette floue.
-  const [reveal, setReveal] = useState(false)
-  // Pendant le déplacement (0,8 s), on GÈLE le rendu 3D des 2 persos : la
-  // transition CSS n'anime plus qu'une image figée → fluide, sans lag.
+  // Carrousel des 3 personnages : un focalisé au centre, les deux autres sur les
+  // côtés (gauche/droite). Cliquer un perso de côté le fait passer au centre.
+  // Positions DÉTERMINISTES (aucun « plateau tournant » → plus de désynchro).
+  const [active, setActive] = useState(0)
+  // Pendant la transition (0,8 s), on GÈLE le rendu 3D : la transition CSS
+  // n'anime plus qu'une image figée → fluide, sans lag.
   const [moving, setMoving] = useState(false)
   const moveTimer = useRef<ReturnType<typeof setTimeout>>()
-  const setRevealAnimated = (v: boolean) => {
-    setReveal(v)
+  const rotateTo = (i: number) => {
+    if (i === active) return
+    setActive(i)
     setMoving(true)
     clearTimeout(moveTimer.current)
     moveTimer.current = setTimeout(() => setMoving(false), 850)
@@ -63,6 +66,15 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
   }
 
   const canSubmit = mode === 'single' ? !!value.trim() : !!value.trim() && !!valueB.trim()
+
+  // Les 3 personnages = les 3 paliers. Ordre fixe ; le carrousel fait tourner
+  // lequel est au centre. Les noms sont des marques (non traduites).
+  const TRIO = [
+    { name: 'Blumi', emoji: '👋', glasses: false, laptop: false, descKey: 'trio.descFree', paid: false },
+    { name: 'Blumiman', emoji: '✨', glasses: true, laptop: false, descKey: 'trio.descBlumiman', paid: true },
+    { name: 'Bluminator', emoji: '🚀', glasses: true, laptop: true, descKey: 'trio.descBluminator', paid: true },
+  ]
+  const activeChar = TRIO[active]
 
   return (
     <div className="min-h-screen">
@@ -114,85 +126,71 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         <>
       {/* Hero */}
       <section className="relative mx-auto max-w-4xl px-6 pt-8 pb-16 text-center md:pt-12">
-        {/* Scène : Lumi devant ; Luminator en retrait (flou) à droite. Cliquer
-            sur la silhouette de Luminator le fait avancer à la place de Lumi. */}
-        <div className="animate-fade-in relative mx-auto h-60 w-full max-w-sm md:h-72">
-          {owns ? (
-            <Avatar state="idle" className="h-full w-full" />
-          ) : (
-            <>
-              {/* Deux états SEULEMENT, déterministes (aucun re-rendu ne peut les
-                  désynchroniser) :
-                  • repos  → Lumi centré (devant), Luminator caché en arrière-plan (haut-droite)
-                  • cliqué → Luminator à gauche (devant), Lumi à droite (derrière) */}
-              {/* Lumi */}
+        {/* Scène : les 3 personnages (= les 3 paliers). Celui au centre est mis
+            en avant (3D, taille pleine) ; les deux autres sont sur les côtés
+            (gauche/droite, réduits, en repli léger). Cliquer un perso de côté le
+            fait passer au centre. Positions déterministes par personnage. */}
+        <div className="animate-fade-in relative mx-auto h-60 w-full max-w-md md:h-72">
+          {TRIO.map((c, i) => {
+            const rel = (i - active + TRIO.length) % TRIO.length // 0 = centre, 1 = droite, 2 = gauche
+            const focused = rel === 0
+            const pos =
+              rel === 0
+                ? { transform: 'translate(0%, 0%) scale(1)', opacity: 1, zIndex: 30 }
+                : rel === 1
+                ? { transform: 'translate(38%, -14%) scale(0.5)', opacity: 0.45, zIndex: 10 }
+                : { transform: 'translate(-38%, -14%) scale(0.5)', opacity: 0.45, zIndex: 10 }
+            return (
               <div
-                className={`absolute inset-0 will-change-transform ${reveal ? 'pointer-events-none' : ''}`}
-                style={{
-                  transition: 'transform 800ms ease-in-out, opacity 800ms ease-in-out',
-                  transform: reveal ? 'translate(40%, -14%) scale(0.55)' : 'translate(0%, 0%) scale(1)',
-                  opacity: reveal ? 0.5 : 1,
-                  zIndex: reveal ? 10 : 20,
-                }}
+                key={c.name}
+                className="absolute inset-0 will-change-transform"
+                style={{ transition: 'transform 800ms ease-in-out, opacity 800ms ease-in-out', ...pos }}
               >
-                <Avatar state="idle" glasses={false} paused={moving} className="h-full w-full" />
+                {/* Perf : seul le perso central allume un canvas 3D ; les côtés
+                    restent en repli léger (emoji) jusqu'à ce qu'on les amène au centre. */}
+                <Avatar
+                  state="idle"
+                  glasses={c.glasses}
+                  laptop={c.laptop}
+                  paused={moving}
+                  forceFallback={!focused}
+                  className="h-full w-full"
+                />
+                {!focused && (
+                  <button
+                    onClick={() => rotateTo(i)}
+                    aria-label={t('trio.discover').replace('{name}', c.name)}
+                    title={t('trio.discover').replace('{name}', c.name)}
+                    className="group absolute inset-0 z-40 cursor-pointer"
+                  >
+                    <span className="pointer-events-none absolute bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-ink-900/75 px-2 py-0.5 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
+                      {c.name}
+                    </span>
+                  </button>
+                )}
               </div>
-
-              {/* Luminator */}
-              <div
-                className={`absolute inset-0 will-change-transform ${reveal ? '' : 'pointer-events-none'}`}
-                style={{
-                  transition: 'transform 800ms ease-in-out, opacity 800ms ease-in-out',
-                  transform: reveal ? 'translate(-22%, 4%) scale(1)' : 'translate(28%, -22%) scale(0.55)',
-                  opacity: reveal ? 1 : 0.5,
-                  zIndex: reveal ? 20 : 10,
-                }}
-              >
-                {/* Perf : tant que Luminator est en retrait (non révélé), on
-                    n'allume PAS un 2e canvas WebGL — repli léger (emoji). Il
-                    passe en 3D au clic. → un seul canvas 3D au repos sur l'accueil. */}
-                <Avatar state="idle" glasses paused={moving} forceFallback={!reveal} className="h-full w-full" />
-              </div>
-
-              {/* Zone cliquable sur la silhouette floue (tant qu'il est en retrait) */}
-              {!reveal && (
-                <button
-                  onClick={() => setRevealAnimated(true)}
-                  aria-label="Découvrir Blumiman"
-                  title="Qui est là, derrière ?"
-                  className="group absolute right-0 top-0 z-40 h-[56%] w-[44%] cursor-pointer"
-                >
-                  <span className="pointer-events-none absolute bottom-1 right-1 rounded-full bg-ink-900/75 px-2 py-0.5 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
-                    {t('hero.whoIsThere')}
-                  </span>
-                </button>
-              )}
-            </>
-          )}
+            )
+          })}
         </div>
 
-        {/* Bulle : message de Lumi (centrée), ou de Luminator (à gauche, pour
-            montrer que c'est lui qui parle) une fois révélé */}
-        <div className={`animate-fade-in -mt-3 mx-auto flex max-w-sm ${reveal && !owns ? 'justify-start' : 'justify-center'}`}>
-          {reveal && !owns ? (
-            <div className="relative max-w-xs rounded-2xl border border-brand-200 bg-white px-4 py-3 text-left text-sm shadow-card">
-              <span className="absolute -top-1.5 left-7 h-3 w-3 rotate-45 border-l border-t border-brand-200 bg-white" />
-              <p className="font-display font-bold text-ink-900">{t('reveal.title')}</p>
-              <p className="mt-1 text-ink-600">{t('reveal.desc')}</p>
-              <div className="mt-2.5 flex flex-wrap justify-start gap-2">
-                <button onClick={onOpenPricing} className="btn-primary py-2 text-sm">{t('reveal.unlock')}</button>
-                <button onClick={() => setRevealAnimated(false)} className="btn-ghost py-2 text-sm">{t('reveal.later')}</button>
+        {/* Bulle du personnage au centre : présentation + (paliers payants) CTA. */}
+        <div className="animate-fade-in -mt-3 mx-auto flex max-w-sm justify-center">
+          <div className="relative max-w-xs rounded-2xl border border-brand-200 bg-white px-4 py-3 text-center text-sm shadow-card">
+            <span className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-brand-200 bg-white" />
+            <p className="font-display font-bold text-ink-900">
+              {activeChar.emoji} {t('trio.meIm').replace('{name}', activeChar.name)}
+            </p>
+            <p className="mt-1 text-ink-600">{t(activeChar.descKey)}</p>
+            {activeChar.paid ? (
+              <div className="mt-2.5 flex justify-center">
+                <button onClick={onOpenPricing} className="btn-primary py-2 text-sm">
+                  {t('trio.unlock').replace('{name}', activeChar.name)}
+                </button>
               </div>
-            </div>
-          ) : (
-            <div className="relative max-w-sm rounded-2xl border border-ink-100 bg-white px-4 py-2.5 text-sm text-ink-700 shadow-card">
-              <span className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l border-t border-ink-100 bg-white" />
-              <LumiSpeech text={t('hero.bubble').replace('{name}', name)} />
-              <span className="block text-xs text-ink-400">
-                {owns ? t('hero.tapHintOwns') : t('hero.tapHint')}
-              </span>
-            </div>
-          )}
+            ) : (
+              <p className="mt-1.5 text-xs text-ink-400">{t('trio.hint')}</p>
+            )}
+          </div>
         </div>
 
         <div className="animate-fade-up">
