@@ -86,14 +86,21 @@ pédagogique.
   est appelé dans `App.tsx` (réveille l'audio au 1er geste, sinon 1er son avalé).
 
 ## Accueil — `src/components/LandingPage.tsx`
-- **Visiteur gratuit** (`!owns`) : hero « Votre métier survivra-t-il à l'IA ? » +
-  scène Lumi/Luminator : Lumi centré devant, **Luminator en arrière-plan (haut-droite,
-  petit, semi-transparent)**. Au clic sur Luminator → il vient **à gauche (devant)**,
-  Lumi part à droite, bulle « Moi c'est Luminator » alignée à gauche + boutons
-  « Débloquer Luminator » / « Plus tard ».
-  - ⚠️ Implémenté en **2 états déterministes** (transform/opacity directs par
-    personnage). NE PAS revenir au « plateau tournant » (rotation parent +
-    contre-rotation) : il se désynchronisait au scroll → positions incohérentes.
+- **Visiteur gratuit** (`!owns`) : hero + **carrousel des 3 personnages** (= les 3
+  paliers) : tableau `TRIO` (`Blumi`/`Blumiman`/`Bluminator`, chacun avec
+  `glasses`/`laptop`/`descKey`/`paid`). Le perso à l'index `active` est **au centre**
+  (3D pleine taille), les deux autres **sur les côtés** (gauche/droite, réduits,
+  `forceFallback` = repli emoji léger). Clic sur un perso de côté → `rotateTo(i)` le
+  passe au centre. La bulle présente le perso central (`trio.meIm` + `descKey`) + un
+  CTA « Débloquer {name} » → `onOpenPricing` pour les paliers payants.
+  - ⚠️ **Positions DÉTERMINISTES par personnage** : `rel = (i - active + 3) % 3`
+    → 0 = centre, 1 = droite, 2 = gauche ; transform/opacity directs. NE PAS revenir
+    au « plateau tournant » (rotation parent + contre-rotation) : il se désynchronisait.
+  - Perf : **un seul canvas 3D** au repos (le perso central) ; les côtés en emoji
+    jusqu'à ce qu'on les amène au centre. `paused={moving}` gèle la 3D pendant la
+    transition CSS (0,8 s).
+  - ⚠️ Le bouton nav « Tarifs » affiche **« Abonnements »** (`nav.luminator`, traduit
+    5 langues), plus « Blumiman ».
 - **Abonné Luminator** (`owns`) : accueil **orienté action / automatisation** (pas
   « ton métier est-il exposé »). Accès direct au chat + raccourcis. (cf. MemberHome)
 
