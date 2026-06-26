@@ -134,17 +134,28 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
           {TRIO.map((c, i) => {
             const rel = (i - active + TRIO.length) % TRIO.length // 0 = centre, 1 = droite, 2 = gauche
             const focused = rel === 0
-            const pos =
+            // Positionnement par `left` (centre du perso) → prévisible, pas de
+            // chevauchement : centre à 50 %, côtés à 14 %/86 %, réduits.
+            const slot =
               rel === 0
-                ? { transform: 'translate(0%, 0%) scale(1)', opacity: 1, zIndex: 30 }
+                ? { left: '50%', scale: 1, z: 20, opacity: 1, shadow: false }
                 : rel === 1
-                ? { transform: 'translate(38%, -14%) scale(0.5)', opacity: 0.45, zIndex: 10 }
-                : { transform: 'translate(-38%, -14%) scale(0.5)', opacity: 0.45, zIndex: 10 }
+                ? { left: '86%', scale: 0.5, z: 10, opacity: 0.5, shadow: true }
+                : { left: '14%', scale: 0.5, z: 10, opacity: 0.5, shadow: true }
             return (
               <div
                 key={c.name}
-                className="absolute inset-0 will-change-transform"
-                style={{ transition: 'transform 800ms ease-in-out, opacity 800ms ease-in-out', ...pos }}
+                className="absolute top-0 h-full w-[52%] will-change-transform"
+                style={{
+                  left: slot.left,
+                  transform: `translateX(-50%) scale(${slot.scale})`,
+                  opacity: slot.opacity,
+                  zIndex: slot.z,
+                  // « Dans l'ombre » : silhouette noire pour les côtés. Au centre, couleur pleine.
+                  filter: slot.shadow ? 'brightness(0)' : 'none',
+                  transition:
+                    'left 800ms ease-in-out, transform 800ms ease-in-out, opacity 800ms ease-in-out, filter 350ms ease',
+                }}
               >
                 {/* Perf : seul le perso central allume un canvas 3D ; les côtés
                     restent en repli léger (emoji) jusqu'à ce qu'on les amène au centre. */}
@@ -156,17 +167,14 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
                   forceFallback={!focused}
                   className="h-full w-full"
                 />
+                {/* Toute la silhouette est cliquable → elle revient au centre. */}
                 {!focused && (
                   <button
                     onClick={() => rotateTo(i)}
                     aria-label={t('trio.discover').replace('{name}', c.name)}
                     title={t('trio.discover').replace('{name}', c.name)}
-                    className="group absolute inset-0 z-40 cursor-pointer"
-                  >
-                    <span className="pointer-events-none absolute bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-ink-900/75 px-2 py-0.5 text-[10px] font-medium text-white opacity-0 transition group-hover:opacity-100">
-                      {c.name}
-                    </span>
-                  </button>
+                    className="absolute inset-0 z-40 cursor-pointer"
+                  />
                 )}
               </div>
             )
