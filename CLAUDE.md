@@ -86,19 +86,24 @@ pédagogique.
   est appelé dans `App.tsx` (réveille l'audio au 1er geste, sinon 1er son avalé).
 
 ## Accueil — `src/components/LandingPage.tsx`
-- **Visiteur gratuit** (`!owns`) : hero + **carrousel des 3 personnages** (= les 3
-  paliers) : tableau `TRIO` (`Blumi`/`Blumiman`/`Bluminator`, chacun avec
-  `glasses`/`laptop`/`descKey`/`paid`). Le perso à l'index `active` est **au centre**
-  (3D pleine taille), les deux autres **sur les côtés** (gauche/droite, réduits,
-  `forceFallback` = repli emoji léger). Clic sur un perso de côté → `rotateTo(i)` le
-  passe au centre. La bulle présente le perso central (`trio.meIm` + `descKey`) + un
-  CTA « Débloquer {name} » → `onOpenPricing` pour les paliers payants.
-  - ⚠️ **Positions DÉTERMINISTES par personnage** : `rel = (i - active + 3) % 3`
-    → 0 = centre, 1 = droite, 2 = gauche ; transform/opacity directs. NE PAS revenir
-    au « plateau tournant » (rotation parent + contre-rotation) : il se désynchronisait.
-  - Perf : **un seul canvas 3D** au repos (le perso central) ; les côtés en emoji
-    jusqu'à ce qu'on les amène au centre. `paused={moving}` gèle la 3D pendant la
-    transition CSS (0,8 s).
+- **Visiteur gratuit** (`!owns`) : hero + **carrousel CIRCULAIRE des 3 personnages**
+  (= les 3 paliers) : tableau `TRIO` (`Blumi`/`Blumiman`/`Bluminator`, chacun avec
+  `glasses`/`laptop`/`descKey`/`paid`). Les 3 sont **équidistants (120°) sur un cercle
+  vu de face** ; `front` = index du perso au premier plan (3D), les 2 autres sur les
+  côtés (réduits, assombris `brightness(0.5)` mais VISIBLES). Clic sur un perso de
+  côté → `rotateToFront(i)` fait **tourner tout l'anneau** (les 3 bougent ensemble)
+  pour l'amener devant, par le chemin le plus court (un sens à gauche, l'autre à
+  droite). La bulle présente le perso central (`trio.meIm` + `descKey`) + un CTA
+  « Débloquer {name} » → `onOpenPricing` pour les paliers payants.
+  - ⚙️ **Animation rAF** (vraie trajectoire en arc) : `applyStyles(rot)` calcule par
+    trigo `left = 50 + 33·sin(θ)`, profondeur `cos(θ)` → `scale`/`zIndex`/ombre.
+    Écrit **directement sur les refs** (`wrapRefs`) → AUCUN `style` géré par React sur
+    ces divs (sinon un re-render écraserait l'anim). `rotationRef` = angle cumulé ;
+    `rotateToFront` choisit le delta dans (-180,180]. Position initiale via
+    `useLayoutEffect` (avant 1re peinture). NE PAS remettre de `style`/transition CSS
+    React sur ces wrappers ni revenir aux slots `left` fixes (sliding, pas rotation).
+  - Perf : **un seul canvas 3D** (le perso `front`) ; les côtés en emoji. `paused={moving}`
+    gèle la 3D pendant la rotation. L'anim ne re-render pas React (refs directs).
   - ⚠️ Le bouton nav « Tarifs » affiche **« Abonnements »** (`nav.luminator`, traduit
     5 langues), plus « Blumiman ».
 - **Abonné Luminator** (`owns`) : accueil **orienté action / automatisation** (pas

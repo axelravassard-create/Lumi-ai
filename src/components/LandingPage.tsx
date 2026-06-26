@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Logo } from './Logo'
 import { AiStatusButton } from './AiStatusButton'
 import { Avatar } from './Avatar'
@@ -39,23 +39,76 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
   const { owns } = useBrand()
   const account = useAccount()
   useLang() // re-render au changement de langue
-  // Carrousel des 3 personnages : un focalisé au centre, les deux autres sur les
-  // côtés (gauche/droite). Cliquer un perso de côté le fait passer au centre.
-  // Positions DÉTERMINISTES (aucun « plateau tournant » → plus de désynchro).
-  const [active, setActive] = useState(0)
-  // Pendant la transition (0,8 s), on GÈLE le rendu 3D : la transition CSS
-  // n'anime plus qu'une image figée → fluide, sans lag.
-  const [moving, setMoving] = useState(false)
-  const moveTimer = useRef<ReturnType<typeof setTimeout>>()
-  const rotateTo = (i: number) => {
-    if (i === active) return
-    setActive(i)
-    setMoving(true)
-    clearTimeout(moveTimer.current)
-    moveTimer.current = setTimeout(() => setMoving(false), 850)
+  // Carrousel CIRCULAIRE des 3 personnages : équidistants (120°) sur un cercle
+  // vu de face. Cliquer un perso fait TOURNER tout l'anneau (les 3 bougent
+  // ensemble) pour l'amener devant — exactement à la place du perso central —
+  // par le chemin le plus court (un sens pour la gauche, l'autre pour la droite).
+  // L'animation est pilotée en rAF (vraie trajectoire en arc), les styles sont
+  // écrits directement sur les éléments → pas de re-render à chaque frame.
+  const BASE = [0, 120, 240] // angles de départ, équidistants sur le cercle
+  const [front, setFront] = useState(0) // index du perso au premier plan (3D)
+  const [moving, setMoving] = useState(false) // gèle la 3D pendant la rotation
+  const wrapRefs = useRef<(HTMLDivElement | null)[]>([])
+  const rotationRef = useRef(0) // angle courant de l'anneau (degrés, cumulés)
+  const rafRef = useRef<number>()
+
+  // Place chaque perso selon l'angle de l'anneau : sin → gauche/droite,
+  // cos → profondeur (devant = grand/net, fond = petit/sombre).
+  const applyStyles = (rot: number) => {
+    BASE.forEach((base, i) => {
+      const el = wrapRefs.current[i]
+      if (!el) return
+      const theta = ((base + rot) * Math.PI) / 180
+      const sin = Math.sin(theta)
+      const cos = Math.cos(theta)
+      const depth = (cos + 0.5) / 1.5 // 1 = devant, 0 = sur les côtés (±120°)
+      const scale = 0.5 + 0.5 * depth
+      const isFront = cos > 0.85
+      el.style.left = `${50 + 33 * sin}%`
+      el.style.top = `${(1 - depth) * -7}%`
+      el.style.transform = `translateX(-50%) scale(${scale.toFixed(3)})`
+      el.style.zIndex = String(Math.round(depth * 100) + 1)
+      el.style.opacity = isFront ? '1' : '0.7'
+      // « Dans l'ombre » mais VISIBLE : assombri, pas noir.
+      el.style.filter = isFront ? 'none' : 'brightness(0.5)'
+    })
   }
-  // Nettoyage du timer si le composant est démonté pendant la transition.
-  useEffect(() => () => clearTimeout(moveTimer.current), [])
+
+  const animateTo = (target: number) => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    const start = rotationRef.current
+    const delta = target - start
+    const dur = 700
+    let t0: number | undefined
+    setMoving(true)
+    const step = (now: number) => {
+      if (t0 === undefined) t0 = now
+      const p = Math.min(1, (now - t0) / dur)
+      const e = 1 - Math.pow(1 - p, 3) // easeOutCubic
+      rotationRef.current = start + delta * e
+      applyStyles(rotationRef.current)
+      if (p < 1) rafRef.current = requestAnimationFrame(step)
+      else setMoving(false)
+    }
+    rafRef.current = requestAnimationFrame(step)
+  }
+
+  const rotateToFront = (i: number) => {
+    // Angle courant du perso i, ramené dans (-180, 180] → chemin le plus court.
+    const a = ((((BASE[i] + rotationRef.current) % 360) + 540) % 360) - 180
+    if (Math.abs(a) < 0.5) return // déjà devant
+    setFront(i) // il devient le perso 3D au premier plan
+    animateTo(rotationRef.current - a)
+  }
+
+  // Positionnement initial AVANT la 1re peinture (évite tout flash) + nettoyage.
+  useLayoutEffect(() => {
+    applyStyles(rotationRef.current)
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const submit = () => {
     if (mode === 'single') {
@@ -74,7 +127,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
     { name: 'Blumiman', emoji: '✨', glasses: true, laptop: false, descKey: 'trio.descBlumiman', paid: true },
     { name: 'Bluminator', emoji: '🚀', glasses: true, laptop: true, descKey: 'trio.descBluminator', paid: true },
   ]
-  const activeChar = TRIO[active]
+  const activeChar = TRIO[front]
 
   return (
     <div className="min-h-screen">
@@ -132,45 +185,30 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
             fait passer au centre. Positions déterministes par personnage. */}
         <div className="animate-fade-in relative mx-auto h-60 w-full max-w-md md:h-72">
           {TRIO.map((c, i) => {
-            const rel = (i - active + TRIO.length) % TRIO.length // 0 = centre, 1 = droite, 2 = gauche
-            const focused = rel === 0
-            // Positionnement par `left` (centre du perso) → prévisible, pas de
-            // chevauchement : centre à 50 %, côtés à 14 %/86 %, réduits.
-            const slot =
-              rel === 0
-                ? { left: '50%', scale: 1, z: 20, opacity: 1, shadow: false }
-                : rel === 1
-                ? { left: '86%', scale: 0.5, z: 10, opacity: 0.5, shadow: true }
-                : { left: '14%', scale: 0.5, z: 10, opacity: 0.5, shadow: true }
+            const isFront = i === front
             return (
+              // ⚠️ Pas de `style` géré par React ici : la position (left/top/
+              // transform/opacity/filter/zIndex) est écrite par `applyStyles` via
+              // le ref → sinon un re-render écraserait l'animation rAF.
               <div
                 key={c.name}
-                className="absolute top-0 h-full w-[52%] will-change-transform"
-                style={{
-                  left: slot.left,
-                  transform: `translateX(-50%) scale(${slot.scale})`,
-                  opacity: slot.opacity,
-                  zIndex: slot.z,
-                  // « Dans l'ombre » : silhouette noire pour les côtés. Au centre, couleur pleine.
-                  filter: slot.shadow ? 'brightness(0)' : 'none',
-                  transition:
-                    'left 800ms ease-in-out, transform 800ms ease-in-out, opacity 800ms ease-in-out, filter 350ms ease',
-                }}
+                ref={(el) => (wrapRefs.current[i] = el)}
+                className="absolute h-full w-[52%] will-change-transform"
               >
-                {/* Perf : seul le perso central allume un canvas 3D ; les côtés
-                    restent en repli léger (emoji) jusqu'à ce qu'on les amène au centre. */}
+                {/* Perf : seul le perso au premier plan allume un canvas 3D ; les
+                    côtés restent en repli léger (emoji) jusqu'à ce qu'on les amène devant. */}
                 <Avatar
                   state="idle"
                   glasses={c.glasses}
                   laptop={c.laptop}
                   paused={moving}
-                  forceFallback={!focused}
+                  forceFallback={!isFront}
                   className="h-full w-full"
                 />
-                {/* Toute la silhouette est cliquable → elle revient au centre. */}
-                {!focused && (
+                {/* Toute la silhouette de côté est cliquable → l'anneau tourne pour l'amener devant. */}
+                {!isFront && (
                   <button
-                    onClick={() => rotateTo(i)}
+                    onClick={() => rotateToFront(i)}
                     aria-label={t('trio.discover').replace('{name}', c.name)}
                     title={t('trio.discover').replace('{name}', c.name)}
                     className="absolute inset-0 z-40 cursor-pointer"
