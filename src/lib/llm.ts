@@ -87,13 +87,16 @@ export function aiReady(): boolean {
 
 // Garde-fou de coût (mode proxy) : un plafond souple d'actions IA par jour, côté
 // navigateur, CALIBRÉ SELON LE PALIER (c'est la vraie différence de Bluminator :
-// usage IA étendu pour les gros utilisateurs). Empêche les emballements et l'abus
-// occasionnel. (Pas une protection dure — la vraie limite par compte demanderait
-// un stockage serveur ; le proxy plafonne déjà modèle et max_tokens.)
+// usage IA étendu pour les gros utilisateurs).
 //
-// Bluminator = exactement 4× le quota de Blumiman (argument « ~4× plus »).
-// Plafonds resserrés (coût Sonnet) tout en restant confortables pour un usage réel.
-export const DAILY_LIMITS: Record<Tier, number> = { free: 20, blumiman: 50, bluminator: 200 }
+// ⚠️ La VRAIE limite est appliquée CÔTÉ SERVEUR (proxy `api/anthropic/[...path].ts`,
+// compteur jour/utilisateur en KV, infalsifiable). Ce `consumeQuota` localStorage
+// n'est plus qu'un pré-contrôle d'UX (feedback instantané, contournable). Garder
+// ces chiffres EN PHASE avec `DAILY_LIMITS` du proxy (affichés sur la page Tarifs).
+//
+// Bluminator = exactement 4× le quota de Blumiman (argument « 4× plus »).
+// Plafonds resserrés (coût Sonnet ~2-3,5 cts/message) pour rester rentable.
+export const DAILY_LIMITS: Record<Tier, number> = { free: 10, blumiman: 25, bluminator: 100 }
 
 // Profondeur des réponses du copilote : Bluminator répond plus longuement (plans
 // complets, vrais livrables en une fois). C'est l'autre vraie différence concrète.
@@ -579,6 +582,8 @@ function parseJsonLoose<T>(response: Anthropic.Message): T {
 // Traduit une erreur API en message lisible (panne, surcharge, coupure réseau…).
 export function describeError(err: unknown): string {
   if (err instanceof Error && err.message.includes('Limite quotidienne')) return err.message
+  // Quota serveur dépassé (429 renvoyée par le proxy avec type quota_exceeded).
+  if (err instanceof Error && /quota_exceeded/i.test(err.message)) return QUOTA_MSG
   if (err instanceof Anthropic.AuthenticationError) return 'Clé API invalide ou révoquée.'
   if (err instanceof Anthropic.PermissionDeniedError) return 'Accès au modèle refusé pour cette clé.'
   if (err instanceof Anthropic.RateLimitError) return 'Beaucoup de demandes en ce moment — réessaie dans quelques instants. 🙏'

@@ -35,3 +35,13 @@ export async function kvSetEx(key: string, value: string, ttlSeconds: number): P
 export async function kvDel(key: string): Promise<void> {
   await cmd(['DEL', key])
 }
+
+// Incrément atomique (renvoie la nouvelle valeur) — pour les compteurs de quota.
+export async function kvIncr(key: string): Promise<number> {
+  const v = await cmd(['INCR', key])
+  return typeof v === 'number' ? v : parseInt(String(v), 10) || 0
+}
+
+export async function kvExpire(key: string, ttlSeconds: number): Promise<void> {
+  await cmd(['EXPIRE', key, ttlSeconds])
+}
