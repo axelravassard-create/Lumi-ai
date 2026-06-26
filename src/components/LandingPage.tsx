@@ -69,8 +69,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
       el.style.transform = `translateX(-50%) scale(${scale.toFixed(3)})`
       el.style.zIndex = String(Math.round(depth * 100) + 1)
       el.style.opacity = isFront ? '1' : '0.7'
-      // « Dans l'ombre » mais VISIBLE : assombri, pas noir.
-      el.style.filter = isFront ? 'none' : 'brightness(0.5)'
+      el.style.filter = 'none'
     })
   }
 
@@ -201,8 +200,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
                   state="idle"
                   glasses={c.glasses}
                   laptop={c.laptop}
-                  paused={moving}
-                  forceFallback={!isFront}
+                  paused={moving || i !== front}
                   className="h-full w-full"
                 />
                 {/* Toute la silhouette de côté est cliquable → l'anneau tourne pour l'amener devant. */}
