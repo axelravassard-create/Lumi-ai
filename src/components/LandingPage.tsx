@@ -200,7 +200,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
                   state="idle"
                   glasses={c.glasses}
                   laptop={c.laptop}
-                  paused={moving || i !== front}
+                  paused={moving}
                   className="h-full w-full"
                 />
                 {/* Toute la silhouette de côté est cliquable → l'anneau tourne pour l'amener devant. */}
