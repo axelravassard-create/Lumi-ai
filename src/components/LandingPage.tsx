@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Logo } from './Logo'
 import { AiStatusButton } from './AiStatusButton'
 import { Avatar } from './Avatar'
@@ -66,7 +66,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
       const isFront = cos > 0.85
       el.style.left = `${50 + 33 * sin}%`
       el.style.top = '0%'
-      el.style.transformOrigin = 'top center'
+      el.style.transformOrigin = '50% 47%'
       el.style.transform = `translateX(-50%) scale(${scale.toFixed(3)})`
       el.style.zIndex = String(Math.round(depth * 100) + 1)
       el.style.opacity = isFront ? '1' : '0.7'
@@ -109,6 +109,11 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Seconde passe APRÈS la peinture : garantit le positionnement même si le
+  // canvas 3D déclenche un reflow qui déplace les wrappers après useLayoutEffect.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { applyStyles(rotationRef.current) }, [])
 
   const submit = () => {
     if (mode === 'single') {
