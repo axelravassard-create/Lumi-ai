@@ -66,6 +66,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
       const isFront = cos > 0.85
       el.style.left = `${50 + 33 * sin}%`
       el.style.top = '0%'
+      el.style.transformOrigin = 'top center'
       el.style.transform = `translateX(-50%) scale(${scale.toFixed(3)})`
       el.style.zIndex = String(Math.round(depth * 100) + 1)
       el.style.opacity = isFront ? '1' : '0.7'
