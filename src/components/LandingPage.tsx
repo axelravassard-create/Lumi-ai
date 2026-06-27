@@ -46,6 +46,16 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
   // L'animation est pilotée en rAF (vraie trajectoire en arc), les styles sont
   // écrits directement sur les éléments → pas de re-render à chaque frame.
   const BASE = [0, 120, 240] // angles de départ, équidistants sur le cercle
+  // Position verticale des yeux dans le canvas pour chaque personnage.
+  // Calculé depuis la caméra (position y=0.02, z=4.9, fov=30°) et la position
+  // 3D des yeux (group.y + eyeOffset). Half-height en units = z×tan(fov/2)=1.312.
+  // frac = 0.5 - (worldY - camY) / (2×halfH)
+  // Blumi/Blumiman : group.y=-0.02, eye local y=0.07 → worldY=0.05 → frac≈0.486
+  // Bluminator    : group.y=0.34,  eye local y=0.07×0.8=0.056 (scale 0.8)
+  //                 → worldY=0.396 → frac≈0.336
+  const EYE_FRAC = [0.486, 0.486, 0.336] // [Blumi, Blumiman, Bluminator]
+  const EYE_TARGET = 0.47 // hauteur cible des yeux dans le carrousel (50% ≈ milieu)
+
   const [front, setFront] = useState(0) // index du perso au premier plan (3D)
   const [moving, setMoving] = useState(false) // gèle la 3D pendant la rotation
   const wrapRefs = useRef<(HTMLDivElement | null)[]>([])
@@ -54,6 +64,10 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
 
   // Place chaque perso selon l'angle de l'anneau : sin → gauche/droite,
   // cos → profondeur (devant = grand/net, fond = petit/sombre).
+  // top dynamique : aligne les yeux à EYE_TARGET du carrousel quelle que soit
+  // la position 3D de la tête (Bluminator est surélevé et réduit vs les autres).
+  // Formule (transform-origin=center) : EYE_TARGET = top + (1-scale)/2 + scale×EYE_FRAC[i]
+  // → top = EYE_TARGET - (1-scale)/2 - scale×EYE_FRAC[i]
   const applyStyles = (rot: number) => {
     BASE.forEach((base, i) => {
       const el = wrapRefs.current[i]
@@ -64,9 +78,10 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
       const depth = (cos + 0.5) / 1.5 // 1 = devant, 0 = sur les côtés (±120°)
       const scale = 0.5 + 0.5 * depth
       const isFront = cos > 0.85
+      const top = EYE_TARGET - (1 - scale) / 2 - scale * EYE_FRAC[i]
       el.style.left = `${50 + 33 * sin}%`
-      el.style.top = '0%'
-      el.style.transformOrigin = '50% 47%'
+      el.style.top = `${(top * 100).toFixed(2)}%`
+      el.style.transformOrigin = 'center'
       el.style.transform = `translateX(-50%) scale(${scale.toFixed(3)})`
       el.style.zIndex = String(Math.round(depth * 100) + 1)
       el.style.opacity = isFront ? '1' : '0.7'
