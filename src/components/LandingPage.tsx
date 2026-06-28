@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Logo } from './Logo'
 import { AiStatusButton } from './AiStatusButton'
 import { Avatar } from './Avatar'
@@ -39,92 +39,12 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
   const { owns } = useBrand()
   const account = useAccount()
   useLang() // re-render au changement de langue
-  // Carrousel CIRCULAIRE des 3 personnages : équidistants (120°) sur un cercle
-  // vu de face. Cliquer un perso fait TOURNER tout l'anneau (les 3 bougent
-  // ensemble) pour l'amener devant — exactement à la place du perso central —
-  // par le chemin le plus court (un sens pour la gauche, l'autre pour la droite).
-  // L'animation est pilotée en rAF (vraie trajectoire en arc), les styles sont
-  // écrits directement sur les éléments → pas de re-render à chaque frame.
-  const BASE = [0, 120, 240] // angles de départ, équidistants sur le cercle
-  // Position verticale des yeux dans le canvas (frac depuis le haut).
-  // Tous les personnages ont group.y=-0.02. Bluminator garde scale=0.8 pour le
-  // laptop mais sa tête reste à la même hauteur 3D → frac ≈ 0.493 (vs 0.486).
-  const EYE_FRAC = [0.486, 0.486, 0.493] // [Blumi, Blumiman, Bluminator]
-  const EYE_TARGET = 0.47
 
-  const [front, setFront] = useState(0) // index du perso au premier plan (3D)
-  const [moving, setMoving] = useState(false) // gèle la 3D pendant la rotation
-  const wrapRefs = useRef<(HTMLDivElement | null)[]>([])
-  const rotationRef = useRef(0) // angle courant de l'anneau (degrés, cumulés)
-  const rafRef = useRef<number>()
-
-  // Place chaque perso selon l'angle de l'anneau : sin → gauche/droite,
-  // cos → profondeur (devant = grand/net, fond = petit/sombre).
-  // top dynamique : aligne les yeux à EYE_TARGET du carrousel quelle que soit
-  // la position 3D de la tête (Bluminator est surélevé et réduit vs les autres).
-  // Formule (transform-origin=center) : EYE_TARGET = top + (1-scale)/2 + scale×EYE_FRAC[i]
-  // → top = EYE_TARGET - (1-scale)/2 - scale×EYE_FRAC[i]
-  const applyStyles = (rot: number) => {
-    BASE.forEach((base, i) => {
-      const el = wrapRefs.current[i]
-      if (!el) return
-      const theta = ((base + rot) * Math.PI) / 180
-      const sin = Math.sin(theta)
-      const cos = Math.cos(theta)
-      const depth = (cos + 0.5) / 1.5 // 1 = devant, 0 = sur les côtés (±120°)
-      const scale = 0.5 + 0.5 * depth
-      const isFront = cos > 0.85
-      const top = EYE_TARGET - (1 - scale) / 2 - scale * EYE_FRAC[i]
-      el.style.left = `${50 + 33 * sin}%`
-      el.style.top = `${(top * 100).toFixed(2)}%`
-      el.style.transformOrigin = 'center'
-      el.style.transform = `translateX(-50%) scale(${scale.toFixed(3)})`
-      el.style.zIndex = String(Math.round(depth * 100) + 1)
-      el.style.opacity = isFront ? '1' : '0.7'
-      el.style.filter = 'none'
-    })
-  }
-
-  const animateTo = (target: number) => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    const start = rotationRef.current
-    const delta = target - start
-    const dur = 700
-    let t0: number | undefined
-    setMoving(true)
-    const step = (now: number) => {
-      if (t0 === undefined) t0 = now
-      const p = Math.min(1, (now - t0) / dur)
-      const e = 1 - Math.pow(1 - p, 3) // easeOutCubic
-      rotationRef.current = start + delta * e
-      applyStyles(rotationRef.current)
-      if (p < 1) rafRef.current = requestAnimationFrame(step)
-      else setMoving(false)
-    }
-    rafRef.current = requestAnimationFrame(step)
-  }
-
-  const rotateToFront = (i: number) => {
-    // Angle courant du perso i, ramené dans (-180, 180] → chemin le plus court.
-    const a = ((((BASE[i] + rotationRef.current) % 360) + 540) % 360) - 180
-    if (Math.abs(a) < 0.5) return // déjà devant
-    setFront(i) // il devient le perso 3D au premier plan
-    animateTo(rotationRef.current - a)
-  }
-
-  // Positionnement initial AVANT la 1re peinture (évite tout flash) + nettoyage.
-  useLayoutEffect(() => {
-    applyStyles(rotationRef.current)
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Seconde passe APRÈS la peinture : garantit le positionnement même si le
-  // canvas 3D déclenche un reflow qui déplace les wrappers après useLayoutEffect.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { applyStyles(rotationRef.current) }, [])
+  const [front, setFront] = useState(0) // index du perso au centre (3D)
+  // Les deux persos de côté : gauche = (front+2)%3, droite = (front+1)%3.
+  // Cliquer un côté téléporte ce perso au centre (swap instantané, pas d'animation).
+  const leftIdx = (front + 2) % 3
+  const rightIdx = (front + 1) % 3
 
   const submit = () => {
     if (mode === 'single') {
@@ -195,43 +115,37 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         <>
       {/* Hero */}
       <section className="relative mx-auto max-w-4xl px-6 pt-8 pb-16 text-center md:pt-12">
-        {/* Scène : les 3 personnages (= les 3 paliers). Celui au centre est mis
-            en avant (3D, taille pleine) ; les deux autres sont sur les côtés
-            (gauche/droite, réduits, en repli léger). Cliquer un perso de côté le
-            fait passer au centre. Positions déterministes par personnage. */}
+        {/* 3 personnages = 3 paliers. Le centre est en 3D (taille pleine) ; les
+            côtés sont en emoji. Cliquer un côté le téléporte immédiatement au
+            centre (swap instantané), qui atterrit pile à la place du personnage
+            central précédent. Un seul canvas 3D allumé à la fois. */}
         <div className="animate-fade-in relative mx-auto h-60 w-full max-w-md md:h-72">
-          {TRIO.map((c, i) => {
-            const isFront = i === front
-            return (
-              // ⚠️ Pas de `style` géré par React ici : la position (left/top/
-              // transform/opacity/filter/zIndex) est écrite par `applyStyles` via
-              // le ref → sinon un re-render écraserait l'animation rAF.
-              <div
-                key={c.name}
-                ref={(el) => (wrapRefs.current[i] = el)}
-                className="absolute h-full w-[52%] will-change-transform"
-              >
-                {/* Perf : seul le perso au premier plan allume un canvas 3D ; les
-                    côtés restent en repli léger (emoji) jusqu'à ce qu'on les amène devant. */}
-                <Avatar
-                  state="idle"
-                  glasses={c.glasses}
-                  laptop={c.laptop}
-                  paused={moving}
-                  className="h-full w-full"
-                />
-                {/* Toute la silhouette de côté est cliquable → l'anneau tourne pour l'amener devant. */}
-                {!isFront && (
-                  <button
-                    onClick={() => rotateToFront(i)}
-                    aria-label={t('trio.discover').replace('{name}', c.name)}
-                    title={t('trio.discover').replace('{name}', c.name)}
-                    className="absolute inset-0 z-40 cursor-pointer"
-                  />
-                )}
-              </div>
-            )
-          })}
+          {/* Côté gauche : emoji + nom, cliquable */}
+          <button
+            onClick={() => setFront(leftIdx)}
+            aria-label={t('trio.discover').replace('{name}', TRIO[leftIdx].name)}
+            title={t('trio.discover').replace('{name}', TRIO[leftIdx].name)}
+            className="absolute bottom-0 left-0 top-0 flex flex-col items-center justify-center gap-1.5 px-2 opacity-50 transition-opacity hover:opacity-80"
+          >
+            <span className="text-5xl">{TRIO[leftIdx].emoji}</span>
+            <span className="text-xs font-semibold text-ink-500">{TRIO[leftIdx].name}</span>
+          </button>
+
+          {/* Centre : 3D Avatar — position identique quelle que soit la valeur de `front` */}
+          <div className="absolute left-1/2 h-full w-[52%] -translate-x-1/2">
+            <Avatar state="idle" glasses={activeChar.glasses} laptop={activeChar.laptop} className="h-full w-full" />
+          </div>
+
+          {/* Côté droit : emoji + nom, cliquable */}
+          <button
+            onClick={() => setFront(rightIdx)}
+            aria-label={t('trio.discover').replace('{name}', TRIO[rightIdx].name)}
+            title={t('trio.discover').replace('{name}', TRIO[rightIdx].name)}
+            className="absolute bottom-0 right-0 top-0 flex flex-col items-center justify-center gap-1.5 px-2 opacity-50 transition-opacity hover:opacity-80"
+          >
+            <span className="text-5xl">{TRIO[rightIdx].emoji}</span>
+            <span className="text-xs font-semibold text-ink-500">{TRIO[rightIdx].name}</span>
+          </button>
         </div>
 
         {/* Bulle du personnage au centre : présentation + (paliers payants) CTA. */}
