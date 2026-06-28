@@ -119,14 +119,14 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
             paused → frameloop="never", 1 seul rendu) + centre (animé). Cliquer
             un côté swape instantanément ce perso au centre, pile à la même place. */}
         <div className="animate-fade-in relative mx-auto h-60 w-full max-w-md md:h-72">
-          {/* Côté gauche : avatar statique (paused), semi-transparent, cliquable */}
+          {/* Côté gauche : avatar animé, semi-transparent, cliquable */}
           <button
             onClick={() => setFront(leftIdx)}
             aria-label={t('trio.discover').replace('{name}', TRIO[leftIdx].name)}
             title={t('trio.discover').replace('{name}', TRIO[leftIdx].name)}
             className="absolute left-0 top-0 h-full w-[24%] cursor-pointer opacity-50 transition-opacity hover:opacity-80"
           >
-            <Avatar state="idle" glasses={TRIO[leftIdx].glasses} laptop={TRIO[leftIdx].laptop} paused className="h-full w-full" />
+            <Avatar state="idle" glasses={TRIO[leftIdx].glasses} laptop={TRIO[leftIdx].laptop} className="h-full w-full" />
           </button>
 
           {/* Centre : 3D Avatar animé — position fixe quelle que soit la valeur de front */}
@@ -134,14 +134,14 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
             <Avatar state="idle" glasses={activeChar.glasses} laptop={activeChar.laptop} className="h-full w-full" />
           </div>
 
-          {/* Côté droit : avatar statique (paused), semi-transparent, cliquable */}
+          {/* Côté droit : avatar animé, semi-transparent, cliquable */}
           <button
             onClick={() => setFront(rightIdx)}
             aria-label={t('trio.discover').replace('{name}', TRIO[rightIdx].name)}
             title={t('trio.discover').replace('{name}', TRIO[rightIdx].name)}
             className="absolute right-0 top-0 h-full w-[24%] cursor-pointer opacity-50 transition-opacity hover:opacity-80"
           >
-            <Avatar state="idle" glasses={TRIO[rightIdx].glasses} laptop={TRIO[rightIdx].laptop} paused className="h-full w-full" />
+            <Avatar state="idle" glasses={TRIO[rightIdx].glasses} laptop={TRIO[rightIdx].laptop} className="h-full w-full" />
           </button>
         </div>
 
