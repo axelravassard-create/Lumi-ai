@@ -407,14 +407,11 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
       }
     }
 
-    // Respiration / lévitation : un être de lumière qui flotte. Avec le portable
-    // (Bluminator), on remonte la tête pour laisser de la place à l'écran sous le
-    // menton, sans rien couper au bord du cadre.
     if (group.current && !reducedMotion) {
-      group.current.position.y = (laptop ? 0.34 : -0.02) + Math.sin(t * 1.1) * 0.03
+      group.current.position.y = -0.02 + Math.sin(t * 1.1) * 0.03
       group.current.rotation.z = Math.sin(t * 0.5) * 0.01
     } else if (group.current) {
-      group.current.position.y = laptop ? 0.34 : -0.02
+      group.current.position.y = -0.02
     }
 
     // Halo orbital.
