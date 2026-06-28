@@ -614,8 +614,8 @@ export default function RobotAvatar({ state, mood = 'neutral', active = true, gl
   usePointerTracking()
   return (
     <Canvas
-      // 'never' suspend la boucle de rendu quand l'avatar est hors écran.
-      frameloop={active ? 'always' : 'never'}
+      // 'demand' : rend une frame au montage puis s'arrête (figé) ; 'always' anime.
+      frameloop={active ? 'always' : 'demand'}
       dpr={[1, 2]}
       gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
       camera={{ position: [0, 0.02, 4.9], fov: 30 }}
