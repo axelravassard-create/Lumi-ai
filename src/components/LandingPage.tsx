@@ -46,15 +46,11 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
   // L'animation est pilotée en rAF (vraie trajectoire en arc), les styles sont
   // écrits directement sur les éléments → pas de re-render à chaque frame.
   const BASE = [0, 120, 240] // angles de départ, équidistants sur le cercle
-  // Position verticale des yeux dans le canvas pour chaque personnage.
-  // Calculé depuis la caméra (position y=0.02, z=4.9, fov=30°) et la position
-  // 3D des yeux (group.y + eyeOffset). Half-height en units = z×tan(fov/2)=1.312.
-  // frac = 0.5 - (worldY - camY) / (2×halfH)
-  // Blumi/Blumiman : group.y=-0.02, eye local y=0.07 → worldY=0.05 → frac≈0.486
-  // Bluminator    : group.y=0.34,  eye local y=0.07×0.8=0.056 (scale 0.8)
-  //                 → worldY=0.396 → frac≈0.336
-  const EYE_FRAC = [0.486, 0.486, 0.336] // [Blumi, Blumiman, Bluminator]
-  const EYE_TARGET = 0.47 // hauteur cible des yeux dans le carrousel (50% ≈ milieu)
+  // Position verticale des yeux dans le canvas (frac depuis le haut).
+  // Tous les personnages ont group.y=-0.02. Bluminator garde scale=0.8 pour le
+  // laptop mais sa tête reste à la même hauteur 3D → frac ≈ 0.493 (vs 0.486).
+  const EYE_FRAC = [0.486, 0.486, 0.493] // [Blumi, Blumiman, Bluminator]
+  const EYE_TARGET = 0.47
 
   const [front, setFront] = useState(0) // index du perso au premier plan (3D)
   const [moving, setMoving] = useState(false) // gèle la 3D pendant la rotation
