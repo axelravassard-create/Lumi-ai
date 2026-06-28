@@ -129,7 +129,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
             title={t('trio.discover').replace('{name}', TRIO[leftIdx].name)}
             className="absolute left-0 top-0 h-full w-[20%] cursor-pointer opacity-50 transition-opacity hover:opacity-80"
           >
-            <Avatar state="idle" glasses={TRIO[leftIdx].glasses} laptop={TRIO[leftIdx].laptop} className="h-full w-full" />
+            <Avatar state="idle" glasses={TRIO[leftIdx].glasses} laptop={TRIO[leftIdx].laptop} paused className="h-full w-full" />
           </button>
 
           {/* Centre : position fixe quelle que soit la valeur de front */}
@@ -144,7 +144,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
             title={t('trio.discover').replace('{name}', TRIO[rightIdx].name)}
             className="absolute right-0 top-0 h-full w-[20%] cursor-pointer opacity-50 transition-opacity hover:opacity-80"
           >
-            <Avatar state="idle" glasses={TRIO[rightIdx].glasses} laptop={TRIO[rightIdx].laptop} className="h-full w-full" />
+            <Avatar state="idle" glasses={TRIO[rightIdx].glasses} laptop={TRIO[rightIdx].laptop} paused className="h-full w-full" />
           </button>
         </div>
 
