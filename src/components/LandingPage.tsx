@@ -115,36 +115,33 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         <>
       {/* Hero */}
       <section className="relative mx-auto max-w-4xl px-6 pt-8 pb-16 text-center md:pt-12">
-        {/* 3 personnages = 3 paliers. Le centre est en 3D (taille pleine) ; les
-            côtés sont en emoji. Cliquer un côté le téléporte immédiatement au
-            centre (swap instantané), qui atterrit pile à la place du personnage
-            central précédent. Un seul canvas 3D allumé à la fois. */}
+        {/* 3 personnages = 3 paliers. Positions fixes : côtés (avatars statiques,
+            paused → frameloop="never", 1 seul rendu) + centre (animé). Cliquer
+            un côté swape instantanément ce perso au centre, pile à la même place. */}
         <div className="animate-fade-in relative mx-auto h-60 w-full max-w-md md:h-72">
-          {/* Côté gauche : emoji + nom, cliquable */}
+          {/* Côté gauche : avatar statique (paused), semi-transparent, cliquable */}
           <button
             onClick={() => setFront(leftIdx)}
             aria-label={t('trio.discover').replace('{name}', TRIO[leftIdx].name)}
             title={t('trio.discover').replace('{name}', TRIO[leftIdx].name)}
-            className="absolute bottom-0 left-0 top-0 flex flex-col items-center justify-center gap-1.5 px-2 opacity-50 transition-opacity hover:opacity-80"
+            className="absolute left-0 top-0 h-full w-[24%] cursor-pointer opacity-50 transition-opacity hover:opacity-80"
           >
-            <span className="text-5xl">{TRIO[leftIdx].emoji}</span>
-            <span className="text-xs font-semibold text-ink-500">{TRIO[leftIdx].name}</span>
+            <Avatar state="idle" glasses={TRIO[leftIdx].glasses} laptop={TRIO[leftIdx].laptop} paused className="h-full w-full" />
           </button>
 
-          {/* Centre : 3D Avatar — position identique quelle que soit la valeur de `front` */}
+          {/* Centre : 3D Avatar animé — position fixe quelle que soit la valeur de front */}
           <div className="absolute left-1/2 h-full w-[52%] -translate-x-1/2">
             <Avatar state="idle" glasses={activeChar.glasses} laptop={activeChar.laptop} className="h-full w-full" />
           </div>
 
-          {/* Côté droit : emoji + nom, cliquable */}
+          {/* Côté droit : avatar statique (paused), semi-transparent, cliquable */}
           <button
             onClick={() => setFront(rightIdx)}
             aria-label={t('trio.discover').replace('{name}', TRIO[rightIdx].name)}
             title={t('trio.discover').replace('{name}', TRIO[rightIdx].name)}
-            className="absolute bottom-0 right-0 top-0 flex flex-col items-center justify-center gap-1.5 px-2 opacity-50 transition-opacity hover:opacity-80"
+            className="absolute right-0 top-0 h-full w-[24%] cursor-pointer opacity-50 transition-opacity hover:opacity-80"
           >
-            <span className="text-5xl">{TRIO[rightIdx].emoji}</span>
-            <span className="text-xs font-semibold text-ink-500">{TRIO[rightIdx].name}</span>
+            <Avatar state="idle" glasses={TRIO[rightIdx].glasses} laptop={TRIO[rightIdx].laptop} paused className="h-full w-full" />
           </button>
         </div>
 
