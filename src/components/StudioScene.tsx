@@ -66,7 +66,7 @@ export function StudioScene({ onBack }: Props) {
 
   const bg =
     scene.phase === 'luminator'
-      ? 'from-violet-700 via-brand-700 to-amber-400'
+      ? 'from-brand-800 via-brand-600 to-sky-400'
       : 'from-ink-900 via-brand-900 to-brand-700'
 
   return (

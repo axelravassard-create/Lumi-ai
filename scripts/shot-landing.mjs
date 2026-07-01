@@ -11,6 +11,10 @@ await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'networkidle' })
 await page.waitForTimeout(4000)
 await page.evaluate(() => { document.activeElement?.blur?.(); window.scrollTo(0, 0) })
 await page.waitForTimeout(300)
-await page.locator('.max-w-xl').first().screenshot({ path: process.env.OUT || '/tmp/landing.png' })
+if (process.env.FULL) {
+  await page.screenshot({ path: process.env.OUT || '/tmp/landing.png' })
+} else {
+  await page.locator('.max-w-xl').first().screenshot({ path: process.env.OUT || '/tmp/landing.png' })
+}
 await browser.close()
 console.log('done')

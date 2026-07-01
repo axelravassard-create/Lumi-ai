@@ -23,7 +23,7 @@ interface Props {
 
 const TAG_STYLES: Record<string, string> = {
   Augmentation: 'bg-brand-100 text-brand-700',
-  Différenciation: 'bg-violet-100 text-violet-700',
+  Différenciation: 'bg-cyan-100 text-cyan-700',
   Évolution: 'bg-sky-100 text-sky-700',
   Protection: 'bg-emerald-100 text-emerald-700',
 }
@@ -144,7 +144,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
               )}
             </span>
             {analysis.personalized && (
-              <span className="pill bg-violet-100 text-violet-700" title={t('dash.adjustedTitle')}>
+              <span className="pill bg-sky-100 text-sky-700" title={t('dash.adjustedTitle')}>
                 {t('dash.adjusted')}
               </span>
             )}
@@ -205,7 +205,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
 
             {analysis.personalAssets && analysis.personalAssets.length > 0 && (
               <div className="mt-6 border-t border-ink-100 pt-5">
-                <h3 className="flex items-center gap-2 text-sm font-bold text-violet-700">{t('dash.personalAssets')}</h3>
+                <h3 className="flex items-center gap-2 text-sm font-bold text-sky-700">{t('dash.personalAssets')}</h3>
                 <div className="mt-3 space-y-4">
                   {analysis.personalAssets.map((a) => (
                     <FactorRow key={a.label} label={a.label} value={a.value} />
