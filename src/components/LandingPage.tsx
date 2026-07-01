@@ -68,9 +68,9 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
   return (
     <div className="min-h-screen">
       {/* Barre de navigation */}
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
+      <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 md:px-6 md:py-6">
         <Logo />
-        <nav className="flex items-center gap-3 text-sm font-medium text-ink-600 md:gap-5">
+        <nav className="flex items-center gap-2 text-sm font-medium text-ink-600 md:gap-5">
           <button onClick={onOpenMetiers} className="hidden transition hover:text-brand-700 md:inline">{t('nav.metiers')}</button>
           <button onClick={onOpenProfile} className="hidden transition hover:text-brand-700 sm:inline">{t('nav.profile')}</button>
           {account.configured && (
@@ -91,7 +91,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
           ) : (
             <button
               onClick={onOpenPricing}
-              className="rounded-full bg-gradient-to-r from-brand-500 to-brand-700 px-3.5 py-1.5 font-semibold text-white shadow-sm transition hover:opacity-90"
+              className="whitespace-nowrap rounded-full bg-gradient-to-r from-brand-500 to-brand-700 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:opacity-90 md:px-3.5 md:text-sm"
             >
               {t('nav.luminator')}
             </button>
@@ -121,19 +121,22 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
             ce perso au centre, pile à la même place.
             Conteneur max-w-xl : centre w-[44%] (28%-72%), côtés w-[20%] avec un
             gap naturel de ~8% entre chaque côté et le centre. */}
-        <div className="animate-fade-in relative mx-auto h-60 w-full max-w-xl md:h-72">
+        {/* ⚠️ Mobile : le canvas central doit rester assez LARGE (ratio pas trop
+            étroit) sinon la tête 3D est rognée sur les côtés. D'où center plus
+            large + hauteur réduite en mobile, valeurs desktop rétablies en md. */}
+        <div className="animate-fade-in relative mx-auto h-52 w-full max-w-xl md:h-72">
           {/* Côté gauche : image figée, cliquable */}
           <button
             onClick={() => setFront(leftIdx)}
             aria-label={t('trio.discover').replace('{name}', TRIO[leftIdx].name)}
             title={t('trio.discover').replace('{name}', TRIO[leftIdx].name)}
-            className="absolute left-0 top-0 h-full w-[20%] cursor-pointer opacity-50 transition-opacity hover:opacity-80"
+            className="absolute left-0 top-0 h-full w-[19%] cursor-pointer opacity-50 transition-opacity hover:opacity-80 md:w-[20%]"
           >
             <img src={TRIO[leftIdx].img} alt={TRIO[leftIdx].name} className="h-full w-full object-contain" />
           </button>
 
           {/* Centre : 3D animé — position fixe quelle que soit la valeur de front */}
-          <div className="absolute left-1/2 h-full w-[44%] -translate-x-1/2">
+          <div className="absolute left-1/2 h-full w-[62%] -translate-x-1/2 md:w-[44%]">
             <Avatar state="idle" glasses={activeChar.glasses} laptop={activeChar.laptop} className="h-full w-full" />
           </div>
 
@@ -142,7 +145,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
             onClick={() => setFront(rightIdx)}
             aria-label={t('trio.discover').replace('{name}', TRIO[rightIdx].name)}
             title={t('trio.discover').replace('{name}', TRIO[rightIdx].name)}
-            className="absolute right-0 top-0 h-full w-[20%] cursor-pointer opacity-50 transition-opacity hover:opacity-80"
+            className="absolute right-0 top-0 h-full w-[19%] cursor-pointer opacity-50 transition-opacity hover:opacity-80 md:w-[20%]"
           >
             <img src={TRIO[rightIdx].img} alt={TRIO[rightIdx].name} className="h-full w-full object-contain" />
           </button>

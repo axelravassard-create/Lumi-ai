@@ -16,7 +16,7 @@ export function AiStatusButton({ enabled, onClick }: Props) {
       title={enabled ? 'IA Claude connectée — cliquez pour gérer la clé' : 'Mode démo — cliquez pour connecter Claude'}
     >
       <span className={`h-2 w-2 rounded-full ${enabled ? 'bg-emerald-500' : 'bg-ink-300'}`} />
-      {enabled ? 'IA Claude' : 'Mode démo'}
+      <span className="hidden sm:inline">{enabled ? 'IA Claude' : 'Mode démo'}</span>
       <svg className="h-3.5 w-3.5 opacity-60" viewBox="0 0 24 24" fill="none">
         <path
           d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"
