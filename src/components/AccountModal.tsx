@@ -80,7 +80,7 @@ export function AccountModal({ onClose }: Props) {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="ton@email.com"
                 autoFocus
-                className="w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                className="field text-sm"
               />
               {err && <p className="mt-2 text-xs text-rose-500">{err}</p>}
               <button type="submit" disabled={!email.trim() || status === 'sending'} className="btn-primary mt-4 w-full justify-center disabled:opacity-50">

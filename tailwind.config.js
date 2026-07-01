@@ -4,8 +4,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['"Plus Jakarta Sans Variable"', '"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+        sans: ['"Manrope Variable"', 'Manrope', 'system-ui', 'sans-serif'],
+        display: ['"Sora Variable"', 'Sora', '"Manrope Variable"', 'sans-serif'],
       },
       colors: {
         ink: {

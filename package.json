@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.2",
+    "@fontsource-variable/manrope": "^5.2.8",
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
+    "@fontsource-variable/sora": "^5.2.8",
     "@fontsource/inter": "^5.2.8",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",

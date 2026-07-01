@@ -269,7 +269,7 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
             }}
             rows={1}
             placeholder={t('chat.placeholder').replace('{name}', name)}
-            className="flex-1 resize-none rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm leading-relaxed text-ink-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+            className="field flex-1 resize-none text-sm leading-relaxed"
           />
           <button
             type="submit"
