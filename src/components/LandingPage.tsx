@@ -59,9 +59,9 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
   // Les 3 personnages = les 3 paliers. Ordre fixe ; le carrousel fait tourner
   // lequel est au centre. Les noms sont des marques (non traduites).
   const TRIO = [
-    { name: 'Blumi', emoji: '👋', glasses: false, laptop: false, descKey: 'trio.descFree', paid: false },
-    { name: 'Blumiman', emoji: '✨', glasses: true, laptop: false, descKey: 'trio.descBlumiman', paid: true },
-    { name: 'Bluminator', emoji: '🚀', glasses: true, laptop: true, descKey: 'trio.descBluminator', paid: true },
+    { name: 'Blumi', emoji: '👋', glasses: false, laptop: false, descKey: 'trio.descFree', paid: false, img: '/avatars/blumi.png' },
+    { name: 'Blumiman', emoji: '✨', glasses: true, laptop: false, descKey: 'trio.descBlumiman', paid: true, img: '/avatars/blumiman.png' },
+    { name: 'Bluminator', emoji: '🚀', glasses: true, laptop: true, descKey: 'trio.descBluminator', paid: true, img: '/avatars/bluminator.png' },
   ]
   const activeChar = TRIO[front]
 
@@ -115,36 +115,36 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         <>
       {/* Hero */}
       <section className="relative mx-auto max-w-4xl px-6 pt-8 pb-16 text-center md:pt-12">
-        {/* 3 personnages = 3 paliers. Positions fixes : côtés (avatars statiques,
-            paused → frameloop="never", 1 seul rendu) + centre (animé). Cliquer
-            un côté swape instantanément ce perso au centre, pile à la même place. */}
-        {/* Conteneur élargi (max-w-xl) pour espacer les côtés du centre.
-            Centre w-[44%] → span 28%-72%. Côtés w-[20%] → 0-20% et 80-100%.
-            Gap naturel de ~8% (~46px) entre chaque côté et le centre. */}
+        {/* 3 personnages = 3 paliers. Le centre est en 3D (animé) ; les côtés
+            sont de simples IMAGES statiques (PNG pré-rendus) → toujours figés,
+            aucun effet, aucune boucle GPU. Cliquer un côté swape instantanément
+            ce perso au centre, pile à la même place.
+            Conteneur max-w-xl : centre w-[44%] (28%-72%), côtés w-[20%] avec un
+            gap naturel de ~8% entre chaque côté et le centre. */}
         <div className="animate-fade-in relative mx-auto h-60 w-full max-w-xl md:h-72">
-          {/* Côté gauche */}
+          {/* Côté gauche : image figée, cliquable */}
           <button
             onClick={() => setFront(leftIdx)}
             aria-label={t('trio.discover').replace('{name}', TRIO[leftIdx].name)}
             title={t('trio.discover').replace('{name}', TRIO[leftIdx].name)}
             className="absolute left-0 top-0 h-full w-[20%] cursor-pointer opacity-50 transition-opacity hover:opacity-80"
           >
-            <Avatar state="idle" glasses={TRIO[leftIdx].glasses} laptop={TRIO[leftIdx].laptop} paused className="h-full w-full pointer-events-none" />
+            <img src={TRIO[leftIdx].img} alt={TRIO[leftIdx].name} className="h-full w-full object-contain" />
           </button>
 
-          {/* Centre : position fixe quelle que soit la valeur de front */}
+          {/* Centre : 3D animé — position fixe quelle que soit la valeur de front */}
           <div className="absolute left-1/2 h-full w-[44%] -translate-x-1/2">
             <Avatar state="idle" glasses={activeChar.glasses} laptop={activeChar.laptop} className="h-full w-full" />
           </div>
 
-          {/* Côté droit */}
+          {/* Côté droit : image figée, cliquable */}
           <button
             onClick={() => setFront(rightIdx)}
             aria-label={t('trio.discover').replace('{name}', TRIO[rightIdx].name)}
             title={t('trio.discover').replace('{name}', TRIO[rightIdx].name)}
             className="absolute right-0 top-0 h-full w-[20%] cursor-pointer opacity-50 transition-opacity hover:opacity-80"
           >
-            <Avatar state="idle" glasses={TRIO[rightIdx].glasses} laptop={TRIO[rightIdx].laptop} paused className="h-full w-full pointer-events-none" />
+            <img src={TRIO[rightIdx].img} alt={TRIO[rightIdx].name} className="h-full w-full object-contain" />
           </button>
         </div>
 
