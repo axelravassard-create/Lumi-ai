@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BeatKind, Fmt, Project } from '../../lib/studio/types'
 import { BEAT_ORDER } from '../../lib/studio/types'
 import { BEAT_META } from './Timeline'
-import { ANGLES, PLATFORMS, generatePost, platform, type PlatformKey } from '../../lib/studio/social'
+import { ANGLES, PLATFORMS, SOCIAL_2026, SOURCES_2026, generatePost, platform, type PlatformKey } from '../../lib/studio/social'
 import { PROFESSIONS } from '../../lib/professions'
 import { analyze } from '../../lib/engine'
 import { HOOKS, CTAS, PIVOTS, PRESETS } from '../../lib/studio/library'
@@ -410,6 +410,22 @@ export function SocialPanel({ project, onChange }: P) {
   return (
     <Section title="📣 Réseaux">
       <p className="text-xs text-ink-500">Choisis un réseau : tu obtiens le format conseillé, la légende prête à coller, les hashtags et les bonnes pratiques.</p>
+
+      {/* À retenir — données 2026 */}
+      <div className="rounded-xl border border-brand-100 bg-brand-50/60 p-3">
+        <div className="mb-1 text-xs font-bold text-brand-700">📌 À retenir (données 2026)</div>
+        <ul className="space-y-1">
+          {SOCIAL_2026.map((x, i) => (
+            <li key={i} className="flex gap-1.5 text-[11px] leading-snug text-ink-600"><span className="text-brand-500">•</span>{x}</li>
+          ))}
+        </ul>
+        <div className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-ink-400">
+          Sources :
+          {SOURCES_2026.map((s) => (
+            <a key={s.url} href={s.url} target="_blank" rel="noreferrer" className="underline hover:text-brand-600">{s.label}</a>
+          ))}
+        </div>
+      </div>
 
       {/* Plateforme */}
       <div className="flex flex-wrap gap-1.5">

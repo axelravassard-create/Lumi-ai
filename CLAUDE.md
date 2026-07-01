@@ -276,7 +276,10 @@ pédagogique.
   les **hashtags** (base + tag métier via `metierTag`), le **format conseillé**
   (ratio/durée/cadence/créneau) et les **bonnes pratiques** par plateforme, plus des
   **angles de contenu** (`ANGLES`) applicables en 1 clic (preset + hook). Ferme la
-  boucle production → publication.
+  boucle production → publication. ⚠️ Playbook (durées, créneaux, cadence, tips,
+  nb de hashtags) **calé sur des benchmarks 2026** (`SOCIAL_2026`, `SOURCES_2026`
+  affichés dans l'UI) : complétion ~70 %, Social SEO > hashtags (3–5 max, légende +
+  texte à l'écran riches en mots-clés), audio original reboosté, 1re heure décisive.
 - **Regard caméra** : dans le studio, `RobotAvatar staticGaze` fixe le regard vers
   la caméra (micro-vie) au lieu de suivre le curseur → l'export ne montre plus
   Blumi loucher vers la souris.

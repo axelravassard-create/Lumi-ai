@@ -19,24 +19,25 @@ export interface PlatformInfo {
   tone: 'casual' | 'pro' | 'short'
 }
 
+// Données de référence mises à jour selon les benchmarks 2026 (voir SOURCES_2026).
 export const PLATFORMS: PlatformInfo[] = [
   {
     key: 'tiktok',
     name: 'TikTok',
     emoji: '🎵',
     ratio: '9:16',
-    length: '12–16 s (idéal <20 s pour la complétion)',
-    cadence: '1 à 3 posts / jour',
-    best: '11–13 h et 18–22 h',
+    length: '15–45 s (viser ~70 % de complétion, le seuil 2026 pour percer)',
+    cadence: '2 à 5 posts / semaine (régularité > volume)',
+    best: 'mar–ven 14–18 h + 18–20 h ; dimanche soir. Mercredi = meilleur jour.',
     tips: [
-      'Hook visuel + texte dès la 1re frame (0–1 s), zéro intro.',
-      'Un son tendance en fond booste la portée (ajoute-le dans l\'app TikTok).',
+      'Hook + texte à l\'écran dès 0–1 s : vise ~70 % de complétion (nouveau seuil 2026, vs 50 % en 2024).',
+      'Les 60 premières minutes font ~80 % de la portée → poste à une heure active et réponds tout de suite aux commentaires.',
+      'Audio ORIGINAL reboosté en 2026 (voix off / son maison) ; un son tendance ajoute un bonus.',
+      'Mots-clés parlés + écrits > hashtags : TikTok indexe ce que tu DIS et MONTRES (Social SEO).',
       'Boucle parfaite : la dernière frame renvoie à la première → rewatch.',
-      'Comment-bait qui force la réponse (« commente ton métier »).',
-      'Réponds aux commentaires EN vidéo → nouvelles vues gratuites.',
-      'Teste 2 hooks (A/B) sur 2 posts, garde le meilleur angle.',
+      'Reste sur ta niche (métiers × IA) : l\'algo 2026 privilégie la cohérence à la viralité au hasard.',
     ],
-    tags: ['ia', 'intelligenceartificielle', 'travail', 'metier', 'futurdutravail', 'careertok', 'tech'],
+    tags: ['ia', 'intelligenceartificielle', 'futurdutravail', 'careertok', 'emploi'],
     tone: 'casual',
   },
   {
@@ -44,17 +45,17 @@ export const PLATFORMS: PlatformInfo[] = [
     name: 'Instagram Reels',
     emoji: '📸',
     ratio: '9:16',
-    length: '7–15 s',
-    cadence: '1 post / jour + partage en story',
-    best: '12–13 h et 19–21 h',
+    length: '7–30 s',
+    cadence: '3 à 5 / semaine + partage en story',
+    best: 'mar 13–19 h, mer 12–21 h',
     tips: [
-      'Audio tendance quasi obligatoire pour la distribution.',
-      'Hook lisible même en muet (80 % regardent sans son).',
-      'CTA « enregistre » et « partage en DM » (les saves pèsent lourd).',
-      'Republie le Reel en story avec un sticker « + d\'infos ».',
-      'Réponds en Reel aux commentaires pour relancer la portée.',
+      'Légende riche en mots-clés : Instagram indexe la LÉGENDE et le texte à l\'écran (Social SEO), plus les hashtags.',
+      'Hook lisible même en muet (80 % regardent sans son) — le texte karaoké du studio joue ce rôle.',
+      'CTA « enregistre » et « partage en DM » : saves et partages pèsent le plus.',
+      'Audio original + un son tendance ; republie le Reel en story.',
+      '3–5 hashtags précis DANS la légende (le suivi de hashtags a disparu).',
     ],
-    tags: ['reels', 'ia', 'ai', 'emploi', 'metiers', 'futureofwork', 'reelsinstagram', 'carriere'],
+    tags: ['reels', 'ia', 'emploi', 'futureofwork', 'carriere'],
     tone: 'casual',
   },
   {
@@ -62,16 +63,16 @@ export const PLATFORMS: PlatformInfo[] = [
     name: 'YouTube Shorts',
     emoji: '▶️',
     ratio: '9:16',
-    length: '15–30 s (max 60 s)',
-    cadence: '1 post / jour',
-    best: '12 h et 17–20 h',
+    length: '15–40 s (max 3 min)',
+    cadence: '3 à 5 / semaine',
+    best: '14–16 h et 20–22 h',
     tips: [
-      'Le TITRE compte (SEO YouTube) : mets le métier + « IA » dedans.',
-      'Ajoute #shorts et des mots-clés dans la description.',
-      'Hook fort + fin qui renvoie au début (rewatch).',
-      'Les Shorts ont une longue traîne : ré-exploite tes meilleurs métiers.',
+      'Le TITRE est du SEO : mets le métier + « IA » dedans, plus des mots-clés en description.',
+      'Hook fort + fin qui renvoie au début (rewatch), #shorts.',
+      'Longue traîne : un Short peut percer des jours/semaines après → ré-exploite tes meilleurs métiers.',
+      'Vise une haute complétion : 15–40 s est le sweet spot pour la garder.',
     ],
-    tags: ['shorts', 'ia', 'ai', 'jobs', 'careers', 'futureofwork', 'emploi'],
+    tags: ['shorts', 'ia', 'jobs', 'futureofwork', 'emploi'],
     tone: 'casual',
   },
   {
@@ -85,10 +86,11 @@ export const PLATFORMS: PlatformInfo[] = [
     tips: [
       '1re ligne = hook AVANT le « …voir plus » (le scroll s\'arrête là).',
       'Ton pro + accroche perso (« J\'ai testé mon métier face à l\'IA »).',
-      'Termine par une question ouverte → commentaires = portée.',
-      'Peu d\'emojis, 3–5 hashtags ciblés, pas de lien dans le post (mets-le en 1er commentaire).',
+      'Mots-clés en langage naturel dans le texte (LinkedIn indexe les phrases, plus les tags).',
+      'Termine par une question ouverte → commentaires = portée. Lien en 1er commentaire, pas dans le post.',
+      '3–5 hashtags ciblés maximum.',
     ],
-    tags: ['IA', 'IntelligenceArtificielle', 'FuturDuTravail', 'Compétences', 'Emploi', 'Reconversion'],
+    tags: ['IA', 'FuturDuTravail', 'Compétences', 'Emploi', 'Reconversion'],
     tone: 'pro',
   },
   {
@@ -96,18 +98,34 @@ export const PLATFORMS: PlatformInfo[] = [
     name: 'X (Twitter)',
     emoji: '𝕏',
     ratio: '9:16 ou 16:9',
-    length: '< 2 min (idéal 15–30 s)',
+    length: '15–30 s (max ~2 min)',
     cadence: 'plusieurs posts / jour',
     best: '8–10 h et 18–20 h',
     tips: [
-      'Le HOOK est dans le texte du tweet, pas seulement la vidéo.',
+      'Le HOOK est dans le texte du post, pas seulement la vidéo.',
       'Phrase choc + question → cite/retweet.',
-      'Décline en thread (1 métier = 1 tweet) pour tenir l\'attention.',
+      'Décline en thread (1 métier = 1 post) pour tenir l\'attention.',
       '1–2 hashtags max, le reste dilue la portée.',
     ],
     tags: ['IA', 'AI', 'FutureOfWork'],
     tone: 'short',
   },
+]
+
+// Vérités transverses 2026 (Social SEO, complétion, 1re heure) affichées dans l'UI.
+export const SOCIAL_2026: string[] = [
+  'Complétion reine : ~70 % de la vidéo vue = le nouveau seuil pour percer (vs 50 % en 2024). Fais court et bouclé.',
+  'Social SEO > hashtags : la découverte passe par la LÉGENDE, le TITRE et le TEXTE À L\'ÉCRAN riches en mots-clés. Garde 3–5 hashtags précis.',
+  'Cohérence de niche + régularité (2–5 posts/sem.) comptent plus que la viralité au hasard ou l\'heure exacte.',
+  '1re heure décisive sur TikTok (~80 % de la portée) : poste à une heure active et engage tout de suite.',
+]
+
+// Sources consultées (benchmarks 2026) — pour traçabilité.
+export const SOURCES_2026: { label: string; url: string }[] = [
+  { label: 'Hootsuite — TikTok algorithm 2026', url: 'https://blog.hootsuite.com/tiktok-algorithm/' },
+  { label: 'Buffer — Best time to post 2026', url: 'https://buffer.com/resources/best-time-to-post-social-media/' },
+  { label: 'Buffer — Posting frequency 2026', url: 'https://buffer.com/resources/social-media-frequency-guide/' },
+  { label: 'Dive Media — Social SEO vs hashtags 2026', url: 'https://www.divemedia.com.au/marketing-tips-and-insights/social-seo-keywords-vs-hashtags' },
 ]
 
 export function platform(key: PlatformKey): PlatformInfo {
@@ -137,7 +155,9 @@ export function generatePost(project: Project, key: PlatformKey): SocialPost {
   const hook = interpolate(s.hook, metier, s.score)
   const cta = interpolate(s.cta, metier, s.score)
   const tag = metierTag(metier)
-  const hashtags = Array.from(new Set([...p.tags, tag])).slice(0, key === 'linkedin' || key === 'x' ? 5 : 10)
+  // 2026 : 3–5 hashtags précis suffisent (ils sont devenus des métadonnées, pas
+  // le moteur de découverte — c'est le Social SEO de la légende qui prime).
+  const hashtags = Array.from(new Set([tag, ...p.tags])).slice(0, key === 'x' ? 3 : 5)
 
   let caption = ''
   if (p.tone === 'pro') {
