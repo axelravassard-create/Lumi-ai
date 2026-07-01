@@ -1,9 +1,26 @@
 // Sauvegarde / chargement multi-projets (localStorage). Les médias (vidéo,
 // musique) NE sont PAS persistés (object-URLs éphémères) : on garde les réglages,
 // l'utilisateur ré-importe son fichier au besoin.
-import type { Project } from './types'
+import type { BeatDef, Project } from './types'
+import { BEAT_ORDER } from './types'
 import { DEFAULT_BEATS, DEFAULT_DURATION } from './library'
 import { defaultScript } from './script'
+
+// Resserre les moments actifs bout à bout (dans l'ordre canonique) et ajuste la
+// durée totale ; les moments masqués sont parqués à la fin (hors déroulé).
+export function compactBeats(project: Project): Project {
+  const ordered = BEAT_ORDER.map((id) => project.beats.find((b) => b.id === id)).filter(Boolean) as BeatDef[]
+  let t = 0
+  const placed = ordered.map((b) => {
+    if (b.enabled === false) return { ...b }
+    const nb = { ...b, start: +t.toFixed(2) }
+    t += b.dur
+    return nb
+  })
+  const total = Math.max(4, +t.toFixed(2))
+  const final = placed.map((b) => (b.enabled === false ? { ...b, start: total } : b))
+  return { ...project, beats: final, duration: total }
+}
 
 const KEY = 'blumi.studio.projects'
 const CUR = 'blumi.studio.current'

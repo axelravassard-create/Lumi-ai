@@ -23,7 +23,8 @@ interface Win {
 
 function windows(beats: BeatDef[]): Record<BeatKind, Win> {
   const out = {} as Record<BeatKind, Win>
-  for (const b of beats) out[b.id] = { start: b.start, end: b.start + b.dur, dur: b.dur }
+  // Les beats désactivés sont ignorés → aucun overlay ni transition associés.
+  for (const b of beats) if (b.enabled !== false) out[b.id] = { start: b.start, end: b.start + b.dur, dur: b.dur }
   return out
 }
 
@@ -50,8 +51,9 @@ function karaoke(text: string, start: number, span: number, t: number): CaptionW
 }
 
 export function activeBeat(beats: BeatDef[], t: number): BeatKind {
-  let best: BeatKind = beats[0]?.id ?? 'hook'
-  for (const b of beats) if (t >= b.start) best = b.id
+  const on = beats.filter((b) => b.enabled !== false)
+  let best: BeatKind = on[0]?.id ?? 'hook'
+  for (const b of on) if (t >= b.start) best = b.id
   return best
 }
 
@@ -163,7 +165,9 @@ export function evalFrame(project: Project, t: number): Frame {
   if (project.caption.enabled && !NO_CAPTION) {
     const cw = w[phase]
     const line = narrationFor(phase, s)
-    if (cw && line) {
+    // Uniquement dans la fenêtre du beat (évite une caption figée dans un « trou »
+    // laissé par un moment désactivé).
+    if (cw && line && t >= cw.start && t <= cw.end) {
       // Timing manuel : décalage + vitesse de défilement réglables.
       const manual = project.caption.timing === 'manual'
       const off = manual ? project.caption.offset : 0

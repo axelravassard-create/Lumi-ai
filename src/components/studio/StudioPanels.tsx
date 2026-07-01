@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
-import type { Fmt, Project } from '../../lib/studio/types'
+import type { BeatKind, Fmt, Project } from '../../lib/studio/types'
+import { BEAT_ORDER } from '../../lib/studio/types'
+import { BEAT_META } from './Timeline'
 import { PROFESSIONS } from '../../lib/professions'
 import { analyze } from '../../lib/engine'
 import { HOOKS, CTAS, PIVOTS, PRESETS } from '../../lib/studio/library'
@@ -373,6 +375,42 @@ export function FormatPanel({ project, onChange }: P) {
       <Row label="BPM" hint={`${project.tempo.bpm}`}>
         <Slider value={project.tempo.bpm} min={60} max={180} step={1} onChange={(v) => onChange({ ...project, tempo: { ...project.tempo, bpm: Math.round(v) } })} />
       </Row>
+    </Section>
+  )
+}
+
+// ── Moments (activer/retirer chaque beat) ────────────────────────────────────
+export function BeatsPanel({ project, onChange, onCompact }: P & { onCompact: () => void }) {
+  const setBeat = (id: BeatKind, enabled: boolean) =>
+    onChange({ ...project, beats: project.beats.map((b) => (b.id === id ? { ...b, enabled } : b)) })
+  const enabledCount = project.beats.filter((b) => b.enabled !== false).length
+  return (
+    <Section title="🎞️ Moments du clip">
+      <p className="text-xs text-ink-500">Active ou retire un moment de la cinématique (ex. le pivot). « Compacter » resserre le clip sur les moments actifs.</p>
+      {BEAT_ORDER.map((id) => {
+        const b = project.beats.find((x) => x.id === id)
+        if (!b) return null
+        const m = BEAT_META[id]
+        const on = b.enabled !== false
+        return (
+          <div key={id} className={`flex items-center gap-3 rounded-xl border p-2.5 ${on ? 'border-ink-100' : 'border-ink-100 bg-ink-50'}`}>
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-lg" style={{ background: on ? m.color : '#e5e7eb' }}>{m.emoji}</span>
+            <div className="min-w-0 flex-1">
+              <div className={`text-sm font-semibold ${on ? 'text-ink-800' : 'text-ink-400 line-through'}`}>{m.label}</div>
+              <div className="text-[11px] text-ink-400">{on ? `${b.dur.toFixed(1)}s` : 'masqué'}</div>
+            </div>
+            <button
+              onClick={() => setBeat(id, !on)}
+              role="switch"
+              aria-checked={on}
+              className={`relative h-6 w-11 shrink-0 rounded-full transition ${on ? 'bg-brand-500' : 'bg-ink-300'}`}
+            >
+              <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${on ? 'left-[22px]' : 'left-0.5'}`} />
+            </button>
+          </div>
+        )
+      })}
+      <button onClick={onCompact} className="btn-ghost w-full !py-2 text-sm">↔️ Compacter la timeline ({enabledCount} moments)</button>
     </Section>
   )
 }

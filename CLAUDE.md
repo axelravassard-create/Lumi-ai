@@ -270,6 +270,11 @@ pédagogique.
   mono-thread chargé depuis un CDN, repli unpkg→jsdelivr ; repli WebM si le CDN est
   injoignable). Multi-projets en `localStorage` (`blumi.studio.*`), les médias
   (object-URLs) ne sont PAS persistés. Cover PNG exportable.
+- **Moments activables** : chaque beat a `enabled?: boolean` (onglet « Moments »,
+  `BeatsPanel`). Un beat désactivé est ignoré par `windows()`/`activeBeat()` (aucun
+  overlay ni transition — ex. retirer le pivot). Bouton « Compacter »
+  (`compactBeats`) resserre les moments actifs bout à bout et ajuste `duration` ;
+  les moments masqués sont parqués à la fin.
 - **Réglages fins** : humeur du perso manuelle (`character.mood`, sinon `auto` par
   beat) + vraies entrées `pop`/`slide`/`zoom` (transforme `avatarScale`/`avatarDX/DY`
   dans le `Frame`) ; écoute TTS par réplique (bouton 🔊) ; **ducking** auto (la

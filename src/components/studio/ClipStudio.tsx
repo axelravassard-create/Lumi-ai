@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { BeatKind, Project } from '../../lib/studio/types'
-import { loadCurrent, newProject, saveProject } from '../../lib/studio/projects'
+import { compactBeats, loadCurrent, newProject, saveProject } from '../../lib/studio/projects'
 import { captureCover, downloadBlob, exportClip } from '../../lib/studio/export'
 import { warmTTS } from '../../lib/studio/tts'
 import { sharedCtx } from '../../lib/studio/audio'
@@ -14,6 +14,7 @@ import {
   CaptionPanel,
   CharacterPanel,
   ContentPanel,
+  BeatsPanel,
   FormatPanel,
   PresetPanel,
   ProjectsPanel,
@@ -24,11 +25,12 @@ interface Props {
   onBack: () => void
 }
 
-type Tab = 'fond' | 'contenu' | 'captions' | 'perso' | 'audio' | 'format' | 'presets' | 'projets' | 'file'
+type Tab = 'fond' | 'contenu' | 'moments' | 'captions' | 'perso' | 'audio' | 'format' | 'presets' | 'projets' | 'file'
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'fond', label: 'Fond', icon: '🎬' },
   { id: 'contenu', label: 'Contenu', icon: '🎯' },
+  { id: 'moments', label: 'Moments', icon: '🎞️' },
   { id: 'captions', label: 'Captions', icon: '💬' },
   { id: 'perso', label: 'Perso', icon: '🤖' },
   { id: 'audio', label: 'Audio', icon: '🔊' },
@@ -203,6 +205,7 @@ export function ClipStudio({ onBack }: Props) {
     switch (tab) {
       case 'fond': return <BackgroundPanel {...p} />
       case 'contenu': return <ContentPanel {...p} />
+      case 'moments': return <BeatsPanel {...p} onCompact={() => { setProject(compactBeats(projectRef.current)); scrub(0) }} />
       case 'captions': return <CaptionPanel {...p} />
       case 'perso': return <CharacterPanel {...p} />
       case 'audio': return <AudioPanel {...p} />

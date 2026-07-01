@@ -48,11 +48,12 @@ export interface ScriptModel {
   cta: string
 }
 
-// Un beat placé sur la timeline : déplaçable / redimensionnable.
+// Un beat placé sur la timeline : déplaçable / redimensionnable / activable.
 export interface BeatDef {
   id: BeatKind
   start: number
   dur: number
+  enabled?: boolean // undefined = actif ; false = moment retiré du clip
 }
 
 export interface CaptionCfg {

@@ -109,17 +109,23 @@ export function Timeline({ project, time, onChange, onSeek, onSelect, selected }
           const m = BEAT_META[b.id]
           const left = (b.start / dur) * 100
           const width = (b.dur / dur) * 100
+          const off = b.enabled === false
           return (
             <div
               key={b.id}
               onPointerDown={(e) => startDrag(e, b, 'move')}
               className={`absolute top-1.5 flex h-[52px] cursor-grab items-center overflow-hidden rounded-lg px-2 text-[11px] font-bold text-white transition ${
                 selected === b.id ? 'ring-2 ring-white' : ''
-              }`}
-              style={{ left: `${left}%`, width: `calc(${width}% - 2px)`, background: m.color }}
-              title={`${m.label} — ${b.dur.toFixed(2)}s`}
+              } ${off ? 'opacity-30 grayscale' : ''}`}
+              style={{
+                left: `${left}%`,
+                width: `calc(${width}% - 2px)`,
+                background: m.color,
+                ...(off ? { backgroundImage: 'repeating-linear-gradient(45deg, rgba(0,0,0,.25) 0 6px, transparent 6px 12px)' } : {}),
+              }}
+              title={`${m.label} — ${b.dur.toFixed(2)}s${off ? ' (masqué)' : ''}`}
             >
-              <span className="pointer-events-none truncate drop-shadow">{m.emoji} {m.label}</span>
+              <span className="pointer-events-none truncate drop-shadow">{off ? '🚫' : m.emoji} {m.label}</span>
               {/* Poignée de redimensionnement */}
               <div
                 onPointerDown={(e) => startDrag(e, b, 'resize')}
