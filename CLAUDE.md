@@ -270,6 +270,13 @@ pédagogique.
   mono-thread chargé depuis un CDN, repli unpkg→jsdelivr ; repli WebM si le CDN est
   injoignable). Multi-projets en `localStorage` (`blumi.studio.*`), les médias
   (object-URLs) ne sont PAS persistés. Cover PNG exportable.
+- **Communication réseaux** (`src/lib/studio/social.ts` + onglet « Réseaux »,
+  `SocialPanel`) : à partir du métier/score/hook/CTA du projet, génère la **légende
+  prête à coller** (ton adapté : TikTok/Reels/Shorts punchy, LinkedIn pro, X court),
+  les **hashtags** (base + tag métier via `metierTag`), le **format conseillé**
+  (ratio/durée/cadence/créneau) et les **bonnes pratiques** par plateforme, plus des
+  **angles de contenu** (`ANGLES`) applicables en 1 clic (preset + hook). Ferme la
+  boucle production → publication.
 - **Regard caméra** : dans le studio, `RobotAvatar staticGaze` fixe le regard vers
   la caméra (micro-vie) au lieu de suivre le curseur → l'export ne montre plus
   Blumi loucher vers la souris.

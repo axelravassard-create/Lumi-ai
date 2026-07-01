@@ -19,13 +19,14 @@ import {
   PresetPanel,
   ProjectsPanel,
   QueuePanel,
+  SocialPanel,
 } from './StudioPanels'
 
 interface Props {
   onBack: () => void
 }
 
-type Tab = 'fond' | 'contenu' | 'moments' | 'captions' | 'perso' | 'audio' | 'format' | 'presets' | 'projets' | 'file'
+type Tab = 'fond' | 'contenu' | 'moments' | 'captions' | 'perso' | 'audio' | 'format' | 'presets' | 'reseaux' | 'file' | 'projets'
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'fond', label: 'Fond', icon: '🎬' },
@@ -36,6 +37,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'audio', label: 'Audio', icon: '🔊' },
   { id: 'format', label: 'Format', icon: '📐' },
   { id: 'presets', label: 'Presets', icon: '✨' },
+  { id: 'reseaux', label: 'Réseaux', icon: '📣' },
   { id: 'file', label: 'File', icon: '🗂️' },
   { id: 'projets', label: 'Projets', icon: '📁' },
 ]
@@ -244,6 +246,7 @@ export function ClipStudio({ onBack }: Props) {
       case 'audio': return <AudioPanel {...p} />
       case 'format': return <FormatPanel {...p} />
       case 'presets': return <PresetPanel {...p} />
+      case 'reseaux': return <SocialPanel {...p} />
       case 'file': return <QueuePanel {...p} onRunQueue={runQueue} busy={exporting} />
       case 'projets': return <ProjectsPanel {...p} onSave={doSave} />
     }

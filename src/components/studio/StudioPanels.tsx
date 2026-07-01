@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BeatKind, Fmt, Project } from '../../lib/studio/types'
 import { BEAT_ORDER } from '../../lib/studio/types'
 import { BEAT_META } from './Timeline'
+import { ANGLES, PLATFORMS, generatePost, platform, type PlatformKey } from '../../lib/studio/social'
 import { PROFESSIONS } from '../../lib/professions'
 import { analyze } from '../../lib/engine'
 import { HOOKS, CTAS, PIVOTS, PRESETS } from '../../lib/studio/library'
@@ -375,6 +376,110 @@ export function FormatPanel({ project, onChange }: P) {
       <Row label="BPM" hint={`${project.tempo.bpm}`}>
         <Slider value={project.tempo.bpm} min={60} max={180} step={1} onChange={(v) => onChange({ ...project, tempo: { ...project.tempo, bpm: Math.round(v) } })} />
       </Row>
+    </Section>
+  )
+}
+
+// ── Réseaux (stratégie + légende + hashtags + angles) ────────────────────────
+export function SocialPanel({ project, onChange }: P) {
+  const [key, setKey] = useState<PlatformKey>('tiktok')
+  const [copied, setCopied] = useState('')
+  const info = platform(key)
+  const post = useMemo(() => generatePost(project, key), [project, key])
+  const [caption, setCaption] = useState(post.caption)
+  useEffect(() => setCaption(post.caption), [post.caption])
+
+  const copy = (text: string, label: string) => {
+    navigator.clipboard?.writeText(text).catch(() => {})
+    setCopied(label)
+    setTimeout(() => setCopied(''), 1500)
+  }
+
+  const applyAngle = (a: (typeof ANGLES)[number]) => {
+    let np = project
+    if (a.presetId) {
+      const pr = PRESETS.find((x) => x.id === a.presetId)
+      if (pr) np = { ...np, preset: pr.id, duration: pr.duration, beats: pr.beats.map((b) => ({ ...b })), script: { ...np.script, ...pr.patch } }
+    }
+    if (a.hook) np = { ...np, script: { ...np.script, hook: a.hook } }
+    onChange(np)
+  }
+
+  const hashLine = info.tags && post.hashtags.map((h) => '#' + h).join(' ')
+
+  return (
+    <Section title="📣 Réseaux">
+      <p className="text-xs text-ink-500">Choisis un réseau : tu obtiens le format conseillé, la légende prête à coller, les hashtags et les bonnes pratiques.</p>
+
+      {/* Plateforme */}
+      <div className="flex flex-wrap gap-1.5">
+        {PLATFORMS.map((pf) => (
+          <button
+            key={pf.key}
+            onClick={() => setKey(pf.key)}
+            className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${key === pf.key ? 'bg-brand-600 text-white' : 'bg-ink-100 text-ink-500 hover:bg-ink-200'}`}
+          >
+            {pf.emoji} {pf.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Format conseillé */}
+      <div className="grid grid-cols-2 gap-2 rounded-xl bg-ink-50 p-3 text-xs">
+        <div><span className="text-ink-400">Format</span><div className="font-semibold text-ink-800">{info.ratio}</div></div>
+        <div><span className="text-ink-400">Durée</span><div className="font-semibold text-ink-800">{info.length}</div></div>
+        <div><span className="text-ink-400">Cadence</span><div className="font-semibold text-ink-800">{info.cadence}</div></div>
+        <div><span className="text-ink-400">Créneau</span><div className="font-semibold text-ink-800">{info.best}</div></div>
+      </div>
+
+      {/* Légende prête à coller */}
+      <div>
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-xs font-semibold text-ink-600">Légende</span>
+          <button onClick={() => copy(caption, 'caption')} className="rounded-lg border border-ink-200 px-2 py-0.5 text-[11px] font-semibold text-ink-500 hover:border-brand-300 hover:text-brand-600">
+            {copied === 'caption' ? 'Copié ✓' : '📋 Copier'}
+          </button>
+        </div>
+        <textarea value={caption} onChange={(e) => setCaption(e.target.value)} rows={8} className="field text-sm leading-relaxed" />
+      </div>
+
+      {/* Hashtags */}
+      <div>
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-xs font-semibold text-ink-600">Hashtags</span>
+          <button onClick={() => copy(hashLine || '', 'tags')} className="rounded-lg border border-ink-200 px-2 py-0.5 text-[11px] font-semibold text-ink-500 hover:border-brand-300 hover:text-brand-600">
+            {copied === 'tags' ? 'Copié ✓' : '📋 Copier'}
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {post.hashtags.map((h) => (
+            <span key={h} className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700">#{h}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* Bonnes pratiques */}
+      <div>
+        <span className="text-xs font-semibold text-ink-600">Ce qui marche sur {info.name}</span>
+        <ul className="mt-1 space-y-1">
+          {info.tips.map((tip, i) => (
+            <li key={i} className="flex gap-1.5 text-xs text-ink-600"><span className="text-brand-500">›</span>{tip}</li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Angles de contenu */}
+      <div>
+        <span className="text-xs font-semibold text-ink-600">Angles qui cartonnent (clic = appliquer)</span>
+        <div className="mt-1 space-y-1.5">
+          {ANGLES.map((a) => (
+            <button key={a.title} onClick={() => applyAngle(a)} className="w-full rounded-xl border border-ink-100 p-2.5 text-left transition hover:border-brand-300 hover:bg-brand-50">
+              <div className="flex items-center gap-2 text-sm font-semibold text-ink-800"><span>{a.emoji}</span>{a.title}</div>
+              <div className="text-[11px] text-ink-500">{a.desc}</div>
+            </button>
+          ))}
+        </div>
+      </div>
     </Section>
   )
 }
