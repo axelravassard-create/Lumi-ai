@@ -631,8 +631,10 @@ export default function RobotAvatar({ state, mood = 'neutral', active = true, gl
         <Lightformer intensity={0.5} position={[4, -1, 1]} scale={[5, 6, 1]} color="#dfe3ff" />
       </Environment>
       <EffectComposer>
-        {/* Seuil élevé : seuls les yeux lumineux (HDR) « bloomment », le visage reste net. */}
-        <Bloom intensity={0.9} luminanceThreshold={1.0} luminanceSmoothing={0.3} mipmapBlur radius={0.6} />
+        {/* Halo SERRÉ autour des yeux/étincelles uniquement. Pas de mipmapBlur ni
+            de grand radius → le bloom n'inonde plus tout le rectangle du canvas
+            pendant l'effet (sinon on voyait la « case » réservée au personnage). */}
+        <Bloom intensity={0.55} luminanceThreshold={1.1} luminanceSmoothing={0.2} radius={0.22} />
       </EffectComposer>
     </Canvas>
   )
