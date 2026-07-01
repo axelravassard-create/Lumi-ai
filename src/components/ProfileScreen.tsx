@@ -233,7 +233,7 @@ export function ProfileScreen({ onBack, onAnalyze, aiEnabled, onOpenSettings }: 
         </section>
       </main>
 
-      <style>{`.inp{width:100%;border:1px solid #d6dae9;border-radius:0.75rem;background:#fff;padding:0.6rem 0.85rem;font-size:0.9rem;color:#1c2033;outline:none;transition:all .15s}.inp:focus{border-color:#818cf8;box-shadow:0 0 0 3px #e0e7ff}.inp::placeholder{color:#8893b8}`}</style>
+      <style>{`.inp{width:100%;border:1px solid #d6dae9;border-radius:0.75rem;background:#fff;padding:0.65rem 0.9rem;font-size:0.9rem;color:#1c2033;outline:none;transition:all .15s}.inp:hover{border-color:#b2bad3}.inp:focus{border-color:#3aa0fb;box-shadow:0 0 0 4px rgba(21,131,239,0.12)}.inp::placeholder{color:#8893b8}`}</style>
     </div>
   )
 }

@@ -55,13 +55,13 @@ export function ToolboxScreen({ onBack, onOpenChat }: Props) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t('tb.namePlaceholder')}
-              className="flex-1 rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+              className="field flex-1 text-sm"
             />
             <input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder={t('tb.urlPlaceholder')}
-              className="flex-1 rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+              className="field flex-1 text-sm"
             />
             <button type="submit" disabled={!name.trim()} className="btn-primary px-4 py-2.5 text-sm disabled:opacity-40">
               {t('common.add')}

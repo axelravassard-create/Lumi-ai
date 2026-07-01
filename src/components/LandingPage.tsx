@@ -650,7 +650,7 @@ function SearchInput({
   prefix?: string
 }) {
   return (
-    <div className="group flex items-center gap-2 rounded-2xl border border-ink-200 bg-white p-2 shadow-card transition focus-within:border-brand-300 focus-within:shadow-glow">
+    <div className="search-box group">
       {prefix ? (
         <span className="ml-2 grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-brand-50 text-sm font-bold text-brand-700">
           {prefix}

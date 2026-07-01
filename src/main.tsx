@@ -2,11 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
 // Polices auto-hébergées (aucune requête vers Google → pas de transfert d'IP).
-import '@fontsource/inter/400.css'
-import '@fontsource/inter/500.css'
-import '@fontsource/inter/600.css'
-import '@fontsource/inter/700.css'
-import '@fontsource-variable/plus-jakarta-sans'
+// Texte : Manrope (humaniste, lisible, pro). Titres : Sora (géométrique, premium).
+import '@fontsource-variable/manrope'
+import '@fontsource-variable/sora'
 import './index.css'
 
 createRoot(document.getElementById('root')!).render(

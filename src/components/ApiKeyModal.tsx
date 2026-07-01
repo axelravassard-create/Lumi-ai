@@ -52,7 +52,7 @@ export function ApiKeyModal({ onClose, onChange }: Props) {
           onChange={(e) => setValue(e.target.value)}
           placeholder="sk-ant-..."
           autoFocus
-          className="mt-1.5 w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+          className="field mt-1.5 text-sm"
           onKeyDown={(e) => e.key === 'Enter' && save()}
         />
 
