@@ -270,6 +270,14 @@ pédagogique.
   mono-thread chargé depuis un CDN, repli unpkg→jsdelivr ; repli WebM si le CDN est
   injoignable). Multi-projets en `localStorage` (`blumi.studio.*`), les médias
   (object-URLs) ne sont PAS persistés. Cover PNG exportable.
+- **Idées à partir de l'actu IA** (onglet « Idées », `IdeasPanel` + `src/lib/studio/ideas.ts`
+  + `generateReelIdeas` dans `llm.ts`) : Claude (Sonnet + `web_search_20260209`) cherche
+  une **info IA récente** impactant un métier et en tire un concept de réel (info +
+  source + métier + hook + format + légende). **« Idée du jour »** mise en cache
+  localStorage (`blumi.studio.idea.<YYYY-MM-DD>`, 1/jour, pour publier 1 clip/jour) +
+  bouton « 3 idées de plus ». `applyIdea()` applique au projet (métier + score
+  recalculé via `analyze`, hook, preset déduit du format). Gaté sur `aiReady()`
+  (message si l'IA n'est pas active). Pattern calqué sur `generateSectorTrend`.
 - **Communication réseaux** (`src/lib/studio/social.ts` + onglet « Réseaux »,
   `SocialPanel`) : à partir du métier/score/hook/CTA du projet, génère la **légende
   prête à coller** (ton adapté : TikTok/Reels/Shorts punchy, LinkedIn pro, X court),

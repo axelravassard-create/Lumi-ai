@@ -558,6 +558,69 @@ La "direction" décrit l'évolution de la pression de l'IA sur le secteur. Dans 
   }
 }
 
+// ── Idées de réels à partir de l'actu IA récente (studio) ────────────────────
+export interface ReelIdea {
+  info: string // l'info IA récente, en 1 phrase factuelle
+  source?: { title: string; url: string }
+  metier: string // métier à mettre en avant dans le clip
+  hook: string // accroche prête ({METIER}/{SCORE} autorisés)
+  caption: string // idée de légende courte
+  format: string // angle conseillé (ex. « Doom → Glow-up », « POV », « Tier list »)
+}
+
+// Cherche des développements IA récents impactant l'emploi et en tire des concepts
+// de réels prêts à tourner (info → hook → métier → format). Recherche web réelle.
+export async function generateReelIdeas(count = 3): Promise<ReelIdea[]> {
+  const c = client()
+  const tools: Anthropic.Messages.ToolUnion[] = [{ type: 'web_search_20260209', name: 'web_search' }]
+  const messages: Anthropic.MessageParam[] = [
+    {
+      role: 'user',
+      content: `Tu aides à produire des shorts viraux (TikTok/Reels) sur le thème « l'IA va-t-elle transformer ce métier ? ».
+Recherche ${count} développements RÉCENTS (dernières semaines) sur l'intelligence artificielle qui impactent CONCRÈTEMENT un métier précis (nouvel outil IA, étude, licenciements, automatisation d'une tâche, etc.), de préférence pertinents pour un public francophone.
+Pour chacun, propose un concept de réel. Renvoie UNIQUEMENT un tableau JSON valide (aucun texte autour, pas de markdown) :
+[
+  {
+    "info": "l'info IA récente en 1 phrase factuelle",
+    "source": {"title": "titre court", "url": "https://lien-exact"},
+    "metier": "le métier concerné (ex. Comptable)",
+    "hook": "accroche choc <70 caractères ({METIER} et {SCORE} autorisés)",
+    "caption": "idée de légende courte et punchy",
+    "format": "un angle parmi : Doom → Glow-up | POV analyse | Tier list | Choc express | Storytime"
+  }
+]
+Utilise des URLs RÉELLES issues de tes recherches, n'invente rien.${langDirective()}`,
+    },
+  ]
+
+  let resp = await c.messages.create({ model: MODEL, max_tokens: 2000, tools, messages })
+  let guard = 0
+  while (resp.stop_reason === 'pause_turn' && guard++ < 4) {
+    messages.push({ role: 'assistant', content: resp.content })
+    resp = await c.messages.create({ model: MODEL, max_tokens: 2000, tools, messages })
+  }
+
+  const text = resp.content
+    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+    .map((b) => b.text)
+    .join('')
+  const start = text.indexOf('[')
+  const end = text.lastIndexOf(']')
+  if (start === -1 || end === -1) throw new Error('Réponse IA illisible.')
+  const arr = JSON.parse(text.slice(start, end + 1)) as ReelIdea[]
+  return (Array.isArray(arr) ? arr : [])
+    .filter((x) => x && x.hook && x.metier)
+    .map((x) => ({
+      info: String(x.info || ''),
+      source: x.source && /^https?:\/\//i.test(x.source.url || '') ? { title: String(x.source.title || x.source.url), url: x.source.url } : undefined,
+      metier: String(x.metier || ''),
+      hook: String(x.hook || ''),
+      caption: String(x.caption || ''),
+      format: String(x.format || ''),
+    }))
+    .slice(0, count)
+}
+
 // Extrait et parse le bloc texte JSON renvoyé par l'API.
 function parseJson<T>(response: Anthropic.Message): T {
   const text = response.content

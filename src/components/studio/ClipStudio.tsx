@@ -16,6 +16,7 @@ import {
   ContentPanel,
   BeatsPanel,
   FormatPanel,
+  IdeasPanel,
   PresetPanel,
   ProjectsPanel,
   QueuePanel,
@@ -26,9 +27,10 @@ interface Props {
   onBack: () => void
 }
 
-type Tab = 'fond' | 'contenu' | 'moments' | 'captions' | 'perso' | 'audio' | 'format' | 'presets' | 'reseaux' | 'file' | 'projets'
+type Tab = 'idees' | 'fond' | 'contenu' | 'moments' | 'captions' | 'perso' | 'audio' | 'format' | 'presets' | 'reseaux' | 'file' | 'projets'
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
+  { id: 'idees', label: 'Idées', icon: '💡' },
   { id: 'fond', label: 'Fond', icon: '🎬' },
   { id: 'contenu', label: 'Contenu', icon: '🎯' },
   { id: 'moments', label: 'Moments', icon: '🎞️' },
@@ -238,6 +240,7 @@ export function ClipStudio({ onBack }: Props) {
   const panel = () => {
     const p = { project, onChange: setProject }
     switch (tab) {
+      case 'idees': return <IdeasPanel {...p} />
       case 'fond': return <BackgroundPanel {...p} />
       case 'contenu': return <ContentPanel {...p} />
       case 'moments': return <BeatsPanel {...p} onCompact={() => { setProject(compactBeats(projectRef.current)); scrub(0) }} />

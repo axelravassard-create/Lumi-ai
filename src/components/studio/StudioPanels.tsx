@@ -3,6 +3,8 @@ import type { BeatKind, Fmt, Project } from '../../lib/studio/types'
 import { BEAT_ORDER } from '../../lib/studio/types'
 import { BEAT_META } from './Timeline'
 import { ANGLES, PLATFORMS, SOCIAL_2026, SOURCES_2026, generatePost, platform, type PlatformKey } from '../../lib/studio/social'
+import { aiReady, describeError, generateReelIdeas } from '../../lib/llm'
+import { applyIdea, getDailyIdea, setDailyIdea, type ReelIdea } from '../../lib/studio/ideas'
 import { PROFESSIONS } from '../../lib/professions'
 import { analyze } from '../../lib/engine'
 import { HOOKS, CTAS, PIVOTS, PRESETS } from '../../lib/studio/library'
@@ -376,6 +378,93 @@ export function FormatPanel({ project, onChange }: P) {
       <Row label="BPM" hint={`${project.tempo.bpm}`}>
         <Slider value={project.tempo.bpm} min={60} max={180} step={1} onChange={(v) => onChange({ ...project, tempo: { ...project.tempo, bpm: Math.round(v) } })} />
       </Row>
+    </Section>
+  )
+}
+
+// ── Idées (actu IA → concept de réel) ────────────────────────────────────────
+function IdeaCard({ idea, onApply }: { idea: ReelIdea; onApply: () => void }) {
+  return (
+    <div className="space-y-1.5 rounded-2xl border border-ink-100 bg-white p-3">
+      {idea.info && <p className="text-xs text-ink-500">📰 {idea.info}</p>}
+      <div className="font-display text-sm font-bold text-ink-900">« {idea.hook} »</div>
+      <div className="flex flex-wrap gap-1.5 text-[11px]">
+        <span className="rounded-full bg-brand-50 px-2 py-0.5 font-semibold text-brand-700">🎯 {idea.metier}</span>
+        {idea.format && <span className="rounded-full bg-ink-100 px-2 py-0.5 font-semibold text-ink-600">🎬 {idea.format}</span>}
+      </div>
+      {idea.caption && <p className="text-[11px] italic text-ink-400">💬 {idea.caption}</p>}
+      <div className="flex items-center gap-2 pt-0.5">
+        <button onClick={onApply} className="btn-primary !rounded-xl !px-3 !py-1.5 text-xs">Appliquer au projet</button>
+        {idea.source && (
+          <a href={idea.source.url} target="_blank" rel="noreferrer" className="truncate text-[11px] text-ink-400 underline hover:text-brand-600">source</a>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export function IdeasPanel({ project, onChange }: P) {
+  const [daily, setDaily] = useState<ReelIdea | null>(() => getDailyIdea())
+  const [ideas, setIdeas] = useState<ReelIdea[]>([])
+  const [loading, setLoading] = useState<'' | 'daily' | 'more'>('')
+  const [error, setError] = useState('')
+  const ready = aiReady()
+
+  const genDaily = async () => {
+    setLoading('daily')
+    setError('')
+    try {
+      const list = await generateReelIdeas(1)
+      if (list[0]) {
+        setDailyIdea(list[0])
+        setDaily(list[0])
+      } else setError('Aucune idée trouvée, réessaie.')
+    } catch (e) {
+      setError(describeError(e))
+    } finally {
+      setLoading('')
+    }
+  }
+
+  const genMore = async () => {
+    setLoading('more')
+    setError('')
+    try {
+      setIdeas(await generateReelIdeas(3))
+    } catch (e) {
+      setError(describeError(e))
+    } finally {
+      setLoading('')
+    }
+  }
+
+  return (
+    <Section title="💡 Idées">
+      <p className="text-xs text-ink-500">Une actu IA récente transformée en concept de réel prêt à tourner. Idéal pour publier 1 clip/jour.</p>
+
+      {!ready && <p className="rounded-xl bg-amber-50 p-3 text-xs text-amber-700">Active l'IA (clé serveur ou personnelle) pour générer des idées à partir de l'actualité.</p>}
+
+      {/* Idée du jour */}
+      <div className="rounded-2xl border border-brand-100 bg-brand-50/50 p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-xs font-bold text-brand-700">🗞️ Idée du jour</span>
+          <button onClick={genDaily} disabled={!ready || loading !== ''} className="rounded-lg bg-brand-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-brand-500 disabled:opacity-40">
+            {loading === 'daily' ? 'Recherche…' : daily ? 'Régénérer' : 'Générer'}
+          </button>
+        </div>
+        {daily ? <IdeaCard idea={daily} onApply={() => onChange(applyIdea(project, daily))} /> : <p className="text-xs text-ink-400">Clique sur « Générer » : Blumi cherche une info IA du moment et t'en fait un concept.</p>}
+      </div>
+
+      {/* Plus d'idées */}
+      <button onClick={genMore} disabled={!ready || loading !== ''} className="btn-ghost w-full !py-2 text-sm disabled:opacity-40">
+        {loading === 'more' ? 'Recherche…' : '✨ Générer 3 idées de plus'}
+      </button>
+      {error && <p className="rounded-xl bg-red-50 p-2 text-xs text-red-600">{error}</p>}
+      <div className="space-y-2">
+        {ideas.map((idea, i) => (
+          <IdeaCard key={i} idea={idea} onApply={() => onChange(applyIdea(project, idea))} />
+        ))}
+      </div>
     </Section>
   )
 }
