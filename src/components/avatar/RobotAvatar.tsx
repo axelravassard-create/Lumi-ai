@@ -20,6 +20,8 @@ interface Props {
   laptop?: boolean
   /** Anime la bouche comme s'il parlait (chat avec le copilote). */
   speaking?: boolean
+  /** Réaction lumineuse au clic (étincelles / rayons). false = vitrine figée. */
+  interactive?: boolean
 }
 
 // Pointeur global normalisé (-1..1). Le visage suit le curseur partout sur la
@@ -140,7 +142,7 @@ function Eye({
   )
 }
 
-function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaking = false }: Props) {
+function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaking = false, interactive = true }: Props) {
   const group = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
   const lEye = useRef<THREE.Group | null>(null)
@@ -430,9 +432,9 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     <group ref={group} scale={laptop ? 0.8 : 1}>
       <group
         ref={head}
-        onClick={onPat}
-        onPointerOver={() => setCursor('pointer')}
-        onPointerOut={() => setCursor('auto')}
+        onClick={interactive ? onPat : undefined}
+        onPointerOver={interactive ? () => setCursor('pointer') : undefined}
+        onPointerOut={interactive ? () => setCursor('auto') : undefined}
       >
         {/* Crâne ovale d'un seul tenant (sans couture), légèrement aminci vers
             le menton pour une silhouette humaine. */}
@@ -610,7 +612,7 @@ function Laptop() {
   )
 }
 
-export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, laptop = false, speaking = false }: Props) {
+export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, laptop = false, speaking = false, interactive = true }: Props) {
   usePointerTracking()
   return (
     <Canvas
@@ -621,7 +623,7 @@ export default function RobotAvatar({ state, mood = 'neutral', active = true, gl
       camera={{ position: [0, 0.02, 4.9], fov: 30 }}
       style={{ background: 'transparent' }}
     >
-      <Face state={state} mood={mood} glasses={glasses} laptop={laptop} speaking={speaking} />
+      <Face state={state} mood={mood} glasses={glasses} laptop={laptop} speaking={speaking} interactive={interactive} />
       {/* Environnement studio généré localement (aucun téléchargement réseau). */}
       <Environment resolution={128}>
         <Lightformer intensity={0.8} position={[0, 1, 4]} scale={[10, 8, 1]} color="#ffffff" />

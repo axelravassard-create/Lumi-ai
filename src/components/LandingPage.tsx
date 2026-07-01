@@ -137,7 +137,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
 
           {/* Centre : 3D animé — position fixe quelle que soit la valeur de front */}
           <div className="absolute left-1/2 h-full w-[62%] -translate-x-1/2 md:w-[44%]">
-            <Avatar state="idle" glasses={activeChar.glasses} laptop={activeChar.laptop} className="h-full w-full" />
+            <Avatar state="idle" glasses={activeChar.glasses} laptop={activeChar.laptop} interactive={false} className="h-full w-full" />
           </div>
 
           {/* Côté droit : image figée, cliquable */}

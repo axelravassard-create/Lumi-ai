@@ -20,6 +20,8 @@ interface Props {
   speaking?: boolean
   /** Gèle la boucle de rendu 3D (ex. pendant une transition CSS pour éviter les lags). */
   paused?: boolean
+  /** Réaction lumineuse au clic (étincelles/rayons). false = vitrine sans effet. */
+  interactive?: boolean
 }
 
 // Détection WebGL : si le navigateur ne sait pas faire de 3D, on retombe
@@ -52,7 +54,7 @@ function Fallback({ state, glasses, laptop }: { state: AvatarState; glasses: boo
   )
 }
 
-export function Avatar({ state = 'idle', mood = 'neutral', className = '', forceFallback = false, glasses, laptop, speaking = false, paused = false }: Props) {
+export function Avatar({ state = 'idle', mood = 'neutral', className = '', forceFallback = false, glasses, laptop, speaking = false, paused = false, interactive = true }: Props) {
   const owns = useLuminator()
   const tier = useTier()
   // Si `glasses` n'est pas imposé, on suit la possession d'un palier payant.
@@ -80,7 +82,7 @@ export function Avatar({ state = 'idle', mood = 'neutral', className = '', force
     <div ref={ref} className={`relative select-none ${className}`}>
       {canRender3D ? (
         <Suspense fallback={<Fallback state={state} glasses={showGlasses} laptop={showLaptop} />}>
-          <RobotAvatar state={state} mood={mood} active={visible && !paused} glasses={showGlasses} laptop={showLaptop} speaking={speaking} />
+          <RobotAvatar state={state} mood={mood} active={visible && !paused} glasses={showGlasses} laptop={showLaptop} speaking={speaking} interactive={interactive} />
         </Suspense>
       ) : (
         <Fallback state={state} glasses={showGlasses} laptop={showLaptop} />
