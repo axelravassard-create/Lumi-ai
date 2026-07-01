@@ -91,7 +91,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
           ) : (
             <button
               onClick={onOpenPricing}
-              className="rounded-full bg-gradient-to-r from-brand-600 to-violet-600 px-3.5 py-1.5 font-semibold text-white shadow-sm transition hover:opacity-90"
+              className="rounded-full bg-gradient-to-r from-brand-500 to-brand-700 px-3.5 py-1.5 font-semibold text-white shadow-sm transition hover:opacity-90"
             >
               {t('nav.luminator')}
             </button>
@@ -181,7 +181,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
         <h1 className="animate-fade-up font-display text-4xl font-extrabold leading-[1.1] tracking-tight text-ink-900 md:text-6xl" style={{ animationDelay: '60ms' }}>
           {t('hero.h1a')}
           <br />
-          <span className="bg-gradient-to-r from-brand-600 to-violet-500 bg-clip-text text-transparent">{t('hero.h1b')}</span>
+          <span className="bg-gradient-to-r from-brand-700 to-brand-500 bg-clip-text text-transparent">{t('hero.h1b')}</span>
         </h1>
 
         <p className="animate-fade-up mx-auto mt-6 max-w-2xl text-lg text-ink-500" style={{ animationDelay: '120ms' }}>
@@ -280,7 +280,7 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
           dans la durée (rétention + valeur de l'abonnement). */}
       {!owns && (
         <section className="mx-auto max-w-5xl px-6 py-10">
-          <div className="card relative overflow-hidden bg-gradient-to-br from-brand-600 to-violet-600 p-8 text-white md:p-12">
+          <div className="card relative overflow-hidden bg-gradient-to-br from-brand-600 to-brand-800 p-8 text-white md:p-12">
             <div className="grid items-center gap-8 md:grid-cols-[1fr_auto]">
               <div>
                 <span className="pill mb-4 bg-white/15 text-white">{t('promo.pill')}</span>
@@ -452,7 +452,7 @@ function MemberHome({
             <span className="font-semibold text-brand-600">{pct}%</span>
           </div>
           <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-ink-100">
-            <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-violet-500 transition-all" style={{ width: `${Math.max(pct, 4)}%` }} />
+            <div className="h-full rounded-full bg-gradient-to-r from-brand-400 to-brand-600 transition-all" style={{ width: `${Math.max(pct, 4)}%` }} />
           </div>
         </div>
 
@@ -505,7 +505,7 @@ function MemberHome({
         <h1 className="animate-fade-up mt-6 font-display text-3xl font-extrabold leading-[1.1] tracking-tight text-ink-900 md:text-5xl" style={{ animationDelay: '60ms' }}>
           {t('mh.heroLine1')}
           <br />
-          <span className="bg-gradient-to-r from-brand-600 to-violet-500 bg-clip-text text-transparent">{t('mh.heroLine2').replace('{name}', name)}</span>
+          <span className="bg-gradient-to-r from-brand-700 to-brand-500 bg-clip-text text-transparent">{t('mh.heroLine2').replace('{name}', name)}</span>
         </h1>
         <p className="animate-fade-up mx-auto mt-4 max-w-xl text-lg text-ink-500" style={{ animationDelay: '120ms' }}>
           {t('mh.heroDesc').replace('{name}', name)}
@@ -551,7 +551,7 @@ function MemberHome({
             <span className="font-display text-3xl font-extrabold text-brand-600">{progress.score}%</span>
           </div>
           <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-ink-100">
-            <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-violet-500 transition-all" style={{ width: `${Math.max(progress.score, 3)}%` }} />
+            <div className="h-full rounded-full bg-gradient-to-r from-brand-400 to-brand-600 transition-all" style={{ width: `${Math.max(progress.score, 3)}%` }} />
           </div>
           <p className="mt-2 text-xs text-ink-400">
             {t('mh.progressFooter')

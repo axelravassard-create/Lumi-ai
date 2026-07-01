@@ -473,7 +473,7 @@ function Field({ label, hint, mark, children }: { label: string; hint?: string; 
       <label className="mb-1.5 flex items-center gap-2 text-sm font-medium text-ink-700">
         {label}
         {hint && <span className="pill bg-brand-50 px-2 py-0.5 text-[10px] text-brand-700">{hint}</span>}
-        {mark && <span className="pill bg-violet-100 px-2 py-0.5 text-[10px] text-violet-700">🤓 {brandName()}</span>}
+        {mark && <span className="pill bg-sky-100 px-2 py-0.5 text-[10px] text-sky-700">🤓 {brandName()}</span>}
       </label>
       {children}
     </div>

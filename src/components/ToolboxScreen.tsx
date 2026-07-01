@@ -104,7 +104,7 @@ export function ToolboxScreen({ onBack, onOpenChat }: Props) {
 function ToolCard({ tool }: { tool: ToolItem }) {
   return (
     <div className="card flex items-start gap-3 p-4">
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-50 text-lg">🧰</span>
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky-50 text-lg">🧰</span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-ink-900">{tool.name}</p>
         {tool.reason && <p className="mt-0.5 text-xs text-ink-500">{tool.reason}</p>}

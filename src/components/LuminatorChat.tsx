@@ -202,7 +202,7 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
             </div>
           )}
           {tooled && !noted && !planned && (
-            <div className="absolute left-1/2 top-2 -translate-x-1/2 animate-fade-in rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-medium text-violet-700">
+            <div className="absolute left-1/2 top-2 -translate-x-1/2 animate-fade-in rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-medium text-sky-700">
               {t('chat.tooled')}
             </div>
           )}

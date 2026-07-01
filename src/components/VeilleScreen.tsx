@@ -56,7 +56,7 @@ export function VeilleScreen({ onBack, aiEnabled, onOpenSettings, onOpenChat, on
               <SectorTrendCard sector={sector} aiEnabled={aiEnabled} onOpenSettings={onOpenSettings} />
 
               {/* De la veille à l'action */}
-              <div className="card flex flex-col items-start gap-3 bg-gradient-to-br from-brand-50 to-violet-50 p-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="card flex flex-col items-start gap-3 bg-gradient-to-br from-brand-50 to-sky-50 p-6 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="font-display font-bold text-ink-900">{t('veille.actionTitle')}</h2>
                   <p className="mt-1 text-sm text-ink-600">{t('veille.actionDesc').replace('{name}', brandName())}</p>

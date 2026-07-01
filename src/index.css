@@ -14,8 +14,8 @@
   body {
     @apply bg-ink-50 text-ink-900 font-sans antialiased;
     background-image:
-      radial-gradient(60rem 60rem at 110% -10%, rgba(129, 140, 248, 0.12), transparent 55%),
-      radial-gradient(50rem 50rem at -10% 0%, rgba(99, 102, 241, 0.1), transparent 50%);
+      radial-gradient(60rem 60rem at 110% -10%, rgba(58, 160, 251, 0.12), transparent 55%),
+      radial-gradient(50rem 50rem at -10% 0%, rgba(21, 131, 239, 0.1), transparent 50%);
     background-attachment: fixed;
   }
 

@@ -69,7 +69,7 @@ export function PlanScreen({ onBack, onOpenChat }: Props) {
               <span className="font-display text-3xl font-extrabold text-brand-600">{progress.score}%</span>
             </div>
             <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-ink-100">
-              <div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-violet-500 transition-all" style={{ width: `${Math.max(progress.score, 3)}%` }} />
+              <div className="h-full rounded-full bg-gradient-to-r from-brand-400 to-brand-600 transition-all" style={{ width: `${Math.max(progress.score, 3)}%` }} />
             </div>
           </div>
 
