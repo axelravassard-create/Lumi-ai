@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.2",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "@fontsource-variable/manrope": "^5.2.8",
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
     "@fontsource-variable/sora": "^5.2.8",

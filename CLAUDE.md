@@ -240,6 +240,38 @@ pédagogique.
 - Score heuristique sur 7 facteurs ; ~242 métiers. Le compteur de l'accueil affiche
   `PROFESSIONS.length`.
 
+## Studio de clips viraux — route `#/studio` (`src/components/studio/`)
+- **Outil PRIVÉ (mono-utilisateur)** pour produire des shorts verticaux (9:16) :
+  vidéo de fond importée + cinématique animée par-dessus (Blumi débarque, scanne le
+  métier, révèle un score choc, puis Blumiman donne la solution), export MP4.
+- **Architecture déterministe** (aperçu == export, image par image) :
+  `src/lib/studio/timeline.ts` `evalFrame(project, t) → Frame` (état visuel complet à
+  l'instant t, aucun recours à l'horloge réelle). `src/lib/studio/render.ts`
+  `renderOverlay(ctx, frame, …)` dessine TOUS les overlays 2D (hook karaoké, faisceau
+  de scan, jauge+compteur %, cartes d'action, CTA, watermark, safe-zones) — code de
+  rendu **partagé** entre l'aperçu et l'export.
+- **3 couches composées** dans un canvas maître 1080×1920 : vidéo de fond (crop 9:16
+  via `coverRect`) → **avatar WebGL capturable** (`RobotAvatar capture` =
+  `preserveDrawingBuffer`, rendu hors-vue puis `drawImage` dans le maître) → overlays
+  2D. Voir `StudioPreview.tsx` (le seul `drawFrame(t)`, réutilisé par l'export).
+- **Beats** (7, déplaçables/redimensionnables via `Timeline.tsx`) : hook / scan /
+  verdict / pivot / glowup / solution / cta. Le glow-up transforme Blumi → palier
+  choisi (`character.tier` : lunettes Blumiman, +ordi Bluminator). Presets dans
+  `library.ts` (Doom→Glow-up, POV analyse, Tier list) + bibliothèque de HOOKS/CTA.
+- **Métier & score** : autocomplétion sur `PROFESSIONS`, score auto via
+  `analyze().currentRisk`, override manuel. `{METIER}`/`{SCORE}` injectés partout.
+- **Audio** (`audio.ts`) : SFX synthétisés Web Audio (pop/riser/sting/shimmer/whoosh)
+  calés sur les beats + voix off TTS FR (`tts.ts`) + musique importée. ⚠️ La voix
+  TTS (SpeechSynthesis) n'est PAS routable dans Web Audio → jouée à l'aperçu mais
+  **absente du MP4 exporté** ; emplacement prévu pour brancher une voix API (buffer
+  mixable) dans `tts.ts`.
+- **Export** (`export.ts`) : `captureStream(30)` + `MediaRecorder` (WebM) avec piste
+  audio (musique+SFX mixés), puis WebM→MP4 (H.264/AAC) via **ffmpeg.wasm** (cœur
+  mono-thread chargé depuis un CDN, repli unpkg→jsdelivr ; repli WebM si le CDN est
+  injoignable). Multi-projets en `localStorage` (`blumi.studio.*`), les médias
+  (object-URLs) ne sont PAS persistés. Cover PNG exportable.
+- Deps ajoutées : `@ffmpeg/ffmpeg`, `@ffmpeg/util`.
+
 ## Conformité / légal
 - Pages : `src/components/LegalScreen.tsx` (routes `#/legal/mentions|confidentialite|cgu`),
   liens dans le footer.

@@ -18,7 +18,7 @@ import { PlanScreen } from './components/PlanScreen'
 import { ToolboxScreen } from './components/ToolboxScreen'
 import { VeilleScreen } from './components/VeilleScreen'
 import { GeneratorsScreen } from './components/GeneratorsScreen'
-import { StudioScene } from './components/StudioScene'
+import { ClipStudio } from './components/studio/ClipStudio'
 import { loadProfile, profileToContext } from './lib/profile'
 import { addBilan } from './lib/history'
 import { useLuminator, brandName, APP_NAME } from './lib/entitlement'
@@ -290,7 +290,7 @@ export default function App() {
         <GeneratorsScreen onBack={() => setView('landing')} onOpenChat={openChat} />
       )}
 
-      {view === 'studio' && <StudioScene onBack={goHome} />}
+      {view === 'studio' && <ClipStudio onBack={goHome} />}
 
       {view === 'directory' && (
         <MetiersDirectory onBack={goHome} onOpenMetier={(id) => { window.location.hash = '/metier/' + id }} />

@@ -22,6 +22,8 @@ interface Props {
   speaking?: boolean
   /** Réaction lumineuse au clic (étincelles / rayons). false = vitrine figée. */
   interactive?: boolean
+  /** Rend le canvas capturable (preserveDrawingBuffer) pour l'export vidéo du studio. */
+  capture?: boolean
 }
 
 // Pointeur global normalisé (-1..1). Le visage suit le curseur partout sur la
@@ -612,14 +614,14 @@ function Laptop() {
   )
 }
 
-export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, laptop = false, speaking = false, interactive = true }: Props) {
+export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, laptop = false, speaking = false, interactive = true, capture = false }: Props) {
   usePointerTracking()
   return (
     <Canvas
       // 'demand' : rend une frame au montage puis s'arrête (figé) ; 'always' anime.
       frameloop={active ? 'always' : 'demand'}
       dpr={[1, 2]}
-      gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
+      gl={{ alpha: true, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: capture }}
       camera={{ position: [0, 0.02, 4.9], fov: 30 }}
       style={{ background: 'transparent' }}
     >
