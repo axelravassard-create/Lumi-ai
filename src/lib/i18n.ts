@@ -18,6 +18,14 @@ export const LANG_LABELS: Record<Lang, string> = {
   es: 'Español',
   zh: '中文',
 }
+// Drapeaux affichés dans le sélecteur de langue (à la place du texte).
+export const LANG_FLAGS: Record<Lang, string> = {
+  fr: '🇫🇷',
+  en: '🇬🇧',
+  de: '🇩🇪',
+  es: '🇪🇸',
+  zh: '🇨🇳',
+}
 
 const STORAGE_KEY = 'lumi.lang'
 
