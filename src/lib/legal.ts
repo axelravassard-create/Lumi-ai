@@ -40,7 +40,7 @@ export const LEGAL_INFO: LegalInfo = {
   editorName: 'Axel Ravassard',
   publicationDirector: 'Axel Ravassard',
   address: '16 bis Avenue des Monts d’Or, 69890 La Tour-de-Salvagny, France',
-  siret: undefined, // ⚠️ À COMPLÉTER : SIRET de la micro-entreprise (14 chiffres)
+  siret: '10675480700019', // SIRET de la micro-entreprise (14 chiffres)
   rcs: undefined,
   legalForm: undefined,
   capital: undefined,
@@ -50,5 +50,5 @@ export const LEGAL_INFO: LegalInfo = {
     address: '340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis',
     url: 'vercel.com',
   },
-  updated: 'juin 2026',
+  updated: 'juillet 2026',
 }
