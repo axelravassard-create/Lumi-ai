@@ -239,6 +239,7 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
             interactive={false}
             capture
             active
+            staticGaze
           />
         </Suspense>
       </div>

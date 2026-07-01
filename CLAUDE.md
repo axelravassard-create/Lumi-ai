@@ -270,6 +270,11 @@ pédagogique.
   mono-thread chargé depuis un CDN, repli unpkg→jsdelivr ; repli WebM si le CDN est
   injoignable). Multi-projets en `localStorage` (`blumi.studio.*`), les médias
   (object-URLs) ne sont PAS persistés. Cover PNG exportable.
+- **Regard caméra** : dans le studio, `RobotAvatar staticGaze` fixe le regard vers
+  la caméra (micro-vie) au lieu de suivre le curseur → l'export ne montre plus
+  Blumi loucher vers la souris.
+- **Raccourcis** (ClipStudio) : Espace = lecture/pause, ←/→ = image (±0,1 s ; ±1 s
+  avec Maj), Début = t0 ; + boutons ⏪/⏩ de pas image par image.
 - **Moments activables** : chaque beat a `enabled?: boolean` (onglet « Moments »,
   `BeatsPanel`). Un beat désactivé est ignoré par `windows()`/`activeBeat()` (aucun
   overlay ni transition — ex. retirer le pivot). Bouton « Compacter »

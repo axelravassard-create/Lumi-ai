@@ -24,6 +24,8 @@ interface Props {
   interactive?: boolean
   /** Rend le canvas capturable (preserveDrawingBuffer) pour l'export vidéo du studio. */
   capture?: boolean
+  /** Regard fixé vers la caméra (studio) au lieu de suivre le curseur. */
+  staticGaze?: boolean
 }
 
 // Pointeur global normalisé (-1..1). Le visage suit le curseur partout sur la
@@ -144,7 +146,7 @@ function Eye({
   )
 }
 
-function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaking = false, interactive = true }: Props) {
+function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaking = false, interactive = true, staticGaze = false }: Props) {
   const group = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
   const lEye = useRef<THREE.Group | null>(null)
@@ -254,6 +256,13 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     }
     let gx = pointer.active ? THREE.MathUtils.clamp(pointer.x, -1, 1) : Math.sin(t * 0.4) * 0.4 + saccade.current.x
     let gy = pointer.active ? THREE.MathUtils.clamp(pointer.y, -1, 1) : saccade.current.y
+
+    // Studio : Blumi fixe la caméra (il « parle au spectateur ») avec une micro-vie,
+    // sans suivre le curseur — sinon son regard partirait n'importe où dans l'export.
+    if (staticGaze) {
+      gx = Math.sin(t * 0.5) * 0.1 + saccade.current.x * 0.3
+      gy = Math.sin(t * 0.8) * 0.05
+    }
 
     // Bluminator : absorbé par son écran. Il ne suit PAS le curseur — son regard
     // reste baissé sur l'ordinateur portable posé devant lui, avec un léger
@@ -614,7 +623,7 @@ function Laptop() {
   )
 }
 
-export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, laptop = false, speaking = false, interactive = true, capture = false }: Props) {
+export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, laptop = false, speaking = false, interactive = true, capture = false, staticGaze = false }: Props) {
   usePointerTracking()
   return (
     <Canvas
@@ -625,7 +634,7 @@ export default function RobotAvatar({ state, mood = 'neutral', active = true, gl
       camera={{ position: [0, 0.02, 4.9], fov: 30 }}
       style={{ background: 'transparent' }}
     >
-      <Face state={state} mood={mood} glasses={glasses} laptop={laptop} speaking={speaking} interactive={interactive} />
+      <Face state={state} mood={mood} glasses={glasses} laptop={laptop} speaking={speaking} interactive={interactive} staticGaze={staticGaze} />
       {/* Environnement studio généré localement (aucun téléchargement réseau). */}
       <Environment resolution={128}>
         <Lightformer intensity={0.8} position={[0, 1, 4]} scale={[10, 8, 1]} color="#ffffff" />

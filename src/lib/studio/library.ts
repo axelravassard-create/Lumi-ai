@@ -14,6 +14,10 @@ export const HOOKS: string[] = [
   'Tag un(e) {METIER} qui doit voir ça 👇',
   '{SCORE}% des {METIER} ignorent que leur job est menacé…',
   'Découvre en 15 s si l\'IA va te piquer ton job ⏱️',
+  'Personne ne veut te dire ça sur le métier de {METIER} 🤐',
+  'Arrête de scroller si tu es {METIER} 🛑',
+  'En 2027, {METIER} ça ressemblera à ça 👇',
+  'L\'IA a mis {SCORE}% à ce métier… tu vas halluciner 😱',
 ]
 
 export const CTAS: string[] = [
@@ -21,6 +25,8 @@ export const CTAS: string[] = [
   'Toi c\'est quoi ton job ? Dis-le 👇',
   'Envoie ça à un(e) {METIER} 📲',
   'Enregistre avant que ton métier change 🔖',
+  'D\'accord ou pas ? Dis-le en commentaire 💬',
+  'Score trop haut ou trop bas ? Donne le tien 👇',
 ]
 
 // Trois actions « solution » par défaut (le payoff qui déclenche le save).
@@ -84,6 +90,24 @@ export const PRESETS: Preset[] = [
     duration: 13,
     beats: seq([0.8, 2.2, 2.5, 1.0, 1.0, 4.0, 1.5]),
     patch: { hook: 'Ton job en 2030 : remplacé ou augmenté ? 🤔' },
+  },
+  {
+    id: 'choc-express',
+    name: 'Choc express',
+    emoji: '⚡',
+    desc: 'Ultra court (12 s), hook + verdict immédiats. Complétion maximale.',
+    duration: 12,
+    beats: seq([0.7, 1.6, 3.2, 0.8, 1.2, 3.0, 1.5]),
+    patch: { hook: 'L\'IA a mis {SCORE}% à ce métier… tu vas halluciner 😱' },
+  },
+  {
+    id: 'storytime',
+    name: 'Storytime',
+    emoji: '🎙️',
+    desc: 'Scan long et immersif, montée de tension, révélation appuyée.',
+    duration: 16,
+    beats: seq([1.0, 4.5, 3.0, 1.5, 1.5, 3.0, 1.5]),
+    patch: { hook: 'J\'ai demandé à une IA si {METIER} allait disparaître 💀' },
   },
 ]
 

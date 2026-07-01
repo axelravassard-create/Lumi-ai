@@ -60,8 +60,12 @@ export function ClipStudio({ onBack }: Props) {
   const previewRef = useRef<PreviewHandle>(null)
   const projectRef = useRef(project)
   projectRef.current = project
+  const playingRef = useRef(playing)
+  playingRef.current = playing
+  const exportingRef = useRef(false)
 
   const [exporting, setExporting] = useState(false)
+  exportingRef.current = exporting
   const [progress, setProgress] = useState(0)
   const [status, setStatus] = useState('')
 
@@ -83,7 +87,7 @@ export function ClipStudio({ onBack }: Props) {
 
   const play = () => {
     sharedCtx() // débloque l'audio
-    setSeek((s) => (s >= project.duration - 0.05 ? 0 : s))
+    setSeek((s) => (s >= projectRef.current.duration - 0.05 ? 0 : s))
     setPlaying(true)
   }
   const pause = () => {
@@ -104,6 +108,35 @@ export function ClipStudio({ onBack }: Props) {
     setUiTime(t)
     timeRef.current = t
   }
+  // Avance/recul image par image (0,1 s ; ±1 s avec Maj).
+  const step = (delta: number) => {
+    scrub(Math.max(0, Math.min(projectRef.current.duration, timeRef.current + delta)))
+  }
+
+  // Raccourcis clavier d'éditeur (hors saisie de texte).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null
+      if (el && /INPUT|TEXTAREA|SELECT/.test(el.tagName)) return
+      if (exportingRef.current) return
+      if (e.code === 'Space') {
+        e.preventDefault()
+        playingRef.current ? pause() : play()
+      } else if (e.code === 'ArrowRight') {
+        e.preventDefault()
+        step(e.shiftKey ? 1 : 0.1)
+      } else if (e.code === 'ArrowLeft') {
+        e.preventDefault()
+        step(e.shiftKey ? -1 : -0.1)
+      } else if (e.code === 'Home') {
+        e.preventDefault()
+        scrub(0)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const doSave = () => {
     saveProject(project)
@@ -249,11 +282,14 @@ export function ClipStudio({ onBack }: Props) {
           {/* Transport + timeline */}
           <div className="border-t border-white/10 bg-ink-900/60 p-3">
             <div className="mb-2 flex items-center gap-2">
-              <button onClick={playing ? pause : play} className="rounded-lg bg-brand-500 px-4 py-1.5 text-sm font-bold hover:bg-brand-400">
+              <button onClick={() => step(-0.1)} title="Recul (←)" className="rounded-lg bg-white/10 px-2.5 py-1.5 text-sm hover:bg-white/20">⏪</button>
+              <button onClick={playing ? pause : play} title="Lecture/Pause (Espace)" className="rounded-lg bg-brand-500 px-4 py-1.5 text-sm font-bold hover:bg-brand-400">
                 {playing ? '⏸ Pause' : '▶︎ Lecture'}
               </button>
-              <button onClick={restart} className="rounded-lg bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20">↺</button>
+              <button onClick={() => step(0.1)} title="Avance (→)" className="rounded-lg bg-white/10 px-2.5 py-1.5 text-sm hover:bg-white/20">⏩</button>
+              <button onClick={restart} title="Rejouer" className="rounded-lg bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20">↺</button>
               <span className="ml-1 text-xs tabular-nums text-white/60">{uiTime.toFixed(2)}s / {project.duration.toFixed(1)}s</span>
+              <span className="ml-2 hidden text-[11px] text-white/30 md:inline">Espace lecture · ← → image · Maj = 1 s · Début = 0</span>
               {status && <span className="ml-auto text-xs text-brand-200">{status}</span>}
             </div>
             <div className="[&_*]:text-white">
