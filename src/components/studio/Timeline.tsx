@@ -20,12 +20,14 @@ interface Props {
   selected: BeatKind | null
 }
 
-const snap = (v: number) => Math.round(v / 0.25) * 0.25
-
 export function Timeline({ project, time, onChange, onSeek, onSelect, selected }: Props) {
   const trackRef = useRef<HTMLDivElement>(null)
   const dur = project.duration
   const pxPerSec = () => (trackRef.current?.clientWidth ?? 800) / dur
+  // Pas d'aimantation : grille de tempo si activée, sinon 0,25 s.
+  const grid = project.tempo.enabled ? 60 / Math.max(40, project.tempo.bpm) : 0.25
+  const snap = (v: number) => Math.round(v / grid) * grid
+  const beatSec = 60 / Math.max(40, project.tempo.bpm)
 
   const startDrag = (e: React.PointerEvent, beat: BeatDef, mode: 'move' | 'resize') => {
     e.stopPropagation()
@@ -97,6 +99,11 @@ export function Timeline({ project, time, onChange, onSeek, onSelect, selected }
         {Array.from({ length: Math.floor(dur) + 1 }).map((_, i) => (
           <div key={i} className="absolute top-0 h-full w-px bg-ink-200" style={{ left: `${(i / dur) * 100}%` }} />
         ))}
+        {/* Marqueurs de tempo (grille BPM) */}
+        {project.tempo.enabled &&
+          Array.from({ length: Math.floor(dur / beatSec) + 1 }).map((_, i) => (
+            <div key={`bpm${i}`} className="absolute top-0 h-full w-px bg-brand-400/40" style={{ left: `${((i * beatSec) / dur) * 100}%` }} />
+          ))}
         {/* Beats */}
         {project.beats.map((b) => {
           const m = BEAT_META[b.id]

@@ -69,13 +69,29 @@ export function evalFrame(project: Project, t: number): Frame {
   const glasses = transformed && (tier === 'blumiman' || tier === 'bluminator')
   const laptop = transformed && tier === 'bluminator'
 
-  // Entrée : pop élastique pendant le hook.
-  const avatarIn = w.hook ? elastic(clamp((t - w.hook.start) / Math.max(0.3, w.hook.dur * 0.8))) : 1
+  // Entrée : progression linéaire eased, puis transformée selon le style choisi.
+  const pin = w.hook ? clamp((t - w.hook.start) / Math.max(0.3, w.hook.dur * 0.8)) : 1
+  const avatarIn = w.hook ? easeOut(pin) : 1
+  let avatarScale = 1
+  let avatarDX = 0
+  let avatarDY = 0
+  if (w.hook) {
+    if (project.character.entrance === 'pop') {
+      avatarScale = elastic(pin) // petit → grand avec rebond
+    } else if (project.character.entrance === 'zoom') {
+      avatarScale = 0.25 + 0.75 * easeOut(pin) // grossit depuis un petit point
+    } else {
+      // slide : arrive du bas du cadre.
+      avatarScale = 1
+      avatarDY = (1 - easeOut(pin)) * 0.6
+    }
+  }
 
-  // Humeur au fil de l'histoire.
+  // Humeur : auto (pilotée par les beats) ou forcée par l'utilisateur.
   let mood: Frame['mood'] = 'neutral'
   if (phase === 'verdict' || phase === 'pivot') mood = 'concerned'
   else if (phase === 'glowup' || phase === 'solution' || phase === 'cta') mood = 'calm'
+  if (project.character.mood !== 'auto') mood = project.character.mood
 
   // ── Hook (gros titre karaoké) ───────────────────────────────────────────
   const hookText = interpolate(s.abTest && Math.floor(t) % 2 === 1 ? s.hookB : s.hook, metier, s.score)
@@ -148,7 +164,11 @@ export function evalFrame(project: Project, t: number): Frame {
     const cw = w[phase]
     const line = narrationFor(phase, s)
     if (cw && line) {
-      caption = { words: karaoke(line, cw.start + 0.1, cw.dur * 0.9, t), style: project.caption.style }
+      // Timing manuel : décalage + vitesse de défilement réglables.
+      const manual = project.caption.timing === 'manual'
+      const off = manual ? project.caption.offset : 0
+      const pace = manual ? Math.max(0.3, project.caption.pace) : 1
+      caption = { words: karaoke(line, cw.start + 0.1 + off, (cw.dur * 0.9) / pace, t), style: project.caption.style }
     }
   }
 
@@ -162,6 +182,9 @@ export function evalFrame(project: Project, t: number): Frame {
     mood,
     speaking,
     avatarIn,
+    avatarScale,
+    avatarDX,
+    avatarDY,
     shake,
     flash,
     zoomPulse,

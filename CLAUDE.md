@@ -270,6 +270,14 @@ pédagogique.
   mono-thread chargé depuis un CDN, repli unpkg→jsdelivr ; repli WebM si le CDN est
   injoignable). Multi-projets en `localStorage` (`blumi.studio.*`), les médias
   (object-URLs) ne sont PAS persistés. Cover PNG exportable.
+- **Réglages fins** : humeur du perso manuelle (`character.mood`, sinon `auto` par
+  beat) + vraies entrées `pop`/`slide`/`zoom` (transforme `avatarScale`/`avatarDX/DY`
+  dans le `Frame`) ; écoute TTS par réplique (bouton 🔊) ; **ducking** auto (la
+  musique baisse quand `frame.speaking`) ; **tempo** (`project.tempo` : grille BPM +
+  aimantation des beats) ; **7 facteurs** du métier affichés ; **timing manuel** des
+  captions (`caption.timing/offset/pace`) ; **file multi-métiers** (onglet File →
+  export en lot, un clip par métier). ⚠️ `projects.ts` `migrate()` complète les
+  projets enregistrés avant l'ajout de ces champs.
 - Deps ajoutées : `@ffmpeg/ffmpeg`, `@ffmpeg/util`.
 
 ## Conformité / légal

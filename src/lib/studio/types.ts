@@ -60,6 +60,9 @@ export interface CaptionCfg {
   style: CaptionStyle
   posY: number // 0..1 (part de la hauteur, dans la safe-zone basse)
   scale: number
+  timing: 'auto' | 'manual'
+  offset: number // décalage manuel (s) : - = plus tôt, + = plus tard
+  pace: number // vitesse de défilement des mots (1 = cale sur le beat)
 }
 
 export interface AudioCfg {
@@ -80,6 +83,12 @@ export interface CharacterCfg {
   x: number // -1..1
   y: number // -1..1
   entrance: 'pop' | 'slide' | 'zoom'
+  mood: AvatarMood | 'auto' // 'auto' = humeur pilotée par les beats
+}
+
+export interface TempoCfg {
+  bpm: number
+  enabled: boolean // affiche la grille + aimante les beats sur le tempo
 }
 
 export interface Project {
@@ -95,6 +104,7 @@ export interface Project {
   caption: CaptionCfg
   audio: AudioCfg
   character: CharacterCfg
+  tempo: TempoCfg
   preset: string
   updatedAt: number
 }
@@ -121,6 +131,9 @@ export interface Frame {
   mood: AvatarMood
   speaking: boolean
   avatarIn: number // 0..1 progression d'entrée
+  avatarScale: number // multiplicateur d'échelle (entrée pop/zoom)
+  avatarDX: number // décalage horizontal (fraction de largeur, entrée slide)
+  avatarDY: number // décalage vertical (fraction de hauteur, entrée slide)
   shake: number // amplitude du screen-shake (px @1080)
   flash: number // 0..1 flash du glow-up
   zoomPulse: number // 1 = neutre, >1 = zoom (verdict)

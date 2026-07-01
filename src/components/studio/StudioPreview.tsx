@@ -87,6 +87,13 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
       setControl(next)
     }
 
+    // Ducking auto : baisse la musique quand le personnage parle.
+    const music = audioRef.current
+    if (music && p.audio.musicUrl) {
+      const ducked = p.audio.duck && p.audio.voice && f.speaking
+      music.volume = p.audio.musicVolume * (ducked ? 0.3 : 1)
+    }
+
     ctx.clearRect(0, 0, w, h)
     ctx.save()
     if (f.shake) ctx.translate((Math.random() - 0.5) * f.shake, (Math.random() - 0.5) * f.shake)

@@ -4,6 +4,8 @@ import { loadCurrent, newProject, saveProject } from '../../lib/studio/projects'
 import { captureCover, downloadBlob, exportClip } from '../../lib/studio/export'
 import { warmTTS } from '../../lib/studio/tts'
 import { sharedCtx } from '../../lib/studio/audio'
+import { analyze } from '../../lib/engine'
+import { riskEmoji } from '../../lib/studio/script'
 import { StudioPreview, type PreviewHandle } from './StudioPreview'
 import { Timeline } from './Timeline'
 import {
@@ -15,13 +17,14 @@ import {
   FormatPanel,
   PresetPanel,
   ProjectsPanel,
+  QueuePanel,
 } from './StudioPanels'
 
 interface Props {
   onBack: () => void
 }
 
-type Tab = 'fond' | 'contenu' | 'captions' | 'perso' | 'audio' | 'format' | 'presets' | 'projets'
+type Tab = 'fond' | 'contenu' | 'captions' | 'perso' | 'audio' | 'format' | 'presets' | 'projets' | 'file'
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'fond', label: 'Fond', icon: '🎬' },
@@ -31,6 +34,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: 'audio', label: 'Audio', icon: '🔊' },
   { id: 'format', label: 'Format', icon: '📐' },
   { id: 'presets', label: 'Presets', icon: '✨' },
+  { id: 'file', label: 'File', icon: '🗂️' },
   { id: 'projets', label: 'Projets', icon: '📁' },
 ]
 
@@ -52,6 +56,8 @@ export function ClipStudio({ onBack }: Props) {
   const [selectedBeat, setSelectedBeat] = useState<BeatKind | null>(null)
   const timeRef = useRef(0)
   const previewRef = useRef<PreviewHandle>(null)
+  const projectRef = useRef(project)
+  projectRef.current = project
 
   const [exporting, setExporting] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -133,6 +139,52 @@ export function ClipStudio({ onBack }: Props) {
     }
   }
 
+  // Export en lot : un clip par métier de la file.
+  const runQueue = async (metiers: string[]) => {
+    const h = previewRef.current
+    if (!h || !h.master || !metiers.length) return
+    setPlaying(false)
+    setExporting(true)
+    const base = projectRef.current
+    try {
+      await (document as Document & { fonts?: { ready: Promise<unknown> } }).fonts?.ready
+      for (let i = 0; i < metiers.length; i++) {
+        const label = metiers[i]
+        const a = analyze(label)
+        const np: Project = {
+          ...base,
+          name: label,
+          script: { ...base.script, metier: label, score: a.currentRisk, level: a.level, verdictLabel: `{SCORE}% exposé ${riskEmoji(a.currentRisk)}` },
+        }
+        setProject(np)
+        // Laisse l'aperçu (et l'avatar) se mettre à jour avant de capturer.
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+        setProgress(0)
+        h.setExportMode(true)
+        const blob = await exportClip({
+          canvas: h.master,
+          drawFrame: h.drawFrame,
+          project: np,
+          musicEl: h.audio,
+          onProgress: setProgress,
+          onStatus: (st) => setStatus(`Clip ${i + 1}/${metiers.length} · ${label} · ${st}`),
+        })
+        h.setExportMode(false)
+        const ext = blob.type.includes('mp4') ? 'mp4' : 'webm'
+        downloadBlob(blob, `blumi-${slug(label)}.${ext}`)
+      }
+      setStatus(`File terminée ✓ (${metiers.length} clips)`)
+    } catch (e) {
+      console.error(e)
+      setStatus('Erreur d\'export de la file ✕')
+    } finally {
+      h.setExportMode(false)
+      setProject(base)
+      setExporting(false)
+      requestAnimationFrame(() => previewRef.current?.drawFrame(0))
+    }
+  }
+
   const exportCover = async () => {
     const h = previewRef.current
     if (!h || !h.master) return
@@ -156,6 +208,7 @@ export function ClipStudio({ onBack }: Props) {
       case 'audio': return <AudioPanel {...p} />
       case 'format': return <FormatPanel {...p} />
       case 'presets': return <PresetPanel {...p} />
+      case 'file': return <QueuePanel {...p} onRunQueue={runQueue} busy={exporting} />
       case 'projets': return <ProjectsPanel {...p} onSave={doSave} />
     }
   }

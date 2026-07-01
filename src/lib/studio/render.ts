@@ -34,12 +34,12 @@ export function coverRect(
 // Rectangle d'affichage du personnage (aperçu CSS + export drawImage identiques).
 export function avatarRect(project: Project, f: Frame, cw: number, ch: number) {
   const c = project.character
-  const base = Math.min(cw, ch) * 1.05 * c.scale * (0.5 + 0.5 * f.avatarIn)
+  const base = Math.min(cw, ch) * 1.05 * c.scale * f.avatarScale
   const w = base
   const h = base
-  const cx = cw / 2 + (c.x || 0) * cw * 0.4
+  const cx = cw / 2 + (c.x || 0) * cw * 0.4 + (f.avatarDX || 0) * cw
   // Un peu plus haut que le centre pour laisser la place aux cartes/captions.
-  const cy = ch * 0.38 + (c.y || 0) * ch * 0.3
+  const cy = ch * 0.38 + (c.y || 0) * ch * 0.3 + (f.avatarDY || 0) * ch
   return { x: cx - w / 2, y: cy - h / 2, w, h }
 }
 

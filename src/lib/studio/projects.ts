@@ -19,7 +19,7 @@ export function newProject(metier = 'Développeur·se', score = 73, level = 'Él
     background: null,
     script: defaultScript(metier, score, level),
     beats: DEFAULT_BEATS.map((b) => ({ ...b })),
-    caption: { enabled: true, style: 'tiktok', posY: 0.2, scale: 1 },
+    caption: { enabled: true, style: 'tiktok', posY: 0.2, scale: 1, timing: 'auto', offset: 0, pace: 1 },
     audio: {
       voice: true,
       voiceVolume: 1,
@@ -31,9 +31,22 @@ export function newProject(metier = 'Développeur·se', score = 73, level = 'Él
       sfxVolume: 0.8,
       duck: true,
     },
-    character: { tier: 'blumiman', scale: 1, x: 0, y: 0, entrance: 'pop' },
+    character: { tier: 'blumiman', scale: 1, x: 0, y: 0, entrance: 'pop', mood: 'auto' },
+    tempo: { bpm: 120, enabled: false },
     preset: 'doom-glowup',
     updatedAt: Date.now(),
+  }
+}
+
+// Complète les projets enregistrés avant l'ajout de certains champs.
+function migrate(p: Project): Project {
+  const d = newProject()
+  return {
+    ...p,
+    caption: { ...d.caption, ...p.caption },
+    audio: { ...d.audio, ...p.audio },
+    character: { ...d.character, ...p.character },
+    tempo: { ...d.tempo, ...(p.tempo ?? {}) },
   }
 }
 
@@ -48,7 +61,7 @@ export function listProjects(): Project[] {
     const raw = localStorage.getItem(KEY)
     if (!raw) return []
     const arr = JSON.parse(raw) as Project[]
-    return Array.isArray(arr) ? arr.sort((a, b) => b.updatedAt - a.updatedAt) : []
+    return Array.isArray(arr) ? arr.map(migrate).sort((a, b) => b.updatedAt - a.updatedAt) : []
   } catch {
     return []
   }
