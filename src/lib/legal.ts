@@ -44,7 +44,7 @@ export const LEGAL_INFO: LegalInfo = {
   rcs: undefined,
   legalForm: undefined,
   capital: undefined,
-  contact: 'axel.ravassard@gmail.com',
+  contact: 'contact.getblumi@gmail.com',
   host: {
     name: 'Vercel Inc.',
     address: '340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis',
