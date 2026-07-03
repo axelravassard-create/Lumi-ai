@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { PROFESSIONS } from '../lib/professions'
 import { analyze, domainLabel, professionLabel } from '../lib/engine'
 import { useSeo } from '../lib/seo'
+import { t, useLang } from '../lib/i18n'
 import { Logo } from './Logo'
 
 interface Props {
@@ -18,10 +19,8 @@ function riskColor(r: number): string {
 
 // Annuaire des métiers — page d'atterrissage SEO listant toutes les fiches.
 export function MetiersDirectory({ onBack, onOpenMetier }: Props) {
-  useSeo(
-    'Tous les métiers face à l\'IA — risque d\'automatisation | Blumi',
-    'Découvrez le risque de remplacement par l\'intelligence artificielle pour des dizaines de métiers, et comment garder une longueur d\'avance.',
-  )
+  useLang()
+  useSeo(t('seo.dir.title'), t('seo.dir.desc'))
 
   // Regroupe les métiers par domaine, avec leur score estimé.
   const byDomain = useMemo(() => {
@@ -44,7 +43,7 @@ export function MetiersDirectory({ onBack, onOpenMetier }: Props) {
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
               <path d="M5 12h14m-8-6-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Accueil
+            {t('dir.home')}
           </button>
         </div>
       </header>
@@ -52,12 +51,9 @@ export function MetiersDirectory({ onBack, onOpenMetier }: Props) {
       <main className="mx-auto max-w-5xl px-6">
         <section className="animate-fade-up pt-12 text-center">
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink-900 md:text-5xl">
-            Tous les métiers face à l'IA
+            {t('dir.h1')}
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-ink-500">
-            Explorez le risque d'automatisation par l'intelligence artificielle, métier par métier.
-            Choisissez le vôtre pour une analyse complète et personnalisée.
-          </p>
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-ink-500">{t('dir.intro')}</p>
         </section>
 
         {byDomain.map(([domain, list], i) => (

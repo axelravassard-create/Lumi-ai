@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { PROFESSIONS } from '../lib/professions'
-import { analyze } from '../lib/engine'
+import { analyze, professionLabel, domainLabel, riskLevelLabel } from '../lib/engine'
 import { useSeo } from '../lib/seo'
+import { t, useLang } from '../lib/i18n'
 import { Logo } from './Logo'
 
 interface Props {
@@ -22,12 +23,14 @@ function riskColor(r: number): string {
 // remplacer le métier de X ? ». Contenu statique (sans appel IA) → rapide et
 // indexable. Le CTA lance l'analyse complète et personnalisée.
 export function MetierLanding({ professionId, onBack, onOpenDirectory, onAnalyze }: Props) {
+  useLang()
   const profession = PROFESSIONS.find((p) => p.id === professionId) ?? PROFESSIONS[0]
   const a = useMemo(() => analyze(profession.label), [profession.label])
+  const jobName = professionLabel(profession)
 
   useSeo(
-    `L'IA va-t-elle remplacer le métier de ${profession.label} ? | Blumi`,
-    `Risque d'automatisation du métier de ${profession.label} estimé à ${a.score}%. Tâches exposées, projection jusqu'en 2040 et conseils pour rester employable face à l'IA.`,
+    t('seo.met.title').replace('{label}', jobName),
+    t('seo.met.desc').replace('{label}', jobName).replace('{score}', String(a.score)),
   )
 
   return (
@@ -36,7 +39,7 @@ export function MetierLanding({ professionId, onBack, onOpenDirectory, onAnalyze
         <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
           <Logo onClick={onBack} />
           <button onClick={onOpenDirectory} className="btn-ghost py-2.5 text-sm">
-            Tous les métiers
+            {t('met.allJobs')}
           </button>
         </div>
       </header>
@@ -44,31 +47,33 @@ export function MetierLanding({ professionId, onBack, onOpenDirectory, onAnalyze
       <main className="mx-auto max-w-3xl px-6">
         {/* Fil d'ariane */}
         <nav className="animate-fade-up pt-8 text-sm text-ink-400">
-          <button onClick={onBack} className="hover:text-brand-700">Accueil</button>
+          <button onClick={onBack} className="hover:text-brand-700">{t('met.crumbHome')}</button>
           <span className="mx-1.5">/</span>
-          <button onClick={onOpenDirectory} className="hover:text-brand-700">Métiers</button>
+          <button onClick={onOpenDirectory} className="hover:text-brand-700">{t('met.crumbJobs')}</button>
           <span className="mx-1.5">/</span>
-          <span className="text-ink-600">{profession.label}</span>
+          <span className="text-ink-600">{jobName}</span>
         </nav>
 
         <section className="animate-fade-up mt-4" style={{ animationDelay: '60ms' }}>
           <span className="text-4xl">{profession.emoji}</span>
           <h1 className="mt-3 font-display text-3xl font-extrabold leading-tight tracking-tight text-ink-900 md:text-4xl">
-            L'IA va-t-elle remplacer le métier de {profession.label.toLowerCase()} ?
+            {t('met.h1').replace('{label}', jobName.toLowerCase())}
           </h1>
           <p className="mt-4 text-lg leading-relaxed text-ink-600">
-            Le métier de {profession.label.toLowerCase()} relève du domaine « {profession.domain} ». Face à l'essor de
-            l'intelligence artificielle, son exposition à l'automatisation est estimée à <strong>{a.score}%</strong> —
-            un niveau {a.level.toLowerCase()}. Voici ce que cela signifie, et comment garder une longueur d'avance.
+            {t('met.intro')
+              .replace('{label}', jobName.toLowerCase())
+              .replace('{domain}', domainLabel(profession.domain))
+              .replace('{score}', String(a.score))
+              .replace('{level}', riskLevelLabel(a.level))}
           </p>
         </section>
 
         {/* Réponse courte */}
         <section className="animate-fade-up mt-6 grid gap-4 sm:grid-cols-3" style={{ animationDelay: '120ms' }}>
           {[
-            { v: `${a.score}%`, l: 'risque global', c: riskColor(a.score) },
-            { v: `${a.riskIn2040}%`, l: 'projeté en 2040', c: riskColor(a.riskIn2040) },
-            { v: `${a.resilience}%`, l: 'résilience humaine', c: '#10b981' },
+            { v: `${a.score}%`, l: t('met.statGlobal'), c: riskColor(a.score) },
+            { v: `${a.riskIn2040}%`, l: t('met.statProj'), c: riskColor(a.riskIn2040) },
+            { v: `${a.resilience}%`, l: t('met.statResilience'), c: '#10b981' },
           ].map((m) => (
             <div key={m.l} className="card p-5 text-center">
               <div className="font-display text-3xl font-extrabold" style={{ color: m.c }}>{m.v}</div>
@@ -80,7 +85,7 @@ export function MetierLanding({ professionId, onBack, onOpenDirectory, onAnalyze
         {/* Tâches exposées */}
         <section className="animate-fade-up mt-6" style={{ animationDelay: '180ms' }}>
           <div className="card p-6">
-            <h2 className="font-display text-xl font-bold text-ink-900">Quelles tâches sont les plus exposées ?</h2>
+            <h2 className="font-display text-xl font-bold text-ink-900">{t('met.tasksTitle')}</h2>
             <div className="mt-4 space-y-3">
               {a.tasks.slice(0, 4).map((t) => (
                 <div key={t.label}>
@@ -100,7 +105,7 @@ export function MetierLanding({ professionId, onBack, onOpenDirectory, onAnalyze
         {/* Comment rester employable */}
         <section className="animate-fade-up mt-6" style={{ animationDelay: '240ms' }}>
           <div className="card p-6">
-            <h2 className="font-display text-xl font-bold text-ink-900">Comment rester employable face à l'IA ?</h2>
+            <h2 className="font-display text-xl font-bold text-ink-900">{t('met.employableTitle')}</h2>
             <div className="mt-4 space-y-4">
               {a.recommendations.slice(0, 3).map((r) => (
                 <div key={r.title}>
@@ -114,17 +119,15 @@ export function MetierLanding({ professionId, onBack, onOpenDirectory, onAnalyze
 
         {/* CTA */}
         <section className="animate-fade-up mt-8 rounded-3xl bg-gradient-to-br from-ink-900 to-brand-900 p-8 text-center text-white" style={{ animationDelay: '300ms' }}>
-          <h2 className="font-display text-2xl font-bold">Votre situation est unique</h2>
-          <p className="mx-auto mt-2 max-w-md text-white/70">
-            Obtenez une analyse complète et personnalisée de votre métier : projection détaillée, plan d'action et suivi dans le temps.
-          </p>
+          <h2 className="font-display text-2xl font-bold">{t('met.ctaTitle')}</h2>
+          <p className="mx-auto mt-2 max-w-md text-white/70">{t('met.ctaDesc')}</p>
           <button onClick={() => onAnalyze(profession.label)} className="btn-primary mx-auto mt-5 bg-white text-brand-700 hover:bg-white/90">
-            Lancer mon analyse personnalisée
+            {t('met.ctaBtn')}
           </button>
         </section>
 
         <p className="animate-fade-up mt-8 text-center text-xs text-ink-400" style={{ animationDelay: '340ms' }}>
-          Estimation indicative — voir la méthodologie et les sources dans l'analyse complète.
+          {t('met.footnote')}
         </p>
       </main>
     </div>
