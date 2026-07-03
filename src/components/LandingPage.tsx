@@ -3,7 +3,7 @@ import { Logo } from './Logo'
 import { AiStatusButton } from './AiStatusButton'
 import { Avatar } from './Avatar'
 import { LumiSpeech } from './LumiSpeech'
-import { SUGGESTIONS } from '../lib/engine'
+import { SUGGESTIONS, professionLabel } from '../lib/engine'
 import { PROFESSIONS } from '../lib/professions'
 import { useBrand } from '../lib/entitlement'
 import { loadProfile, completeness, profileReady } from '../lib/profile'
@@ -242,12 +242,12 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
               <span className="text-sm text-ink-400">{t('suggest.try')}</span>
               {SUGGESTIONS.map((s) => (
                 <button
-                  key={s}
+                  key={s.id}
                   type="button"
-                  onClick={() => onAnalyze(s)}
+                  onClick={() => onAnalyze(s.label)}
                   className="rounded-full border border-ink-200 bg-white px-3 py-1 text-sm text-ink-600 transition hover:border-brand-300 hover:text-brand-700"
                 >
-                  {s}
+                  {professionLabel(s)}
                 </button>
               ))}
             </div>

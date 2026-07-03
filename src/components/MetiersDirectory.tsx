@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { PROFESSIONS } from '../lib/professions'
-import { analyze, domainLabel } from '../lib/engine'
+import { analyze, domainLabel, professionLabel } from '../lib/engine'
 import { useSeo } from '../lib/seo'
 import { Logo } from './Logo'
 
@@ -71,7 +71,7 @@ export function MetiersDirectory({ onBack, onOpenMetier }: Props) {
                   className="card flex items-center gap-3 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-glow"
                 >
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-ink-50 text-xl">{p.emoji}</span>
-                  <span className="min-w-0 flex-1 truncate font-semibold text-ink-900">{p.label}</span>
+                  <span className="min-w-0 flex-1 truncate font-semibold text-ink-900">{professionLabel(p)}</span>
                   <span className="shrink-0 font-display text-sm font-extrabold tabular-nums" style={{ color: riskColor(p.score) }}>
                     {p.score}%
                   </span>
