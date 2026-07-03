@@ -86,7 +86,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
               <span className="text-sm text-ink-500">{analysis.profession.domain}</span>
             </div>
             {!analysis.exact && (
-              <span className="pill bg-ink-100 text-ink-500" title="Métier estimé par approximation">
+              <span className="pill bg-ink-100 text-ink-500" title={t('dash.approxTitle')}>
                 {t('dash.estProfile')}
               </span>
             )}
