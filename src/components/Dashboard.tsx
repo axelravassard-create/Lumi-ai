@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Analysis, BASE_YEAR, HORIZON_YEAR, tagLabel, domainLabel } from '../lib/engine'
+import { Analysis, BASE_YEAR, HORIZON_YEAR, tagLabel, domainLabel, professionLabel } from '../lib/engine'
 import { RISK_THEME, useCountUp } from '../lib/ui'
 import { REFERENCES } from '../lib/sources'
 import { Logo } from './Logo'
@@ -81,7 +81,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
             </span>
             <div>
               <h1 className="font-display text-2xl font-extrabold text-ink-900 md:text-3xl">
-                {analysis.profession.label}
+                {professionLabel(analysis.profession)}
               </h1>
               <span className="text-sm text-ink-500">{domainLabel(analysis.profession.domain)}</span>
             </div>
@@ -258,10 +258,10 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
             <p className="text-sm text-ink-500">{t('dash.pivotsSub')}</p>
             <div className="mt-4 grid gap-4 sm:grid-cols-3">
               {analysis.pivots.map((p) => (
-                <div key={p.label} className="card flex items-center gap-4 p-5">
+                <div key={p.id} className="card flex items-center gap-4 p-5">
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-ink-50 text-2xl">{p.emoji}</span>
                   <div className="min-w-0">
-                    <h3 className="truncate font-semibold text-ink-900">{p.label}</h3>
+                    <h3 className="truncate font-semibold text-ink-900">{professionLabel(p)}</h3>
                     <div className="mt-1 flex items-center gap-2">
                       <span className="h-2 w-2 rounded-full" style={{ background: riskColor(p.risk) }} />
                       <span className="text-xs text-ink-500">{t('dash.riskPct').replace('{x}', String(p.risk))}</span>
@@ -320,7 +320,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
       </main>
 
       {showShare && (
-        <SharePanel role={analysis.profession.label} score={analysis.score} level={analysis.level} onClose={() => setShowShare(false)} />
+        <SharePanel role={professionLabel(analysis.profession)} score={analysis.score} level={analysis.level} onClose={() => setShowShare(false)} />
       )}
     </div>
   )

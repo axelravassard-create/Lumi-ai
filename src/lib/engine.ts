@@ -1,6 +1,12 @@
 import { Factors, Profession, PROFESSIONS } from './professions'
 import type { CareerProfile } from './profile'
-import { t } from './i18n'
+import { t, getLang } from './i18n'
+import { PROFESSION_LABELS } from './professionLabels'
+
+// Libellé du métier dans la langue courante (repli sur le libellé FR de la base).
+export function professionLabel(p: { id: string; label: string }): string {
+  return PROFESSION_LABELS[getLang()]?.[p.id] || p.label
+}
 
 // Mappe les valeurs internes (enum FR, gardées pour la logique) vers des clés
 // i18n ASCII. L'AFFICHAGE passe par ces helpers ; la logique reste sur l'enum FR.
@@ -259,6 +265,7 @@ function recommendations(f: Factors, score: number): Recommendation[] {
 
 // ── Métiers de repli / pivots conseillés ─────────────────────────────────────
 export interface Pivot {
+  id: string
   label: string
   emoji: string
   domain: string
@@ -278,7 +285,7 @@ function pivots(current: Profession): Pivot[] {
     .sort((a, b) => a.score - b.score)
     .filter((s) => (seen.has(s.p.id) ? false : (seen.add(s.p.id), true)))
     .slice(0, 3)
-    .map((s) => ({ label: s.p.label, emoji: s.p.emoji, domain: s.p.domain, risk: s.score }))
+    .map((s) => ({ id: s.p.id, label: s.p.label, emoji: s.p.emoji, domain: s.p.domain, risk: s.score }))
 }
 
 // ── Résultat complet ─────────────────────────────────────────────────────────
@@ -329,7 +336,7 @@ export function analyze(input: string): Analysis {
     skills: recommendedSkills(f),
     recommendations: recommendations(f, score),
     pivots: pivots(profession),
-    verdict: verdictText(level, profession.label),
+    verdict: verdictText(level, professionLabel(profession)),
   }
 }
 
@@ -433,14 +440,15 @@ export function applyProfileAdjustment(a: Analysis, p: CareerProfile): Analysis 
   }
 }
 
-// Quelques suggestions affichées sur la page d'accueil.
-export const SUGGESTIONS = [
-  'Développeur·se',
-  'Comptable',
-  'Infirmier·ère',
-  'Graphiste',
-  'Chauffeur·se',
-  'Avocat·e',
-  'Enseignant·e',
-  'Commercial·e',
+// Quelques suggestions affichées sur la page d'accueil. On garde le libellé FR
+// (envoyé au moteur pour le matching) + l'id (pour afficher le libellé traduit).
+export const SUGGESTIONS: { id: string; label: string }[] = [
+  { id: 'developer', label: 'Développeur·se' },
+  { id: 'accountant', label: 'Comptable' },
+  { id: 'nurse', label: 'Infirmier·ère' },
+  { id: 'graphic-designer', label: 'Graphiste' },
+  { id: 'driver', label: 'Chauffeur·se' },
+  { id: 'lawyer', label: 'Avocat·e' },
+  { id: 'teacher', label: 'Enseignant·e' },
+  { id: 'sales', label: 'Commercial·e' },
 ]

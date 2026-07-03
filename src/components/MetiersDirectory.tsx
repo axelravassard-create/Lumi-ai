@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { PROFESSIONS } from '../lib/professions'
-import { analyze, domainLabel } from '../lib/engine'
+import { analyze, domainLabel, professionLabel } from '../lib/engine'
 import { useSeo } from '../lib/seo'
+import { t, useLang } from '../lib/i18n'
 import { Logo } from './Logo'
 
 interface Props {
@@ -18,10 +19,8 @@ function riskColor(r: number): string {
 
 // Annuaire des métiers — page d'atterrissage SEO listant toutes les fiches.
 export function MetiersDirectory({ onBack, onOpenMetier }: Props) {
-  useSeo(
-    'Tous les métiers face à l\'IA — risque d\'automatisation | Blumi',
-    'Découvrez le risque de remplacement par l\'intelligence artificielle pour des dizaines de métiers, et comment garder une longueur d\'avance.',
-  )
+  useLang()
+  useSeo(t('seo.dir.title'), t('seo.dir.desc'))
 
   // Regroupe les métiers par domaine, avec leur score estimé.
   const byDomain = useMemo(() => {
@@ -44,7 +43,7 @@ export function MetiersDirectory({ onBack, onOpenMetier }: Props) {
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
               <path d="M5 12h14m-8-6-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Accueil
+            {t('dir.home')}
           </button>
         </div>
       </header>
@@ -52,12 +51,9 @@ export function MetiersDirectory({ onBack, onOpenMetier }: Props) {
       <main className="mx-auto max-w-5xl px-6">
         <section className="animate-fade-up pt-12 text-center">
           <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink-900 md:text-5xl">
-            Tous les métiers face à l'IA
+            {t('dir.h1')}
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-ink-500">
-            Explorez le risque d'automatisation par l'intelligence artificielle, métier par métier.
-            Choisissez le vôtre pour une analyse complète et personnalisée.
-          </p>
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-ink-500">{t('dir.intro')}</p>
         </section>
 
         {byDomain.map(([domain, list], i) => (
@@ -71,7 +67,7 @@ export function MetiersDirectory({ onBack, onOpenMetier }: Props) {
                   className="card flex items-center gap-3 p-4 text-left transition hover:-translate-y-0.5 hover:shadow-glow"
                 >
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-ink-50 text-xl">{p.emoji}</span>
-                  <span className="min-w-0 flex-1 truncate font-semibold text-ink-900">{p.label}</span>
+                  <span className="min-w-0 flex-1 truncate font-semibold text-ink-900">{professionLabel(p)}</span>
                   <span className="shrink-0 font-display text-sm font-extrabold tabular-nums" style={{ color: riskColor(p.score) }}>
                     {p.score}%
                   </span>

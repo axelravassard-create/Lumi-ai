@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Analysis, BASE_YEAR, HORIZON_YEAR, domainLabel } from '../lib/engine'
+import { Analysis, BASE_YEAR, HORIZON_YEAR, domainLabel, professionLabel } from '../lib/engine'
 import { ComparisonResult } from '../lib/llm'
 import { useCountUp } from '../lib/ui'
 import { Logo } from './Logo'
@@ -26,14 +26,14 @@ export function CompareView({ a, b, comparison, onReset }: Props) {
     const riskier = a.score <= b.score ? b : a
     return {
       summary: t('cmp.fb.summary')
-        .replace('{safer}', safer.profession.label.toLowerCase())
+        .replace('{safer}', professionLabel(safer.profession).toLowerCase())
         .replace('{saferScore}', String(safer.score))
-        .replace('{riskier}', riskier.profession.label.toLowerCase())
+        .replace('{riskier}', professionLabel(riskier.profession).toLowerCase())
         .replace('{riskierScore}', String(riskier.score))
         .replace('{diff}', String(riskier.score - safer.score)),
-      winnerLabel: safer.profession.label,
+      winnerLabel: professionLabel(safer.profession),
       insights: [
-        t('cmp.fb.i0').replace('{safer}', safer.profession.label).replace('{res}', String(safer.resilience)),
+        t('cmp.fb.i0').replace('{safer}', professionLabel(safer.profession)).replace('{res}', String(safer.resilience)),
         t('cmp.fb.i1').replace('{horizon}', String(HORIZON_YEAR)).replace('{aRisk}', String(a.riskIn2040)).replace('{bRisk}', String(b.riskIn2040)),
         t('cmp.fb.i2'),
       ],
@@ -41,7 +41,9 @@ export function CompareView({ a, b, comparison, onReset }: Props) {
   }, [a, b])
 
   const result = comparison ?? fallback
-  const winnerIsA = result.winnerLabel.toLowerCase().includes(a.profession.label.toLowerCase().slice(0, 8))
+  const winnerIsA = [a.profession.label, professionLabel(a.profession)].some((l) =>
+    result.winnerLabel.toLowerCase().includes(l.toLowerCase().slice(0, 6)),
+  )
 
   return (
     <div className="min-h-screen pb-20">
@@ -61,7 +63,7 @@ export function CompareView({ a, b, comparison, onReset }: Props) {
         <section className="animate-fade-up pt-10 text-center">
           <span className="pill mx-auto bg-brand-50 text-brand-700">{t('cmp.pill')}</span>
           <h1 className="mt-3 font-display text-2xl font-extrabold text-ink-900 md:text-3xl">
-            {a.profession.label} <span className="text-ink-300">vs</span> {b.profession.label}
+            {professionLabel(a.profession)} <span className="text-ink-300">vs</span> {professionLabel(b.profession)}
           </h1>
         </section>
 
@@ -101,8 +103,8 @@ export function CompareView({ a, b, comparison, onReset }: Props) {
             <h2 className="font-display text-xl font-bold text-ink-900">{t('cmp.trajectories')}</h2>
             <p className="text-sm text-ink-500">{t('cmp.trajSub').replace('{base}', String(BASE_YEAR)).replace('{horizon}', String(HORIZON_YEAR))}</p>
             <div className="mt-4 flex flex-wrap gap-4 text-sm">
-              <Legend color={COLOR_A} label={a.profession.label} />
-              <Legend color={COLOR_B} label={b.profession.label} />
+              <Legend color={COLOR_A} label={professionLabel(a.profession)} />
+              <Legend color={COLOR_B} label={professionLabel(b.profession)} />
             </div>
             <div className="mt-2">
               <DualChart a={a} b={b} />
@@ -145,7 +147,7 @@ function CompareCard({ analysis, color, winner }: { analysis: Analysis; color: s
       <span className="grid mx-auto h-12 w-12 place-items-center rounded-2xl bg-ink-50 text-2xl">
         {analysis.profession.emoji}
       </span>
-      <h3 className="mt-3 truncate font-display text-lg font-bold text-ink-900">{analysis.profession.label}</h3>
+      <h3 className="mt-3 truncate font-display text-lg font-bold text-ink-900">{professionLabel(analysis.profession)}</h3>
       <span className="text-xs text-ink-500">{domainLabel(analysis.profession.domain)}</span>
       <div className="mt-4 font-display text-5xl font-extrabold tabular-nums" style={{ color }}>
         {Math.round(score)}<span className="text-2xl text-ink-300">%</span>
