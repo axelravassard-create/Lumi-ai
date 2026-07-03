@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Analytics } from '@vercel/analytics/react'
-import { analyze, withScore, applyProfileAdjustment, personalAssets, Analysis } from './lib/engine'
-import { describeError, generateComparison, generateNarrative, aiReady, checkServerKey, ComparisonResult } from './lib/llm'
+import { analyze, applyProfileAdjustment, Analysis } from './lib/engine'
+import { aiReady, checkServerKey, ComparisonResult } from './lib/llm'
 import { LandingPage } from './components/LandingPage'
 import { Dashboard } from './components/Dashboard'
 import { CompareView } from './components/CompareView'
@@ -175,28 +175,12 @@ export default function App() {
     setLabel(base.profession.label)
     setView('analyzing')
     const started = Date.now()
-    let result = base
-    let note: string | null = null
+    // L'analyse du métier est 100% INTERNE (moteur heuristique) : aucun appel à
+    // l'IA, donc aucun coût. L'IA (Claude) est réservée au copilote et à la veille
+    // sectorielle, qui sont des fonctions payantes.
+    const result = withProfile ? applyProfileAdjustment(base, loadProfile()) : base
 
-    if (aiReady()) {
-      try {
-        const context = withProfile ? profileToContext(loadProfile()) : undefined
-        const n = await generateNarrative(base, context || undefined)
-        // Le score affiché est celui estimé par Claude (déjà personnalisé via le profil).
-        result = withScore(
-          { ...base, verdict: n.verdict, recommendations: n.recommendations, skills: n.skills, aiEnhanced: true },
-          n.score,
-        )
-        if (withProfile) result = { ...result, personalized: true, personalAssets: personalAssets(loadProfile()) }
-      } catch (e) {
-        note = describeError(e)
-      }
-    } else if (withProfile) {
-      // Mode démo : on personnalise le score localement selon le profil.
-      result = applyProfileAdjustment(base, loadProfile())
-    }
-
-    await sleep(Math.max(0, (aiReady() ? 1100 : 1900) - (Date.now() - started)))
+    await sleep(Math.max(0, 1500 - (Date.now() - started)))
     addBilan({
       role: result.profession.label,
       score: result.currentRisk,
@@ -204,7 +188,7 @@ export default function App() {
       resilience: result.resilience,
       riskIn2040: result.riskIn2040,
     })
-    setNotice(note)
+    setNotice(null)
     setAnalysis(result)
     setView('dashboard')
     window.scrollTo({ top: 0 })
@@ -216,20 +200,11 @@ export default function App() {
     setLabel(`${a.profession.label} et ${b.profession.label}`)
     setView('analyzing')
     const started = Date.now()
-    let comparison: ComparisonResult | null = null
-    let note: string | null = null
-
-    if (aiReady()) {
-      try {
-        comparison = await generateComparison(a, b)
-      } catch (e) {
-        note = describeError(e)
-      }
-    }
-
-    await sleep(Math.max(0, (aiReady() ? 1100 : 1900) - (Date.now() - started)))
-    setNotice(note)
-    setCompareData({ a, b, comparison })
+    // Comparaison 100% INTERNE (CompareView calcule un verdict heuristique) :
+    // aucun appel IA. Pas de coût.
+    await sleep(Math.max(0, 1500 - (Date.now() - started)))
+    setNotice(null)
+    setCompareData({ a, b, comparison: null })
     setView('compare')
     window.scrollTo({ top: 0 })
   }
@@ -336,6 +311,7 @@ export default function App() {
           onOpenProfile={() => setView('profile')}
           aiEnabled={aiEnabled}
           onOpenSettings={() => setModalOpen(true)}
+          onOpenPricing={() => setView('pricing')}
         />
       )}
 

@@ -1,0 +1,16 @@
+import { createRequire } from 'node:module'
+const require = createRequire(import.meta.url)
+const { chromium } = require(process.env.PW_PATH || 'playwright')
+const browser = await chromium.launch({ args: ['--use-gl=angle','--use-angle=swiftshader','--ignore-gpu-blocklist'] })
+const page = await browser.newPage({ viewport: { width: 1000, height: 1200 }, deviceScaleFactor: 1 })
+await page.addInitScript(() => { try { localStorage.setItem('lumi.lang','en'); localStorage.removeItem('lumi.tier'); localStorage.removeItem('lumi.luminator') } catch {} })
+await page.goto('http://localhost:5199/', { waitUntil: 'domcontentloaded' })
+await page.waitForTimeout(2500)
+await page.fill('input', 'accountant')
+await page.getByRole('button', { name: /Analyze my job/i }).click()
+await page.waitForTimeout(4000)
+// scroll to sector trend
+await page.evaluate(() => { const el=[...document.querySelectorAll('h2')].find(h=>/sector/i.test(h.textContent)); el?.scrollIntoView() })
+await page.waitForTimeout(600)
+await page.screenshot({ path: process.env.OUT })
+await browser.close(); console.log('done')
