@@ -1,3 +1,5 @@
+import { t, useLang } from '../lib/i18n'
+
 interface Props {
   enabled: boolean
   onClick: () => void
@@ -5,6 +7,7 @@ interface Props {
 
 // Pastille cliquable indiquant si l'IA Claude est connectée, sinon le mode démo.
 export function AiStatusButton({ enabled, onClick }: Props) {
+  useLang()
   return (
     <button
       onClick={onClick}
@@ -13,10 +16,10 @@ export function AiStatusButton({ enabled, onClick }: Props) {
           ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
           : 'border-ink-200 bg-white text-ink-500'
       }`}
-      title={enabled ? 'IA Claude connectée — cliquez pour gérer la clé' : 'Mode démo — cliquez pour connecter Claude'}
+      title={enabled ? t('ai.onTitle') : t('ai.offTitle')}
     >
       <span className={`h-2 w-2 rounded-full ${enabled ? 'bg-emerald-500' : 'bg-ink-300'}`} />
-      <span className="hidden sm:inline">{enabled ? 'IA Claude' : 'Mode démo'}</span>
+      <span className="hidden sm:inline">{enabled ? t('ai.on') : t('ai.off')}</span>
       <svg className="h-3.5 w-3.5 opacity-60" viewBox="0 0 24 24" fill="none">
         <path
           d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"

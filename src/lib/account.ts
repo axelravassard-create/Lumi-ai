@@ -9,6 +9,7 @@
 import { useEffect, useState } from 'react'
 import { setTier, type Tier } from './entitlement'
 import { syncOnLogin, stopSync, clearSyncedData } from './sync'
+import { t } from './i18n'
 
 interface AccountState {
   email: string | null
@@ -67,8 +68,8 @@ export async function requestLoginLink(email: string): Promise<void> {
     body: JSON.stringify({ email }),
   })
   const j = (await r.json().catch(() => ({}))) as { error?: string; configured?: boolean }
-  if (r.status === 503 || j.configured === false) throw new Error('Les comptes ne sont pas encore activés.')
-  if (!r.ok) throw new Error(j.error || 'Envoi impossible pour le moment.')
+  if (r.status === 503 || j.configured === false) throw new Error(t('err.accountsOff'))
+  if (!r.ok) throw new Error(j.error || t('err.sendFailed'))
 }
 
 // Au chargement : si l'URL contient ?auth=<token>, finalise la connexion.

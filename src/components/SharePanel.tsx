@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { RiskLevel } from '../lib/engine'
 import { createShareCard, shareOrDownloadCard } from '../lib/shareCard'
+import { t, useLang } from '../lib/i18n'
 
 interface Props {
   role: string
@@ -13,10 +14,11 @@ interface Props {
 // d'inviter d'autres personnes à tester. Aucune donnée n'est exposée sans son
 // action explicite — cohérent avec le positionnement « vos données chez vous ».
 export function SharePanel({ role, score, level, onClose }: Props) {
+  useLang()
   const [copied, setCopied] = useState(false)
   const [card, setCard] = useState<'idle' | 'busy'>('idle')
   const url = typeof window !== 'undefined' ? window.location.origin : 'https://lumi.app'
-  const text = `J'ai évalué l'exposition de mon métier (${role}) à l'intelligence artificielle sur Blumi : ${score}%. Et le tien, où en est-il ? Teste gratuitement 👇`
+  const text = t('share.text').replace('{role}', role).replace('{score}', String(score))
   const full = `${text} ${url}`
   const enc = encodeURIComponent
 
@@ -58,7 +60,7 @@ export function SharePanel({ role, score, level, onClose }: Props) {
     { label: 'WhatsApp', emoji: '💬', href: `https://wa.me/?text=${enc(full)}` },
     { label: 'X', emoji: '𝕏', href: `https://twitter.com/intent/tweet?text=${enc(text)}&url=${enc(url)}` },
     { label: 'LinkedIn', emoji: '💼', href: `https://www.linkedin.com/sharing/share-offsite/?url=${enc(url)}` },
-    { label: 'E-mail', emoji: '✉️', href: `mailto:?subject=${enc('Et ton métier face à l\'IA ?')}&body=${enc(full)}` },
+    { label: 'E-mail', emoji: '✉️', href: `mailto:?subject=${enc(t('share.emailSubject'))}&body=${enc(full)}` },
   ]
 
   return (
@@ -67,8 +69,8 @@ export function SharePanel({ role, score, level, onClose }: Props) {
         <div className="flex items-start gap-3">
           <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-50 text-xl">📤</div>
           <div>
-            <h2 className="font-display text-lg font-bold text-ink-900">Partager & inviter</h2>
-            <p className="mt-1 text-sm text-ink-500">Diffusez votre résultat et invitez vos proches à tester leur métier.</p>
+            <h2 className="font-display text-lg font-bold text-ink-900">{t('share.title')}</h2>
+            <p className="mt-1 text-sm text-ink-500">{t('share.subtitle')}</p>
           </div>
         </div>
 
@@ -84,20 +86,17 @@ export function SharePanel({ role, score, level, onClose }: Props) {
 
         {/* Visuel à poster (Snapchat, Instagram, stories…) */}
         <button onClick={downloadVisual} disabled={card === 'busy'} className="btn-primary mt-4 w-full justify-center py-2.5 text-sm">
-          {card === 'busy' ? 'Génération…' : '📸 Partager le visuel (Snapchat, Insta…)'}
+          {card === 'busy' ? t('share.generating') : t('share.visual')}
         </button>
-        <p className="mt-1.5 text-xs text-ink-400">
-          Snapchat & Instagram n'acceptent pas les liens : sur mobile, choisissez l'app dans le menu de partage ;
-          sur ordinateur, l'image est enregistrée — publiez-la ensuite depuis l'app.
-        </p>
+        <p className="mt-1.5 text-xs text-ink-400">{t('share.visualHint')}</p>
 
         {/* Partage natif + copie */}
         <div className="mt-3 flex gap-2">
           <button onClick={nativeShare} className="btn-ghost flex-1 justify-center py-2.5 text-sm">
-            Partager le lien
+            {t('share.link')}
           </button>
           <button onClick={copy} className="btn-ghost justify-center py-2.5 text-sm">
-            {copied ? 'Copié ✓' : 'Copier'}
+            {copied ? t('share.copied') : t('share.copy')}
           </button>
         </div>
 
@@ -117,11 +116,9 @@ export function SharePanel({ role, score, level, onClose }: Props) {
           ))}
         </div>
 
-        <p className="mt-4 text-center text-xs text-ink-400">
-          Vous seul choisissez ce que vous partagez. Aucune donnée n'est publiée automatiquement.
-        </p>
+        <p className="mt-4 text-center text-xs text-ink-400">{t('share.privacy')}</p>
         <button onClick={onClose} className="mt-3 w-full text-sm font-medium text-ink-400 hover:text-ink-700">
-          Fermer
+          {t('common.close')}
         </button>
       </div>
     </div>

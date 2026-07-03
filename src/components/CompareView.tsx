@@ -5,6 +5,7 @@ import { useCountUp } from '../lib/ui'
 import { Logo } from './Logo'
 import { Avatar } from './Avatar'
 import { useBrand } from '../lib/entitlement'
+import { t, useLang } from '../lib/i18n'
 
 interface Props {
   a: Analysis
@@ -17,18 +18,24 @@ const COLOR_A = '#4f46e5' // indigo
 const COLOR_B = '#f59e0b' // amber
 
 export function CompareView({ a, b, comparison, onReset }: Props) {
+  useLang()
   const { name } = useBrand()
   // Comparaison de repli (heuristique) si l'IA n'est pas connectée.
   const fallback = useMemo<ComparisonResult>(() => {
     const safer = a.score <= b.score ? a : b
     const riskier = a.score <= b.score ? b : a
     return {
-      summary: `Le métier de ${safer.profession.label.toLowerCase()} (${safer.score}%) est plus résilient face à l'IA que celui de ${riskier.profession.label.toLowerCase()} (${riskier.score}%), avec ${riskier.score - safer.score} points d'écart de risque.`,
+      summary: t('cmp.fb.summary')
+        .replace('{safer}', safer.profession.label.toLowerCase())
+        .replace('{saferScore}', String(safer.score))
+        .replace('{riskier}', riskier.profession.label.toLowerCase())
+        .replace('{riskierScore}', String(riskier.score))
+        .replace('{diff}', String(riskier.score - safer.score)),
       winnerLabel: safer.profession.label,
       insights: [
-        `${safer.profession.label} conserve une plus grande part de tâches difficiles à automatiser (résilience ${safer.resilience}%).`,
-        `L'écart se creuse d'ici ${HORIZON_YEAR} : ${a.riskIn2040}% contre ${b.riskIn2040}%.`,
-        `Dans les deux cas, l'enjeu est d'utiliser l'IA comme un levier plutôt que de la subir.`,
+        t('cmp.fb.i0').replace('{safer}', safer.profession.label).replace('{res}', String(safer.resilience)),
+        t('cmp.fb.i1').replace('{horizon}', String(HORIZON_YEAR)).replace('{aRisk}', String(a.riskIn2040)).replace('{bRisk}', String(b.riskIn2040)),
+        t('cmp.fb.i2'),
       ],
     }
   }, [a, b])
@@ -45,14 +52,14 @@ export function CompareView({ a, b, comparison, onReset }: Props) {
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
               <path d="M5 12h14m-8-6-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            Nouvelle comparaison
+            {t('cmp.new')}
           </button>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-6">
         <section className="animate-fade-up pt-10 text-center">
-          <span className="pill mx-auto bg-brand-50 text-brand-700">⚔️ Comparaison de métiers</span>
+          <span className="pill mx-auto bg-brand-50 text-brand-700">{t('cmp.pill')}</span>
           <h1 className="mt-3 font-display text-2xl font-extrabold text-ink-900 md:text-3xl">
             {a.profession.label} <span className="text-ink-300">vs</span> {b.profession.label}
           </h1>
@@ -78,11 +85,11 @@ export function CompareView({ a, b, comparison, onReset }: Props) {
             </div>
             <div className="flex-1">
               <h2 className="font-display text-sm font-bold uppercase tracking-wide text-ink-500">
-                {comparison ? `La comparaison de ${name}` : 'Analyse comparative'}
+                {comparison ? t('cmp.byName').replace('{name}', name) : t('cmp.analysis')}
               </h2>
               <p className="mt-1 text-lg font-medium leading-snug text-ink-900">{result.summary}</p>
               <div className="mt-3 pill bg-emerald-100 text-emerald-700">
-                🏆 Plus résilient : {result.winnerLabel}
+                {t('cmp.moreResilientLabel').replace('{label}', result.winnerLabel)}
               </div>
             </div>
           </div>
@@ -91,8 +98,8 @@ export function CompareView({ a, b, comparison, onReset }: Props) {
         {/* Projection superposée */}
         <section className="animate-fade-up mt-6" style={{ animationDelay: '220ms' }}>
           <div className="card p-6 md:p-8">
-            <h2 className="font-display text-xl font-bold text-ink-900">Trajectoires comparées</h2>
-            <p className="text-sm text-ink-500">Évolution du risque d'automatisation, {BASE_YEAR}–{HORIZON_YEAR}.</p>
+            <h2 className="font-display text-xl font-bold text-ink-900">{t('cmp.trajectories')}</h2>
+            <p className="text-sm text-ink-500">{t('cmp.trajSub').replace('{base}', String(BASE_YEAR)).replace('{horizon}', String(HORIZON_YEAR))}</p>
             <div className="mt-4 flex flex-wrap gap-4 text-sm">
               <Legend color={COLOR_A} label={a.profession.label} />
               <Legend color={COLOR_B} label={b.profession.label} />
@@ -105,7 +112,7 @@ export function CompareView({ a, b, comparison, onReset }: Props) {
 
         {/* Enseignements */}
         <section className="animate-fade-up mt-6" style={{ animationDelay: '280ms' }}>
-          <h2 className="font-display text-xl font-bold text-ink-900">Ce qu'il faut en retenir</h2>
+          <h2 className="font-display text-xl font-bold text-ink-900">{t('cmp.takeaways')}</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             {result.insights.slice(0, 3).map((insight, i) => (
               <div key={i} className="card p-5">
@@ -118,7 +125,7 @@ export function CompareView({ a, b, comparison, onReset }: Props) {
 
         <section className="animate-fade-up mt-10 text-center" style={{ animationDelay: '340ms' }}>
           <button onClick={onReset} className="btn-primary mx-auto">
-            Comparer d'autres métiers
+            {t('cmp.compareOthers')}
           </button>
         </section>
       </main>
@@ -132,7 +139,7 @@ function CompareCard({ analysis, color, winner }: { analysis: Analysis; color: s
     <div className={`card relative p-6 text-center ${winner ? 'ring-2 ring-emerald-300' : ''}`}>
       {winner && (
         <span className="absolute -top-3 left-1/2 -translate-x-1/2 pill bg-emerald-500 text-white shadow">
-          🏆 Plus résilient
+          {t('cmp.moreResilient')}
         </span>
       )}
       <span className="grid mx-auto h-12 w-12 place-items-center rounded-2xl bg-ink-50 text-2xl">
@@ -143,15 +150,15 @@ function CompareCard({ analysis, color, winner }: { analysis: Analysis; color: s
       <div className="mt-4 font-display text-5xl font-extrabold tabular-nums" style={{ color }}>
         {Math.round(score)}<span className="text-2xl text-ink-300">%</span>
       </div>
-      <p className="mt-1 text-sm text-ink-500">risque de remplacement</p>
+      <p className="mt-1 text-sm text-ink-500">{t('cmp.replacementRisk')}</p>
       <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
         <div className="rounded-xl bg-ink-50 px-3 py-2">
           <div className="font-bold text-ink-900">{analysis.resilience}%</div>
-          <div className="text-xs text-ink-500">résilience</div>
+          <div className="text-xs text-ink-500">{t('cmp.resilience')}</div>
         </div>
         <div className="rounded-xl bg-ink-50 px-3 py-2">
           <div className="font-bold text-ink-900">{analysis.riskIn2040}%</div>
-          <div className="text-xs text-ink-500">en {HORIZON_YEAR}</div>
+          <div className="text-xs text-ink-500">{t('cmp.inYear').replace('{year}', String(HORIZON_YEAR))}</div>
         </div>
       </div>
     </div>

@@ -22,7 +22,7 @@ import { StudioScene } from './components/StudioScene'
 import { loadProfile, profileToContext } from './lib/profile'
 import { addBilan } from './lib/history'
 import { useLuminator, brandName, APP_NAME } from './lib/entitlement'
-import { t } from './lib/i18n'
+import { t, useLang } from './lib/i18n'
 import { handleCheckoutReturn } from './lib/billing'
 import { completeLoginFromUrl, checkAccount } from './lib/account'
 import { AccountModal } from './components/AccountModal'
@@ -54,6 +54,7 @@ function chatContext(analysis: Analysis | null): string | undefined {
 }
 
 export default function App() {
+  const lang = useLang()
   const [view, setView] = useState<View>('landing')
   const [analysis, setAnalysis] = useState<Analysis | null>(null)
   const [compareData, setCompareData] = useState<{ a: Analysis; b: Analysis; comparison: ComparisonResult | null } | null>(null)
@@ -87,23 +88,23 @@ export default function App() {
   // Titre d'onglet par vue (clarté + contexte des liens partagés).
   useEffect(() => {
     const titles: Record<View, string> = {
-      landing: "Blumi · Votre métier face à l'IA",
-      analyzing: 'Analyse en cours… · Blumi',
-      dashboard: 'Votre résultat · Blumi',
-      compare: 'Comparaison · Blumi',
-      profile: 'Mon profil · Blumi',
-      pricing: 'Tarifs · Blumi',
-      directory: 'Métiers · Blumi',
-      metier: 'Métier · Blumi',
-      legal: 'Informations légales · Blumi',
-      plan: "Mon plan d'action · Blumi",
-      toolbox: 'Ma boîte à outils · Blumi',
-      veille: 'Veille de mon métier · Blumi',
-      generators: 'Générateurs · Blumi',
-      studio: 'Studio · Blumi',
+      landing: t('title.landing'),
+      analyzing: t('title.analyzing'),
+      dashboard: t('title.dashboard'),
+      compare: t('title.compare'),
+      profile: t('title.profile'),
+      pricing: t('title.pricing'),
+      directory: t('title.directory'),
+      metier: t('title.metier'),
+      legal: t('title.legal'),
+      plan: t('title.plan'),
+      toolbox: t('title.toolbox'),
+      veille: t('title.veille'),
+      generators: t('title.generators'),
+      studio: t('title.studio'),
     }
     document.title = titles[view] || 'Blumi'
-  }, [view])
+  }, [view, lang])
 
   // Détecte si une clé serveur est configurée → l'IA s'active pour tous sans
   // que l'utilisateur ait à saisir quoi que ce soit.
