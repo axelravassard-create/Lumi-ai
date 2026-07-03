@@ -50,5 +50,5 @@ export const LEGAL_INFO: LegalInfo = {
     address: '340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis',
     url: 'vercel.com',
   },
-  updated: 'juillet 2026',
+  updated: '07/2026', // format neutre (affiché tel quel dans les 5 langues)
 }
