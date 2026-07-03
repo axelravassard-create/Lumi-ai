@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Analysis, BASE_YEAR, HORIZON_YEAR } from '../lib/engine'
+import { Analysis, BASE_YEAR, HORIZON_YEAR, domainLabel } from '../lib/engine'
 import { ComparisonResult } from '../lib/llm'
 import { useCountUp } from '../lib/ui'
 import { Logo } from './Logo'
@@ -146,7 +146,7 @@ function CompareCard({ analysis, color, winner }: { analysis: Analysis; color: s
         {analysis.profession.emoji}
       </span>
       <h3 className="mt-3 truncate font-display text-lg font-bold text-ink-900">{analysis.profession.label}</h3>
-      <span className="text-xs text-ink-500">{analysis.profession.domain}</span>
+      <span className="text-xs text-ink-500">{domainLabel(analysis.profession.domain)}</span>
       <div className="mt-4 font-display text-5xl font-extrabold tabular-nums" style={{ color }}>
         {Math.round(score)}<span className="text-2xl text-ink-300">%</span>
       </div>

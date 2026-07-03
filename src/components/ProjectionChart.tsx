@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { RiskLevel, YearPoint } from '../lib/engine'
 import { RISK_THEME } from '../lib/ui'
+import { t } from '../lib/i18n'
 
 interface Props {
   data: YearPoint[]
@@ -81,7 +82,7 @@ export function ProjectionChart({ data, level, markerYear, markerValue }: Props)
             <g transform={`translate(${x(markerYear)}, ${y(markerValue) + 18})`}>
               <rect x="-32" y="0" width="64" height="18" rx="9" fill="#1c2033" />
               <text x="0" y="13" textAnchor="middle" className="fill-white" fontSize="10" fontWeight="600">
-                Aujourd'hui
+                {t('chart.today')}
               </text>
             </g>
           </g>

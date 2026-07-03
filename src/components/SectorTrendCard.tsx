@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { SectorTrend, generateSectorTrend, describeError } from '../lib/llm'
 import { loadCachedTrend, saveTrend } from '../lib/trends'
+import { domainLabel } from '../lib/engine'
 import { t, useLang, getLang } from '../lib/i18n'
 
 interface Props {
@@ -65,7 +66,7 @@ export function SectorTrendCard({ sector, aiEnabled, onOpenSettings }: Props) {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="flex items-center gap-2 font-display text-xl font-bold text-ink-900">{t('str.title')}</h2>
-          <p className="text-sm text-ink-500">{t('str.subtitle').replace('{sector}', sector)}</p>
+          <p className="text-sm text-ink-500">{t('str.subtitle').replace('{sector}', domainLabel(sector))}</p>
         </div>
         {trend && (
           <span className={`pill ${DIRECTION[trend.direction].cls}`}>
