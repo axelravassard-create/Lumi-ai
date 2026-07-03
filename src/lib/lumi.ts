@@ -1,4 +1,5 @@
 import type { AvatarMood } from '../components/avatar/RobotAvatar'
+import { t } from './i18n'
 
 // Humeur de Lumi déduite du niveau de risque (réaction au score).
 export function moodFromScore(score: number): AvatarMood {
@@ -7,9 +8,9 @@ export function moodFromScore(score: number): AvatarMood {
   return 'concerned'
 }
 
-// Petite phrase « parlée » par Lumi en réaction au score.
+// Petite phrase « parlée » par Lumi en réaction au score (traduite via i18n).
 export function lumiReaction(score: number): string {
-  if (score <= 40) return 'Bonne nouvelle : ton métier résiste plutôt bien à l\'IA. 💪'
-  if (score <= 70) return 'C\'est nuancé : de vraies forces à cultiver, et quelques angles à surveiller.'
-  return 'Soyons lucides : l\'exposition est forte. Mais respire, j\'ai un plan pour toi. 🛡️'
+  if (score <= 40) return t('lumi.react.low')
+  if (score <= 70) return t('lumi.react.mid')
+  return t('lumi.react.high')
 }
