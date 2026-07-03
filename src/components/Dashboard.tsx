@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Analysis, BASE_YEAR, HORIZON_YEAR } from '../lib/engine'
+import { Analysis, BASE_YEAR, HORIZON_YEAR, tagLabel, domainLabel } from '../lib/engine'
 import { RISK_THEME, useCountUp } from '../lib/ui'
 import { REFERENCES } from '../lib/sources'
 import { Logo } from './Logo'
@@ -83,7 +83,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
               <h1 className="font-display text-2xl font-extrabold text-ink-900 md:text-3xl">
                 {analysis.profession.label}
               </h1>
-              <span className="text-sm text-ink-500">{analysis.profession.domain}</span>
+              <span className="text-sm text-ink-500">{domainLabel(analysis.profession.domain)}</span>
             </div>
             {!analysis.exact && (
               <span className="pill bg-ink-100 text-ink-500" title={t('dash.approxTitle')}>
@@ -224,7 +224,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {analysis.recommendations.map((r) => (
               <div key={r.title} className="card p-6 transition hover:-translate-y-0.5 hover:shadow-glow">
-                <span className={`pill ${TAG_STYLES[r.tag] ?? 'bg-ink-100 text-ink-600'}`}>{r.tag}</span>
+                <span className={`pill ${TAG_STYLES[r.tag] ?? 'bg-ink-100 text-ink-600'}`}>{tagLabel(r.tag)}</span>
                 <h3 className="mt-3 font-display text-lg font-bold text-ink-900">{r.title}</h3>
                 <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{r.detail}</p>
               </div>

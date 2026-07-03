@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { PROFESSIONS } from '../lib/professions'
-import { analyze } from '../lib/engine'
+import { analyze, domainLabel } from '../lib/engine'
 import { useSeo } from '../lib/seo'
 import { Logo } from './Logo'
 
@@ -62,7 +62,7 @@ export function MetiersDirectory({ onBack, onOpenMetier }: Props) {
 
         {byDomain.map(([domain, list], i) => (
           <section key={domain} className="animate-fade-up mt-10" style={{ animationDelay: `${i * 40}ms` }}>
-            <h2 className="font-display text-lg font-bold text-ink-900">{domain}</h2>
+            <h2 className="font-display text-lg font-bold text-ink-900">{domainLabel(domain)}</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {list.map((p) => (
                 <button

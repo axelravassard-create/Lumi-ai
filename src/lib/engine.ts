@@ -1,5 +1,21 @@
 import { Factors, Profession, PROFESSIONS } from './professions'
 import type { CareerProfile } from './profile'
+import { t } from './i18n'
+
+// Mappe les valeurs internes (enum FR, gardées pour la logique) vers des clés
+// i18n ASCII. L'AFFICHAGE passe par ces helpers ; la logique reste sur l'enum FR.
+const LEVEL_KEY: Record<string, string> = { Faible: 'Faible', 'Modéré': 'Modere', 'Élevé': 'Eleve', Critique: 'Critique' }
+const TAG_KEY: Record<string, string> = { Augmentation: 'Augmentation', 'Différenciation': 'Differenciation', 'Évolution': 'Evolution', Protection: 'Protection' }
+const DOMAIN_KEY: Record<string, string> = {
+  'Artisanat & BTP': 'artisanat', 'Arts & Spectacle': 'arts', 'Commerce & Marketing': 'commerce',
+  'Création & Design': 'creation', 'Direction & Management': 'direction', 'Finance & Juridique': 'finance',
+  'Industrie & Logistique': 'industrie', 'Ingénierie & Sciences': 'ingenierie', 'Médias & Communication': 'medias',
+  'Santé': 'sante', 'Services & Public': 'services', 'Tech & Data': 'tech', 'Éducation & Recherche': 'education',
+}
+// Libellés traduits pour l'affichage (niveau de risque, tag, domaine).
+export function riskLevelLabel(level: string): string { return t('lvl.' + (LEVEL_KEY[level] || 'Faible')) }
+export function tagLabel(tag: string): string { return t('tag.' + (TAG_KEY[tag] || 'Augmentation')) }
+export function domainLabel(domain: string): string { return DOMAIN_KEY[domain] ? t('dom.' + DOMAIN_KEY[domain]) : domain }
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Lumi — Moteur d'analyse de l'exposition à l'IA
@@ -172,12 +188,12 @@ export interface TaskRisk {
 
 function taskBreakdown(f: Factors): TaskRisk[] {
   const tasks: TaskRisk[] = [
-    { label: 'Tâches répétitives & administratives', risk: Math.round(clamp(f.routine * 0.7 + f.digital * 0.3)) },
-    { label: 'Analyse & traitement de l’information', risk: Math.round(clamp(f.digital * 0.75 + f.routine * 0.15 + (100 - f.judgment) * 0.1)) },
-    { label: 'Création, conception & idéation', risk: Math.round(clamp(100 - f.creativity)) },
-    { label: 'Relation & accompagnement humain', risk: Math.round(clamp(100 - (f.empathy * 0.7 + f.social * 0.3))) },
-    { label: 'Décision, stratégie & responsabilité', risk: Math.round(clamp(100 - f.judgment)) },
-    { label: 'Intervention physique & terrain', risk: Math.round(clamp(100 - f.physical)) },
+    { label: t('eng.task.routine'), risk: Math.round(clamp(f.routine * 0.7 + f.digital * 0.3)) },
+    { label: t('eng.task.analysis'), risk: Math.round(clamp(f.digital * 0.75 + f.routine * 0.15 + (100 - f.judgment) * 0.1)) },
+    { label: t('eng.task.creation'), risk: Math.round(clamp(100 - f.creativity)) },
+    { label: t('eng.task.human'), risk: Math.round(clamp(100 - (f.empathy * 0.7 + f.social * 0.3))) },
+    { label: t('eng.task.decision'), risk: Math.round(clamp(100 - f.judgment)) },
+    { label: t('eng.task.physical'), risk: Math.round(clamp(100 - f.physical)) },
   ]
   return tasks.sort((a, b) => b.risk - a.risk)
 }
@@ -189,22 +205,22 @@ export interface Skill {
   icon: string
 }
 
-const SKILL_LIBRARY: (Skill & { trigger: (f: Factors) => number })[] = [
-  { name: 'Piloter l’IA (prompting & outils)', icon: '✨', reason: 'Devenir celui qui dirige l’IA plutôt que celui qu’elle remplace.', trigger: (f) => 60 + f.digital * 0.3 },
-  { name: 'Esprit critique & vérification', icon: '🔎', reason: 'Juger, corriger et fiabiliser les productions de l’IA.', trigger: (f) => 50 + (100 - f.judgment) * 0.4 },
-  { name: 'Créativité & résolution de problèmes', icon: '💡', reason: 'L’originalité reste difficile à automatiser.', trigger: (f) => 40 + (100 - f.creativity) * 0.5 },
-  { name: 'Intelligence émotionnelle', icon: '❤️', reason: 'L’empathie et la relation humaine gardent une valeur unique.', trigger: (f) => 30 + (100 - f.empathy) * 0.4 },
-  { name: 'Leadership & communication', icon: '🗣️', reason: 'Fédérer, convaincre et coordonner des humains.', trigger: (f) => 30 + (100 - f.social) * 0.45 },
-  { name: 'Compétences interdisciplinaires', icon: '🧩', reason: 'Relier des domaines que l’IA traite en silos.', trigger: (f) => 45 + f.routine * 0.2 },
-  { name: 'Adaptabilité & apprentissage continu', icon: '🔄', reason: 'Se réinventer plus vite que le métier ne change.', trigger: (f) => 55 + f.routine * 0.2 },
-  { name: 'Éthique & gouvernance de l’IA', icon: '⚖️', reason: 'Encadrer un usage responsable, un besoin en pleine expansion.', trigger: (f) => 35 + f.judgment * 0.2 },
+const SKILL_LIBRARY: ({ key: string; icon: string; trigger: (f: Factors) => number })[] = [
+  { key: 'pilot', icon: '✨', trigger: (f) => 60 + f.digital * 0.3 },
+  { key: 'critical', icon: '🔎', trigger: (f) => 50 + (100 - f.judgment) * 0.4 },
+  { key: 'creativity', icon: '💡', trigger: (f) => 40 + (100 - f.creativity) * 0.5 },
+  { key: 'emotional', icon: '❤️', trigger: (f) => 30 + (100 - f.empathy) * 0.4 },
+  { key: 'leadership', icon: '🗣️', trigger: (f) => 30 + (100 - f.social) * 0.45 },
+  { key: 'interdisc', icon: '🧩', trigger: (f) => 45 + f.routine * 0.2 },
+  { key: 'adapt', icon: '🔄', trigger: (f) => 55 + f.routine * 0.2 },
+  { key: 'ethics', icon: '⚖️', trigger: (f) => 35 + f.judgment * 0.2 },
 ]
 
 function recommendedSkills(f: Factors): Skill[] {
   return SKILL_LIBRARY.map((s) => ({ skill: s, weight: s.trigger(f) }))
     .sort((a, b) => b.weight - a.weight)
     .slice(0, 4)
-    .map(({ skill }) => ({ name: skill.name, reason: skill.reason, icon: skill.icon }))
+    .map(({ skill }) => ({ name: t(`eng.skill.${skill.key}.name`), reason: t(`eng.skill.${skill.key}.reason`), icon: skill.icon }))
 }
 
 // ── Recommandations / plan d'action ──────────────────────────────────────────
@@ -219,46 +235,23 @@ function recommendations(f: Factors, score: number): Recommendation[] {
 
   recs.push({
     tag: 'Augmentation',
-    title: 'Faites de l’IA votre copilote',
-    detail:
-      f.digital > 55
-        ? 'Intégrez les outils d’IA générative à votre flux de travail pour automatiser les tâches à faible valeur et vous concentrer sur l’expertise.'
-        : 'Même dans un métier de terrain, des outils d’IA (planification, devis, diagnostic) peuvent vous faire gagner un temps précieux.',
+    title: t('eng.rec.copilot.title'),
+    detail: f.digital > 55 ? t('eng.rec.copilot.detailDigital') : t('eng.rec.copilot.detailField'),
   })
 
   if (f.creativity < 55) {
-    recs.push({
-      tag: 'Différenciation',
-      title: 'Cultivez votre singularité créative',
-      detail: 'Développez un angle, un style ou une approche que l’IA ne peut pas standardiser. La rareté crée la valeur.',
-    })
+    recs.push({ tag: 'Différenciation', title: t('eng.rec.creative.title'), detail: t('eng.rec.creative.detail') })
   }
   if (f.empathy < 55 && f.social < 60) {
-    recs.push({
-      tag: 'Différenciation',
-      title: 'Renforcez la dimension humaine',
-      detail: 'Misez sur le conseil, la relation client et l’accompagnement : ce que les gens veulent vivre avec un humain.',
-    })
+    recs.push({ tag: 'Différenciation', title: t('eng.rec.human.title'), detail: t('eng.rec.human.detail') })
   }
   if (f.judgment < 60) {
-    recs.push({
-      tag: 'Protection',
-      title: 'Montez en responsabilité et en jugement',
-      detail: 'Positionnez-vous sur les décisions complexes, la stratégie et la supervision — là où l’erreur coûte cher et exige un humain garant.',
-    })
+    recs.push({ tag: 'Protection', title: t('eng.rec.judgment.title'), detail: t('eng.rec.judgment.detail') })
   }
   if (score >= 60) {
-    recs.push({
-      tag: 'Évolution',
-      title: 'Préparez une trajectoire d’évolution',
-      detail: 'Votre métier est très exposé : capitalisez dès maintenant sur des compétences transférables vers des rôles plus résilients.',
-    })
+    recs.push({ tag: 'Évolution', title: t('eng.rec.evolveUp.title'), detail: t('eng.rec.evolveUp.detail') })
   } else {
-    recs.push({
-      tag: 'Évolution',
-      title: 'Spécialisez-vous vers le haut',
-      detail: 'Votre métier est relativement protégé : approfondissez votre expertise pour devenir une référence difficilement remplaçable.',
-    })
+    recs.push({ tag: 'Évolution', title: t('eng.rec.specialize.title'), detail: t('eng.rec.specialize.detail') })
   }
 
   return recs.slice(0, 4)
@@ -311,16 +304,7 @@ export interface Analysis {
 }
 
 function verdictText(level: RiskLevel, label: string): string {
-  switch (level) {
-    case 'Faible':
-      return `Bonne nouvelle : le métier de ${label.toLowerCase()} est parmi les plus résilients face à l’IA. L’automatisation servira surtout d’assistant.`
-    case 'Modéré':
-      return `Le métier de ${label.toLowerCase()} sera profondément transformé par l’IA, sans disparaître. Ceux qui adoptent l’IA prendront l’avantage.`
-    case 'Élevé':
-      return `Le métier de ${label.toLowerCase()} est fortement exposé : une part importante des tâches sera automatisable. Il faut agir tôt.`
-    case 'Critique':
-      return `Le métier de ${label.toLowerCase()} fait partie des plus menacés par l’automatisation. Une stratégie de repositionnement est vivement conseillée.`
-  }
+  return t('eng.verdict.' + (LEVEL_KEY[level] || 'Faible')).replace('{label}', label.toLowerCase())
 }
 
 export function analyze(input: string): Analysis {
@@ -400,11 +384,11 @@ const LEVEL_VAL: Record<string, number> = { 'Débutant·e': 30, 'Confirmé·e': 
 
 export function personalAssets(p: CareerProfile): { label: string; value: number }[] {
   const out: { label: string; value: number }[] = []
-  if (p.educationLevel) out.push({ label: '🎓 Niveau de formation', value: EDU_VAL[p.educationLevel] ?? 50 })
-  if (p.schoolPrestige) out.push({ label: '🏛️ Sélectivité de l\'école', value: PRESTIGE_VAL[p.schoolPrestige] ?? 50 })
-  if (p.aiSkill) out.push({ label: '🤖 Maîtrise de l\'IA', value: AISKILL_VAL[p.aiSkill] ?? 50 })
-  if (p.experience) out.push({ label: '⏳ Expérience', value: EXP_VAL[p.experience] ?? 50 })
-  if (p.level) out.push({ label: '📈 Séniorité', value: LEVEL_VAL[p.level] ?? 50 })
+  if (p.educationLevel) out.push({ label: t('eng.asset.education'), value: EDU_VAL[p.educationLevel] ?? 50 })
+  if (p.schoolPrestige) out.push({ label: t('eng.asset.school'), value: PRESTIGE_VAL[p.schoolPrestige] ?? 50 })
+  if (p.aiSkill) out.push({ label: t('eng.asset.aiSkill'), value: AISKILL_VAL[p.aiSkill] ?? 50 })
+  if (p.experience) out.push({ label: t('eng.asset.experience'), value: EXP_VAL[p.experience] ?? 50 })
+  if (p.level) out.push({ label: t('eng.asset.seniority'), value: LEVEL_VAL[p.level] ?? 50 })
   return out
 }
 
@@ -412,24 +396,24 @@ export function personalAssets(p: CareerProfile): { label: string; value: number
 function personalRecommendations(p: CareerProfile): Recommendation[] {
   const recs: Recommendation[] = []
   if (p.aiSkill === 'Aucune' || p.aiSkill === 'Débutante') {
-    recs.push({ tag: 'Augmentation', title: 'Montez vite en compétence sur l\'IA', detail: 'Maîtriser les outils d\'IA est votre levier n°1 : passez du côté de ceux qui dirigent l\'IA plutôt que de ceux qu\'elle remplace.' })
+    recs.push({ tag: 'Augmentation', title: t('eng.prec.aiSkill.title'), detail: t('eng.prec.aiSkill.detail') })
   }
   if (p.level === 'Débutant·e' || p.experience === "Moins d'1 an" || p.experience === '1–3 ans') {
-    recs.push({ tag: 'Évolution', title: 'Accélérez votre montée en expertise', detail: 'Les profils juniors sont les plus exposés : visez une spécialisation et des responsabilités pour devenir difficilement remplaçable.' })
+    recs.push({ tag: 'Évolution', title: t('eng.prec.junior.title'), detail: t('eng.prec.junior.detail') })
   }
   if (p.schoolPrestige === 'Formation courte / autodidacte' || p.schoolPrestige === 'Établissement standard' || p.educationLevel === 'Sans diplôme / CAP / BEP' || p.educationLevel === 'Bac') {
-    recs.push({ tag: 'Différenciation', title: 'Faites reconnaître vos compétences', detail: 'Certifications, portfolio, réalisations concrètes : prouvez votre valeur indépendamment du diplôme initial.' })
+    recs.push({ tag: 'Différenciation', title: t('eng.prec.credentials.title'), detail: t('eng.prec.credentials.detail') })
   }
   if (p.goal === 'Me reconvertir') {
-    recs.push({ tag: 'Évolution', title: 'Préparez votre reconversion', detail: 'Capitalisez sur vos compétences transférables vers un métier plus résilient face à l\'IA.' })
+    recs.push({ tag: 'Évolution', title: t('eng.prec.reconvert.title'), detail: t('eng.prec.reconvert.detail') })
   }
   return recs
 }
 
 function profileVerdictSuffix(delta: number): string {
-  if (delta <= -4) return 'Bonne nouvelle : votre profil (formation, expérience, maîtrise de l\'IA) vous rend nettement plus résilient que la moyenne de votre métier.'
-  if (delta >= 4) return 'Attention : en l\'état, votre profil vous expose un peu plus que la moyenne — les recommandations ci-dessous peuvent inverser la tendance.'
-  return 'Votre profil est dans la moyenne de votre métier ; les leviers ci-dessous feront la différence.'
+  if (delta <= -4) return t('eng.suffix.better')
+  if (delta >= 4) return t('eng.suffix.worse')
+  return t('eng.suffix.avg')
 }
 
 // Renvoie une analyse entièrement personnalisée selon le profil (mode démo) :

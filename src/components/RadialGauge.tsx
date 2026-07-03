@@ -1,5 +1,6 @@
-import { RiskLevel } from '../lib/engine'
+import { RiskLevel, riskLevelLabel } from '../lib/engine'
 import { RISK_THEME, useCountUp } from '../lib/ui'
+import { t, useLang } from '../lib/i18n'
 
 interface Props {
   score: number
@@ -8,6 +9,7 @@ interface Props {
 
 // Jauge circulaire animée affichant le pourcentage de remplaçabilité.
 export function RadialGauge({ score, level }: Props) {
+  useLang()
   const theme = RISK_THEME[level]
   const animated = useCountUp(score, 1300)
   const radius = 78
@@ -35,7 +37,7 @@ export function RadialGauge({ score, level }: Props) {
           {Math.round(animated)}
           <span className="text-2xl align-top text-ink-400">%</span>
         </span>
-        <span className={`mt-1 pill ${theme.chip}`}>Risque {level.toLowerCase()}</span>
+        <span className={`mt-1 pill ${theme.chip}`}>{t('gauge.risk').replace('{level}', riskLevelLabel(level))}</span>
       </div>
     </div>
   )
