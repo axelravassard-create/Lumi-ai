@@ -19,6 +19,7 @@ interface Props {
   onOpenProfile: () => void
   aiEnabled: boolean
   onOpenSettings: () => void
+  onOpenPricing: () => void
 }
 
 const TAG_STYLES: Record<string, string> = {
@@ -35,7 +36,7 @@ function riskColor(r: number): string {
   return '#ef4444'
 }
 
-export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenSettings }: Props) {
+export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenSettings, onOpenPricing }: Props) {
   const sector = analysis.profession.domain.startsWith('Profil')
     ? analysis.profession.label
     : analysis.profession.domain
@@ -177,7 +178,7 @@ export function Dashboard({ analysis, onReset, onOpenProfile, aiEnabled, onOpenS
 
         {/* Tendance du secteur (note hebdomadaire) */}
         <section className="animate-fade-up mt-6" style={{ animationDelay: '200ms' }}>
-          <SectorTrendCard sector={sector} aiEnabled={aiEnabled} onOpenSettings={onOpenSettings} />
+          <SectorTrendCard sector={sector} aiEnabled={aiEnabled} onOpenSettings={onOpenSettings} onUpgrade={onOpenPricing} />
         </section>
 
         {/* Décomposition par tâche + profil de compétences */}

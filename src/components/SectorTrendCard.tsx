@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react'
 import { SectorTrend, generateSectorTrend, describeError } from '../lib/llm'
 import { loadCachedTrend, saveTrend } from '../lib/trends'
 import { domainLabel } from '../lib/engine'
+import { useLuminator } from '../lib/entitlement'
 import { t, useLang, getLang } from '../lib/i18n'
 
 interface Props {
   sector: string
   aiEnabled: boolean
   onOpenSettings: () => void
+  /** Ouvre la page Tarifs (la veille est réservée aux abonnés). */
+  onUpgrade?: () => void
 }
 
 const DIRECTION: Record<SectorTrend['direction'], { labelKey: string; icon: string; cls: string }> = {
@@ -19,14 +22,17 @@ const DIRECTION: Record<SectorTrend['direction'], { labelKey: string; icon: stri
 const LOCALES: Record<string, string> = { fr: 'fr-FR', en: 'en-US', de: 'de-DE', es: 'es-ES', zh: 'zh-CN' }
 
 // Carte « Tendance de votre secteur » : note hebdomadaire fondée sur l'actualité.
-export function SectorTrendCard({ sector, aiEnabled, onOpenSettings }: Props) {
+export function SectorTrendCard({ sector, aiEnabled, onOpenSettings, onUpgrade }: Props) {
   useLang()
+  // La veille sectorielle (recherche IA sur le web, coûteuse) est RÉSERVÉE AUX
+  // ABONNÉS. Un utilisateur gratuit ne déclenche aucun appel IA ici.
+  const paid = useLuminator()
   const [trend, setTrend] = useState<SectorTrend | null>(null)
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [error, setError] = useState('')
 
   const fetchTrend = async (force = false) => {
-    if (!aiEnabled) return
+    if (!paid || !aiEnabled) return
     const cached = loadCachedTrend(sector)
     if (cached && cached.fresh && !force) {
       setTrend(cached.trend)
@@ -52,11 +58,12 @@ export function SectorTrendCard({ sector, aiEnabled, onOpenSettings }: Props) {
   }
 
   useEffect(() => {
+    if (!paid) return
     const cached = loadCachedTrend(sector)
     if (cached) setTrend(cached.trend)
     if (aiEnabled && (!cached || !cached.fresh)) fetchTrend()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sector, aiEnabled])
+  }, [sector, aiEnabled, paid])
 
   const fmtDate = (iso: string) =>
     new Date(iso).toLocaleDateString(LOCALES[getLang()] || 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -75,8 +82,20 @@ export function SectorTrendCard({ sector, aiEnabled, onOpenSettings }: Props) {
         )}
       </div>
 
-      {/* Mode démo : invitation à connecter Claude */}
-      {!aiEnabled && !trend && (
+      {/* Utilisateur gratuit : fonction réservée aux abonnés (aucun appel IA) */}
+      {!paid && (
+        <div className="mt-4 rounded-2xl bg-ink-50 p-5 text-center">
+          <p className="text-sm text-ink-600">🔒 {t('str.locked')}</p>
+          {onUpgrade && (
+            <button onClick={onUpgrade} className="btn-primary mt-3 py-2.5 text-sm">
+              {t('str.unlock')}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Abonné mais IA non connectée : invitation à l'activer */}
+      {paid && !aiEnabled && !trend && (
         <div className="mt-4 rounded-2xl bg-ink-50 p-5 text-center">
           <p className="text-sm text-ink-600">
             {t('str.demo')}
