@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { Analysis, Recommendation, Skill } from './engine'
 import { getTier, tierName, type Tier } from './entitlement'
-import { getLang } from './i18n'
+import { getLang, t } from './i18n'
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Intégration Claude (Anthropic API)
@@ -102,8 +102,7 @@ export const DAILY_LIMITS: Record<Tier, number> = { free: 10, blumiman: 25, blum
 // complets, vrais livrables en une fois). C'est l'autre vraie différence concrète.
 export const CHAT_MAX_TOKENS: Record<Tier, number> = { free: 1024, blumiman: 1024, bluminator: 2048 }
 
-const QUOTA_MSG =
-  'Tu as atteint ta limite d\'utilisation du jour. Réessaie demain, passe à Bluminator pour un usage étendu, ou ajoute ta propre clé API.'
+const quotaMsg = () => t('err.quota')
 
 function consumeQuota(): boolean {
   try {
@@ -124,7 +123,7 @@ function client(): Anthropic {
     return new Anthropic({ apiKey: userKey, dangerouslyAllowBrowser: true })
   }
   if (!serverKeyAvailable) throw new Error('Aucune clé API configurée.')
-  if (!consumeQuota()) throw new Error(QUOTA_MSG)
+  if (!consumeQuota()) throw new Error(quotaMsg())
   // Mode proxy : la vraie clé est ajoutée côté serveur. Le placeholder ci-dessous
   // n'est jamais transmis à Anthropic (le proxy l'écrase).
   const baseURL = (typeof window !== 'undefined' ? window.location.origin : '') + PROXY_PATH
@@ -583,15 +582,15 @@ function parseJsonLoose<T>(response: Anthropic.Message): T {
 export function describeError(err: unknown): string {
   if (err instanceof Error && err.message.includes('Limite quotidienne')) return err.message
   // Quota serveur dépassé (429 renvoyée par le proxy avec type quota_exceeded).
-  if (err instanceof Error && /quota_exceeded/i.test(err.message)) return QUOTA_MSG
-  if (err instanceof Anthropic.AuthenticationError) return 'Clé API invalide ou révoquée.'
-  if (err instanceof Anthropic.PermissionDeniedError) return 'Accès au modèle refusé pour cette clé.'
-  if (err instanceof Anthropic.RateLimitError) return 'Beaucoup de demandes en ce moment — réessaie dans quelques instants. 🙏'
-  if (err instanceof Anthropic.InternalServerError) return 'Le service IA est momentanément indisponible. Réessaie dans un instant. 🛠️'
-  if (err instanceof Anthropic.APIConnectionError) return 'Connexion au service IA impossible. Vérifie ta connexion et réessaie. 📡'
+  if (err instanceof Error && /quota_exceeded/i.test(err.message)) return quotaMsg()
+  if (err instanceof Anthropic.AuthenticationError) return t('err.authInvalid')
+  if (err instanceof Anthropic.PermissionDeniedError) return t('err.permDenied')
+  if (err instanceof Anthropic.RateLimitError) return t('err.rateLimit')
+  if (err instanceof Anthropic.InternalServerError) return t('err.server')
+  if (err instanceof Anthropic.APIConnectionError) return t('err.connection')
   if (err instanceof Anthropic.APIError) {
-    if (err.status && err.status >= 500) return 'Le service IA est saturé pour le moment. Réessaie dans un instant. 🛠️'
-    return `Une erreur est survenue (${err.status}). Réessaie dans un instant.`
+    if (err.status && err.status >= 500) return t('err.overloaded')
+    return t('err.generic').replace('{status}', String(err.status))
   }
-  return 'Connexion au service IA impossible. Réessaie dans un instant. 📡'
+  return t('err.connectionShort')
 }
