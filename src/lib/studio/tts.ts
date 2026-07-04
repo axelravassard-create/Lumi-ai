@@ -38,9 +38,21 @@ function voiceByName(name?: string): SpeechSynthesisVoice | null {
   return listVoices().find((v) => v.name === name) || frenchVoice()
 }
 
+// Retire les emojis/pictogrammes du texte DIT (ils restent à l'écran). Sans ça,
+// certaines voix lisent « visage stupéfait », « pouce vers le bas », etc.
+export function stripForSpeech(text: string): string {
+  return (text || '')
+    .replace(/[\u{1F1E6}-\u{1F1FF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}]/gu, '')
+    .replace(/\p{Extended_Pictographic}/gu, '')
+    .replace(/\s+([.,!?…;:])/g, '$1')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
 export function speak(text: string, rate = 1.08, volume = 1, voiceName?: string) {
-  if (typeof speechSynthesis === 'undefined' || !text) return
-  const u = new SpeechSynthesisUtterance(text)
+  const clean = stripForSpeech(text)
+  if (typeof speechSynthesis === 'undefined' || !clean) return
+  const u = new SpeechSynthesisUtterance(clean)
   const v = voiceByName(voiceName)
   if (v) u.voice = v
   u.lang = v?.lang || 'fr-FR'
