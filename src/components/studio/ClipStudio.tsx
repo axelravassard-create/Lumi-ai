@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { BeatKind, Project } from '../../lib/studio/types'
-import { compactBeats, loadCurrent, newProject, saveProject } from '../../lib/studio/projects'
+import { compactBeats, loadCurrent, newProject, normalizeDuration, saveProject } from '../../lib/studio/projects'
 import { captureCover, downloadBlob, exportClip } from '../../lib/studio/export'
 import { warmTTS } from '../../lib/studio/tts'
 import { sharedCtx } from '../../lib/studio/audio'
@@ -53,7 +53,7 @@ export function ClipStudio({ onBack }: Props) {
     // Les médias (object-URLs) ne survivent pas à un rechargement : on repart propre.
     if (c.background && !c.background.url) c.background = null
     if (!c.audio.musicUrl) c.audio = { ...c.audio, musicName: '' }
-    return c
+    return normalizeDuration(c)
   })
   const [tab, setTab] = useState<Tab>('contenu')
   const [playing, setPlaying] = useState(false)
@@ -76,6 +76,9 @@ export function ClipStudio({ onBack }: Props) {
   useEffect(() => {
     warmTTS()
   }, [])
+
+  // Toute édition passe par ici : la durée vidéo est reliée aux moments (si auto).
+  const applyProject = useCallback((p: Project) => setProject(normalizeDuration(p)), [])
 
   const onUiTime = useCallback((t: number) => {
     timeRef.current = t
@@ -238,12 +241,12 @@ export function ClipStudio({ onBack }: Props) {
   }
 
   const panel = () => {
-    const p = { project, onChange: setProject }
+    const p = { project, onChange: applyProject }
     switch (tab) {
       case 'idees': return <IdeasPanel {...p} />
       case 'fond': return <BackgroundPanel {...p} />
       case 'contenu': return <ContentPanel {...p} />
-      case 'moments': return <BeatsPanel {...p} onCompact={() => { setProject(compactBeats(projectRef.current)); scrub(0) }} />
+      case 'moments': return <BeatsPanel {...p} onCompact={() => { applyProject(compactBeats(projectRef.current)); scrub(0) }} />
       case 'captions': return <CaptionPanel {...p} />
       case 'perso': return <CharacterPanel {...p} />
       case 'audio': return <AudioPanel {...p} />
@@ -302,7 +305,7 @@ export function ClipStudio({ onBack }: Props) {
               <Timeline
                 project={project}
                 time={uiTime}
-                onChange={(beats) => setProject({ ...project, beats })}
+                onChange={(beats) => applyProject({ ...project, beats })}
                 onSeek={scrub}
                 onSelect={setSelectedBeat}
                 selected={selectedBeat}

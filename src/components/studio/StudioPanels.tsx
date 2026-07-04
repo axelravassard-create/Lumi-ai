@@ -439,8 +439,16 @@ export function FormatPanel({ project, onChange }: P) {
         <Segmented value={project.platform} onChange={(v) => onChange({ ...project, platform: v })} options={[{ value: 'tiktok', label: 'TikTok' }, { value: 'reels', label: 'Reels' }, { value: 'shorts', label: 'Shorts' }]} />
       </Row>
       <Row label="Durée totale" hint={`${project.duration.toFixed(1)}s`}>
-        <Slider value={project.duration} min={8} max={30} step={0.5} onChange={(v) => onChange({ ...project, duration: v })} />
+        {project.autoDuration ? (
+          <p className="rounded-lg bg-ink-50 px-3 py-2 text-xs text-ink-500">🔗 Automatique : la vidéo dure exactement le temps de tes moments ({project.duration.toFixed(1)}s). Allonge un moment (ou « Caler sur la voix ») et la vidéo suit.</p>
+        ) : (
+          <Slider value={project.duration} min={8} max={40} step={0.5} onChange={(v) => onChange({ ...project, duration: v })} />
+        )}
       </Row>
+      <label className="flex items-center gap-2 text-xs font-semibold text-ink-600">
+        <input type="checkbox" checked={project.autoDuration} onChange={(e) => onChange({ ...project, autoDuration: e.target.checked })} className="accent-brand-600" />
+        Lier la durée de la vidéo aux moments
+      </label>
       <label className="flex items-center gap-2 text-xs font-semibold text-ink-600">
         <input type="checkbox" checked={project.showSafeZones} onChange={(e) => onChange({ ...project, showSafeZones: e.target.checked })} className="accent-brand-600" />
         Afficher les safe zones (aperçu)

@@ -23,7 +23,11 @@ interface Props {
 export function Timeline({ project, time, onChange, onSeek, onSelect, selected }: Props) {
   const trackRef = useRef<HTMLDivElement>(null)
   const dur = project.duration
-  const pxPerSec = () => (trackRef.current?.clientWidth ?? 800) / dur
+  // Fin du dernier moment actif ; l'échelle d'affichage garde une marge à droite
+  // (12 %) quand la durée est liée aux moments, pour pouvoir étirer le dernier.
+  const lastEnd = Math.max(4, ...project.beats.filter((b) => b.enabled !== false).map((b) => b.start + b.dur), 4)
+  const span = project.autoDuration ? Math.max(dur, lastEnd) * 1.12 : dur
+  const pxPerSec = () => (trackRef.current?.clientWidth ?? 800) / span
   // Pas d'aimantation : grille de tempo si activée, sinon 0,25 s.
   const grid = project.tempo.enabled ? 60 / Math.max(40, project.tempo.bpm) : 0.25
   const snap = (v: number) => Math.round(v / grid) * grid
@@ -41,10 +45,10 @@ export function Timeline({ project, time, onChange, onSeek, onSelect, selected }
       const beats = project.beats.map((b) => {
         if (b.id !== beat.id) return b
         if (mode === 'move') {
-          const start = Math.max(0, Math.min(dur - b.dur, snap(orig.start + delta)))
+          const start = Math.max(0, Math.min(span - b.dur, snap(orig.start + delta)))
           return { ...b, start }
         }
-        const d = Math.max(0.3, Math.min(dur - orig.start, snap(orig.dur + delta)))
+        const d = Math.max(0.3, Math.min(span - orig.start, snap(orig.dur + delta)))
         return { ...b, dur: d }
       })
       onChange(beats)
@@ -60,7 +64,7 @@ export function Timeline({ project, time, onChange, onSeek, onSelect, selected }
   const seekAt = (e: React.PointerEvent) => {
     const rect = trackRef.current?.getBoundingClientRect()
     if (!rect) return
-    const t = ((e.clientX - rect.left) / rect.width) * dur
+    const t = ((e.clientX - rect.left) / rect.width) * span
     onSeek(Math.max(0, Math.min(dur, t)))
   }
 
@@ -84,10 +88,10 @@ export function Timeline({ project, time, onChange, onSeek, onSelect, selected }
         }}
         className="relative mb-1 h-4 w-full cursor-pointer rounded-t-lg bg-ink-200/60"
       >
-        {Array.from({ length: Math.floor(dur) + 1 }).map((_, i) => (
-          <div key={i} className="absolute top-1 h-2 w-px bg-ink-400/60" style={{ left: `${(i / dur) * 100}%` }} />
+        {Array.from({ length: Math.floor(span) + 1 }).map((_, i) => (
+          <div key={i} className="absolute top-1 h-2 w-px bg-ink-400/60" style={{ left: `${(i / span) * 100}%` }} />
         ))}
-        <div className="pointer-events-none absolute -top-0.5 h-5 w-0.5 bg-ink-900" style={{ left: `${(time / dur) * 100}%` }}>
+        <div className="pointer-events-none absolute -top-0.5 h-5 w-0.5 bg-ink-900" style={{ left: `${(time / span) * 100}%` }}>
           <div className="absolute -left-1.5 -top-1 h-3 w-3 rounded-full bg-ink-900" />
         </div>
       </div>
@@ -96,19 +100,19 @@ export function Timeline({ project, time, onChange, onSeek, onSelect, selected }
         className="relative h-16 w-full overflow-hidden rounded-xl bg-ink-100"
       >
         {/* Graduations chaque seconde */}
-        {Array.from({ length: Math.floor(dur) + 1 }).map((_, i) => (
-          <div key={i} className="absolute top-0 h-full w-px bg-ink-200" style={{ left: `${(i / dur) * 100}%` }} />
+        {Array.from({ length: Math.floor(span) + 1 }).map((_, i) => (
+          <div key={i} className="absolute top-0 h-full w-px bg-ink-200" style={{ left: `${(i / span) * 100}%` }} />
         ))}
         {/* Marqueurs de tempo (grille BPM) */}
         {project.tempo.enabled &&
-          Array.from({ length: Math.floor(dur / beatSec) + 1 }).map((_, i) => (
-            <div key={`bpm${i}`} className="absolute top-0 h-full w-px bg-brand-400/40" style={{ left: `${((i * beatSec) / dur) * 100}%` }} />
+          Array.from({ length: Math.floor(span / beatSec) + 1 }).map((_, i) => (
+            <div key={`bpm${i}`} className="absolute top-0 h-full w-px bg-brand-400/40" style={{ left: `${((i * beatSec) / span) * 100}%` }} />
           ))}
         {/* Beats */}
         {project.beats.map((b) => {
           const m = BEAT_META[b.id]
-          const left = (b.start / dur) * 100
-          const width = (b.dur / dur) * 100
+          const left = (b.start / span) * 100
+          const width = (b.dur / span) * 100
           const off = b.enabled === false
           return (
             <div
@@ -135,7 +139,7 @@ export function Timeline({ project, time, onChange, onSeek, onSelect, selected }
           )
         })}
         {/* Tête de lecture */}
-        <div className="pointer-events-none absolute top-0 z-10 h-full w-0.5 bg-ink-900" style={{ left: `${(time / dur) * 100}%` }}>
+        <div className="pointer-events-none absolute top-0 z-10 h-full w-0.5 bg-ink-900" style={{ left: `${(time / span) * 100}%` }}>
           <div className="absolute -left-1.5 -top-1 h-3 w-3 rounded-full bg-ink-900" />
         </div>
       </div>

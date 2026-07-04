@@ -53,6 +53,7 @@ export function newProject(metier = 'Développeur·se', score = 73, level = 'Él
     name: metier || 'Nouveau clip',
     fmt: '9:16',
     duration: DEFAULT_DURATION,
+    autoDuration: true,
     showSafeZones: true,
     platform: 'tiktok',
     background: null,
@@ -83,11 +84,20 @@ function migrate(p: Project): Project {
   const d = newProject()
   return {
     ...p,
+    autoDuration: p.autoDuration ?? true,
     caption: { ...d.caption, ...p.caption },
     audio: { ...d.audio, ...p.audio },
     character: { ...d.character, ...p.character },
     tempo: { ...d.tempo, ...(p.tempo ?? {}) },
   }
+}
+
+// Lie la durée de la vidéo à la fin du dernier moment actif (si autoDuration).
+export function normalizeDuration(p: Project): Project {
+  if (!p.autoDuration) return p
+  const ends = p.beats.filter((b) => b.enabled !== false).map((b) => +(b.start + b.dur).toFixed(2))
+  const end = Math.max(4, ...ends, 4)
+  return end === p.duration ? p : { ...p, duration: end }
 }
 
 // Retire les médias non sérialisables avant sauvegarde.

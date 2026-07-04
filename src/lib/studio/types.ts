@@ -106,6 +106,7 @@ export interface Project {
   name: string
   fmt: Fmt
   duration: number
+  autoDuration: boolean // true = la durée vidéo = fin du dernier moment (liée)
   showSafeZones: boolean
   platform: 'tiktok' | 'reels' | 'shorts'
   background: Background | null

@@ -293,6 +293,11 @@ pédagogique.
   Blumi loucher vers la souris.
 - **Raccourcis** (ClipStudio) : Espace = lecture/pause, ←/→ = image (±0,1 s ; ±1 s
   avec Maj), Début = t0 ; + boutons ⏪/⏩ de pas image par image.
+- **Durée liée aux moments** : `project.autoDuration` (défaut true) → `normalizeDuration()`
+  fixe `duration` = fin du dernier moment actif. Toute édition passe par `applyProject`
+  (ClipStudio) qui normalise. La `Timeline` affiche avec une **marge à droite** (`span`
+  = `max(duration,lastEnd)*1.12`) découplée de `duration` pour pouvoir étirer le
+  dernier moment. Bascule dans l'onglet Format (sinon curseur manuel 8–40 s).
 - **Moments activables** : chaque beat a `enabled?: boolean` (onglet « Moments »,
   `BeatsPanel`). Un beat désactivé est ignoré par `windows()`/`activeBeat()` (aucun
   overlay ni transition — ex. retirer le pivot). Bouton « Compacter »
