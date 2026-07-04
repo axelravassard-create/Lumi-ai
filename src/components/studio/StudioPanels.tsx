@@ -9,8 +9,8 @@ import { PROFESSIONS } from '../../lib/professions'
 import { analyze } from '../../lib/engine'
 import { HOOKS, CTAS, PIVOTS, PRESETS } from '../../lib/studio/library'
 import { interpolate, riskEmoji, voiceLineFor } from '../../lib/studio/script'
-import { listVoices, speak } from '../../lib/studio/tts'
-import { deleteProject, duplicateProject, listProjects, newProject } from '../../lib/studio/projects'
+import { estimateSpeechSec, listVoices, speak } from '../../lib/studio/tts'
+import { deleteProject, duplicateProject, fitToVoice, listProjects, newProject } from '../../lib/studio/projects'
 import { Row, Section, Segmented, Slider } from './ui'
 
 type P = { project: Project; onChange: (p: Project) => void }
@@ -357,6 +357,10 @@ export function AudioPanel({ project, onChange }: P) {
       <div className="space-y-2 rounded-2xl bg-ink-50 p-3">
         <div className="text-xs font-bold text-ink-700">🎙️ Voix off (par réplique)</div>
         <p className="text-[11px] text-ink-400">Change ce que la voix dit (ajoute/enlève des mots). Laisse vide pour rendre la réplique muette ; « ↺ auto » remet le texte d'origine.</p>
+        <button onClick={() => onChange(fitToVoice(project))} className="btn-ghost w-full !py-2 text-xs">
+          ⏱️ Caler la durée des moments sur la voix off
+        </button>
+        <p className="text-[11px] text-ink-400">Astuce : si la voix est coupée, c'est qu'un moment est trop court. Ce bouton allonge chaque moment pour lui laisser le temps de finir (⚠️ = réplique qui déborde).</p>
         {BEAT_ORDER.map((id) => {
           const b = project.beats.find((x) => x.id === id)
           if (!b) return null
@@ -364,12 +368,15 @@ export function AudioPanel({ project, onChange }: P) {
           const ov = s.vo?.[id]
           const shown = ov && ov.text !== undefined ? ov.text : voiceLineFor(id, s).text
           const off = b.enabled === false
+          const est = a.voice ? estimateSpeechSec(shown, a.voiceRate) : 0
+          const over = est > b.dur + 0.05
           return (
-            <div key={id} className={`space-y-1 rounded-xl border border-ink-100 bg-white p-2 ${off ? 'opacity-50' : ''}`}>
+            <div key={id} className={`space-y-1 rounded-xl border bg-white p-2 ${over ? 'border-amber-300' : 'border-ink-100'} ${off ? 'opacity-50' : ''}`}>
               <div className="flex items-center gap-1.5 text-[11px] font-semibold text-ink-600">
                 <span>{m.emoji}</span> {m.label}{off && <span className="text-ink-400">(masqué)</span>}
+                <span className={`ml-auto tabular-nums ${over ? 'text-amber-600' : 'text-ink-400'}`}>{est > 0 ? `${est.toFixed(1)}s / ${b.dur.toFixed(1)}s${over ? ' ⚠️' : ''}` : ''}</span>
                 {ov && ov.text !== undefined && (
-                  <button onClick={() => setVo(id, { text: undefined })} className="ml-auto text-[10px] text-ink-400 hover:text-brand-600">↺ auto</button>
+                  <button onClick={() => setVo(id, { text: undefined })} className="text-[10px] text-ink-400 hover:text-brand-600">↺ auto</button>
                 )}
               </div>
               <div className="flex gap-1.5">

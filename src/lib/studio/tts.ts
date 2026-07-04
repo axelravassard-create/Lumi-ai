@@ -53,3 +53,15 @@ export function speak(text: string, rate = 1.08, volume = 1, voiceName?: string)
 export function stopTTS() {
   if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel()
 }
+
+// Estimation de la durée de parole d'un texte (s), pour caler les beats sur la
+// voix off. ~2,6 mots/s en français à débit 1, + une petite marge de fin.
+export function estimateSpeechSec(text: string, rate = 1): number {
+  const words = (text || '')
+    .trim()
+    .split(/\s+/)
+    .filter((w) => /[\p{L}\p{N}]/u.test(w)).length // ignore les emojis/ponctuation seuls
+  if (!words) return 0
+  const wps = 2.6 * Math.max(0.5, rate)
+  return words / wps + 0.4
+}

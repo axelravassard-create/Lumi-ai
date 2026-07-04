@@ -4,7 +4,29 @@
 import type { BeatDef, Project } from './types'
 import { BEAT_ORDER } from './types'
 import { DEFAULT_BEATS, DEFAULT_DURATION } from './library'
-import { defaultScript } from './script'
+import { defaultScript, voiceLineFor } from './script'
+import { estimateSpeechSec } from './tts'
+
+// Allonge chaque moment actif pour que la voix off ait le temps de finir sa
+// réplique (sans jamais raccourcir en dessous de la durée visuelle voulue),
+// puis resserre bout à bout et ajuste la durée totale.
+export function fitToVoice(project: Project): Project {
+  const rate = project.audio.voiceRate || 1
+  const ordered = BEAT_ORDER.map((id) => project.beats.find((b) => b.id === id)).filter(Boolean) as BeatDef[]
+  let t = 0
+  const placed = ordered.map((b) => {
+    if (b.enabled === false) return { ...b }
+    const line = project.audio.voice ? voiceLineFor(b.id, project.script).text : ''
+    const need = estimateSpeechSec(line, rate)
+    const dur = Math.max(b.dur, +need.toFixed(2), 0.6)
+    const nb = { ...b, start: +t.toFixed(2), dur }
+    t += dur
+    return nb
+  })
+  const total = Math.max(4, +t.toFixed(2))
+  const final = placed.map((b) => (b.enabled === false ? { ...b, start: total } : b))
+  return { ...project, beats: final, duration: total }
+}
 
 // Resserre les moments actifs bout à bout (dans l'ordre canonique) et ajuste la
 // durée totale ; les moments masqués sont parqués à la fin (hors déroulé).
