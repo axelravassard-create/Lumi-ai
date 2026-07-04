@@ -8,12 +8,26 @@ import { applyIdea, getDailyIdea, setDailyIdea, type ReelIdea } from '../../lib/
 import { PROFESSIONS } from '../../lib/professions'
 import { analyze } from '../../lib/engine'
 import { HOOKS, CTAS, PIVOTS, PRESETS } from '../../lib/studio/library'
-import { interpolate, riskEmoji } from '../../lib/studio/script'
-import { speak } from '../../lib/studio/tts'
+import { interpolate, riskEmoji, voiceLineFor } from '../../lib/studio/script'
+import { listVoices, speak } from '../../lib/studio/tts'
 import { deleteProject, duplicateProject, listProjects, newProject } from '../../lib/studio/projects'
 import { Row, Section, Segmented, Slider } from './ui'
 
 type P = { project: Project; onChange: (p: Project) => void }
+
+// Voix TTS disponibles (dépend du navigateur/OS), rechargées si la liste change.
+function useVoices(): SpeechSynthesisVoice[] {
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  useEffect(() => {
+    const load = () => setVoices(listVoices())
+    load()
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.addEventListener('voiceschanged', load)
+      return () => speechSynthesis.removeEventListener('voiceschanged', load)
+    }
+  }, [])
+  return voices
+}
 
 // Bouton « écouter » (TTS) une réplique.
 function Listen({ text, project }: { text: string; project: Project }) {
@@ -312,17 +326,72 @@ export function CharacterPanel({ project, onChange }: P) {
 // ── Audio ────────────────────────────────────────────────────────────────────
 export function AudioPanel({ project, onChange }: P) {
   const a = project.audio
+  const s = project.script
+  const voices = useVoices()
   const fileRef = useRef<HTMLInputElement>(null)
   const set = (patch: Partial<typeof a>) => onChange({ ...project, audio: { ...a, ...patch } })
+  // Met à jour la voix off d'un beat (texte et/ou voix).
+  const setVo = (id: (typeof BEAT_ORDER)[number], patch: { text?: string | undefined; voice?: string | undefined }) =>
+    onChange({ ...project, script: { ...s, vo: { ...(s.vo || {}), [id]: { ...(s.vo?.[id] || {}), ...patch } } } })
+
   return (
     <Section title="🔊 Audio">
       <label className="flex items-center gap-2 text-xs font-semibold text-ink-600">
         <input type="checkbox" checked={a.voice} onChange={(e) => set({ voice: e.target.checked })} className="accent-brand-600" />
-        Voix off (TTS FR) — aperçu uniquement
+        Voix off (TTS) — aperçu uniquement
       </label>
+      <Row label="Voix">
+        <select value={a.voiceName} onChange={(e) => set({ voiceName: e.target.value })} className="field">
+          <option value="">Voix auto (français)</option>
+          {voices.map((v) => (
+            <option key={v.name} value={v.name}>{v.name} · {v.lang}</option>
+          ))}
+        </select>
+      </Row>
+      {voices.length === 0 && <p className="text-[11px] text-ink-400">Les voix se chargent selon ton navigateur/OS. Sur Mac, tu en as plusieurs en français (Thomas, Amélie…).</p>}
       <Row label="Débit de la voix" hint={`${a.voiceRate.toFixed(2)}×`}>
         <Slider value={a.voiceRate} min={0.8} max={1.5} onChange={(v) => set({ voiceRate: v })} />
       </Row>
+
+      {/* Éditeur de voix off par réplique */}
+      <div className="space-y-2 rounded-2xl bg-ink-50 p-3">
+        <div className="text-xs font-bold text-ink-700">🎙️ Voix off (par réplique)</div>
+        <p className="text-[11px] text-ink-400">Change ce que la voix dit (ajoute/enlève des mots). Laisse vide pour rendre la réplique muette ; « ↺ auto » remet le texte d'origine.</p>
+        {BEAT_ORDER.map((id) => {
+          const b = project.beats.find((x) => x.id === id)
+          if (!b) return null
+          const m = BEAT_META[id]
+          const ov = s.vo?.[id]
+          const shown = ov && ov.text !== undefined ? ov.text : voiceLineFor(id, s).text
+          const off = b.enabled === false
+          return (
+            <div key={id} className={`space-y-1 rounded-xl border border-ink-100 bg-white p-2 ${off ? 'opacity-50' : ''}`}>
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-ink-600">
+                <span>{m.emoji}</span> {m.label}{off && <span className="text-ink-400">(masqué)</span>}
+                {ov && ov.text !== undefined && (
+                  <button onClick={() => setVo(id, { text: undefined })} className="ml-auto text-[10px] text-ink-400 hover:text-brand-600">↺ auto</button>
+                )}
+              </div>
+              <div className="flex gap-1.5">
+                <input value={shown} onChange={(e) => setVo(id, { text: e.target.value })} className="field !py-1.5 text-sm" />
+                <button
+                  onClick={() => speak(interpolate(shown, s.metier, s.score), a.voiceRate, a.voiceVolume, ov?.voice || a.voiceName)}
+                  title="Écouter"
+                  className="shrink-0 rounded-lg border border-ink-200 px-2 text-xs text-ink-500 hover:border-brand-300 hover:text-brand-600"
+                >🔊</button>
+              </div>
+              {voices.length > 0 && (
+                <select value={ov?.voice || ''} onChange={(e) => setVo(id, { voice: e.target.value || undefined })} className="field !py-1 text-[11px]">
+                  <option value="">↳ voix globale</option>
+                  {voices.map((v) => (
+                    <option key={v.name} value={v.name}>{v.name}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )
+        })}
+      </div>
 
       <label className="flex items-center gap-2 text-xs font-semibold text-ink-600">
         <input type="checkbox" checked={a.sfx} onChange={(e) => set({ sfx: e.target.checked })} className="accent-brand-600" />

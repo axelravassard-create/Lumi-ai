@@ -298,6 +298,13 @@ pédagogique.
   overlay ni transition — ex. retirer le pivot). Bouton « Compacter »
   (`compactBeats`) resserre les moments actifs bout à bout et ajuste `duration` ;
   les moments masqués sont parqués à la fin.
+- **Voix off éditable + multi-voix** (onglet Audio) : `audio.voiceName` = voix TTS
+  globale (liste via `tts.listVoices()`, dépend du navigateur/OS) ; `script.vo`
+  (`Partial<Record<BeatKind, {text?,voice?}>>`) permet d'**éditer le texte dit par
+  réplique** (ajout/suppression de mots, vide = muet, « ↺ auto » = revient au texte
+  dérivé) et d'assigner une **voix différente par réplique**. `voiceLineFor(phase, s)`
+  résout override→auto ; `speak(text, rate, vol, voiceName?)`. `StudioPreview` cale la
+  voix off sur les beats actifs (ignore les beats désactivés).
 - **Réglages fins** : humeur du perso manuelle (`character.mood`, sinon `auto` par
   beat) + vraies entrées `pop`/`slide`/`zoom` (transforme `avatarScale`/`avatarDX/DY`
   dans le `Frame`) ; écoute TTS par réplique (bouton 🔊) ; **ducking** auto (la

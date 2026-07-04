@@ -34,6 +34,12 @@ export interface ActionCard {
 }
 
 // Contenu éditable de la cinématique (le métier s'injecte via {METIER}/{SCORE}).
+// Réglage de la voix off pour un beat : texte dit (override) + voix (override).
+export interface VoiceLine {
+  text?: string // ce que la voix DIT (si absent : dérivé du script/on-screen)
+  voice?: string // nom de la voix (si absent : voix globale)
+}
+
 export interface ScriptModel {
   metier: string
   score: number
@@ -46,6 +52,8 @@ export interface ScriptModel {
   pivot: string
   actions: ActionCard[]
   cta: string
+  // Voix off personnalisée par moment (texte et/ou voix). Vide = auto.
+  vo?: Partial<Record<BeatKind, VoiceLine>>
 }
 
 // Un beat placé sur la timeline : déplaçable / redimensionnable / activable.
@@ -68,6 +76,7 @@ export interface CaptionCfg {
 
 export interface AudioCfg {
   voice: boolean
+  voiceName: string // voix TTS globale (nom SpeechSynthesis) ; '' = auto FR
   voiceVolume: number
   voiceRate: number
   musicUrl: string

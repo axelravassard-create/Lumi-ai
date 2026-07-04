@@ -39,6 +39,7 @@ export function newProject(metier = 'Développeur·se', score = 73, level = 'Él
     caption: { enabled: true, style: 'tiktok', posY: 0.2, scale: 1, timing: 'auto', offset: 0, pace: 1 },
     audio: {
       voice: true,
+      voiceName: '',
       voiceVolume: 1,
       voiceRate: 1.08,
       musicUrl: '',

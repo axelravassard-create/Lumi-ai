@@ -22,12 +22,28 @@ export function warmTTS() {
   speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices()
 }
 
-export function speak(text: string, rate = 1.08, volume = 1) {
+// Liste des voix disponibles (dépend du navigateur/OS), FR d'abord.
+export function listVoices(): SpeechSynthesisVoice[] {
+  if (typeof speechSynthesis === 'undefined') return []
+  const voices = speechSynthesis.getVoices()
+  return [...voices].sort((a, b) => {
+    const af = a.lang.toLowerCase().startsWith('fr') ? 0 : 1
+    const bf = b.lang.toLowerCase().startsWith('fr') ? 0 : 1
+    return af - bf || a.name.localeCompare(b.name)
+  })
+}
+
+function voiceByName(name?: string): SpeechSynthesisVoice | null {
+  if (!name) return frenchVoice()
+  return listVoices().find((v) => v.name === name) || frenchVoice()
+}
+
+export function speak(text: string, rate = 1.08, volume = 1, voiceName?: string) {
   if (typeof speechSynthesis === 'undefined' || !text) return
   const u = new SpeechSynthesisUtterance(text)
-  const v = frenchVoice()
+  const v = voiceByName(voiceName)
   if (v) u.voice = v
-  u.lang = 'fr-FR'
+  u.lang = v?.lang || 'fr-FR'
   u.rate = rate
   u.pitch = 1.05
   u.volume = volume

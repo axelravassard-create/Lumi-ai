@@ -5,7 +5,7 @@ import { fmtSize } from '../../lib/studio/types'
 import { evalFrame } from '../../lib/studio/timeline'
 import { avatarRect, drawBackground, drawEmptyBackground, renderOverlay } from '../../lib/studio/render'
 import { scheduleSfx, sharedCtx } from '../../lib/studio/audio'
-import { narrationFor } from '../../lib/studio/script'
+import { voiceLineFor } from '../../lib/studio/script'
 import { speak, stopTTS, warmTTS } from '../../lib/studio/tts'
 
 const RobotAvatar = lazy(() => import('../avatar/RobotAvatar'))
@@ -169,10 +169,16 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
     if (actx) scheduleSfx(actx, p, actx.currentTime + 0.05, startOffset, actx.destination, 1)
     if (p.audio.voice) {
       for (const b of p.beats) {
-        const line = narrationFor(b.id, p.script)
+        if (b.enabled === false) continue
+        const { text, voice } = voiceLineFor(b.id, p.script)
         const at = b.start
-        if (!line || at < startOffset - 0.05) continue
-        ttsTimers.push(window.setTimeout(() => speak(line, p.audio.voiceRate, p.audio.voiceVolume), (at - startOffset) * 1000))
+        if (!text || at < startOffset - 0.05) continue
+        ttsTimers.push(
+          window.setTimeout(
+            () => speak(text, p.audio.voiceRate, p.audio.voiceVolume, voice || p.audio.voiceName),
+            (at - startOffset) * 1000,
+          ),
+        )
       }
     }
     const music = audioRef.current

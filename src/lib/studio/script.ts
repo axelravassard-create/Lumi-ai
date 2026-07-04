@@ -1,5 +1,5 @@
 // Construction du script de la cinématique à partir d'un métier + score.
-import type { ScriptModel } from './types'
+import type { BeatKind, ScriptModel } from './types'
 import { DEFAULT_ACTIONS, HOOKS, CTAS, PIVOTS } from './library'
 
 // Remplace {METIER} / {SCORE} dans un texte.
@@ -37,6 +37,13 @@ export function defaultScript(metier: string, score: number, level: string): Scr
     actions: DEFAULT_ACTIONS.map((a) => ({ ...a })),
     cta: CTAS[0],
   }
+}
+
+// Résout la voix off d'un beat : texte + voix, override utilisateur sinon auto.
+export function voiceLineFor(phase: BeatKind, s: ScriptModel): { text: string; voice?: string } {
+  const ov = s.vo?.[phase]
+  const text = ov && ov.text !== undefined ? ov.text : narrationFor(phase, s)
+  return { text, voice: ov?.voice }
 }
 
 // Ligne de narration (voix off + caption karaoké) pour chaque beat.
