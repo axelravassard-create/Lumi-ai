@@ -1,7 +1,7 @@
 // Sauvegarde / chargement multi-projets (localStorage). Les médias (vidéo,
 // musique) NE sont PAS persistés (object-URLs éphémères) : on garde les réglages,
 // l'utilisateur ré-importe son fichier au besoin.
-import type { BeatDef, Project } from './types'
+import type { BeatDef, BeatKind, Project } from './types'
 import { BEAT_ORDER } from './types'
 import { DEFAULT_BEATS, DEFAULT_DURATION } from './library'
 import { defaultScript, voiceLineFor } from './script'
@@ -90,6 +90,22 @@ function migrate(p: Project): Project {
     character: { ...d.character, ...p.character },
     tempo: { ...d.tempo, ...(p.tempo ?? {}) },
   }
+}
+
+// Change la durée d'un moment et décale les moments suivants pour rester calé
+// (préserve l'ordre et les éventuels espaces). Min 0,3 s.
+export function setBeatDur(project: Project, id: BeatKind, durRaw: number): Project {
+  const dur = Math.max(0.3, Math.round(durRaw * 100) / 100)
+  const target = project.beats.find((b) => b.id === id)
+  if (!target || dur === target.dur) return project
+  const delta = dur - target.dur
+  const end = target.start + target.dur
+  const beats = project.beats.map((b) => {
+    if (b.id === id) return { ...b, dur }
+    if (b.enabled !== false && b.start >= end - 0.001) return { ...b, start: Math.max(0, +(b.start + delta).toFixed(2)) }
+    return b
+  })
+  return { ...project, beats }
 }
 
 // Lie la durée de la vidéo à la fin du dernier moment actif (si autoDuration).

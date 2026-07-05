@@ -10,7 +10,7 @@ import { analyze } from '../../lib/engine'
 import { HOOKS, CTAS, PIVOTS, PRESETS } from '../../lib/studio/library'
 import { interpolate, riskEmoji, voiceLineFor } from '../../lib/studio/script'
 import { estimateSpeechSec, listVoices, speak } from '../../lib/studio/tts'
-import { deleteProject, duplicateProject, fitToVoice, listProjects, newProject } from '../../lib/studio/projects'
+import { deleteProject, duplicateProject, fitToVoice, listProjects, newProject, setBeatDur } from '../../lib/studio/projects'
 import { Row, Section, Segmented, Slider } from './ui'
 
 type P = { project: Project; onChange: (p: Project) => void }
@@ -691,13 +691,29 @@ export function BeatsPanel({ project, onChange, onCompact }: P & { onCompact: ()
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-lg" style={{ background: on ? m.color : '#e5e7eb' }}>{m.emoji}</span>
             <div className="min-w-0 flex-1">
               <div className={`text-sm font-semibold ${on ? 'text-ink-800' : 'text-ink-400 line-through'}`}>{m.label}</div>
-              <div className="text-[11px] text-ink-400">{on ? `${b.dur.toFixed(1)}s` : 'masqué'}</div>
+              {on ? (
+                <div className="mt-0.5 flex items-center gap-1">
+                  <button onClick={() => onChange(setBeatDur(project, id, b.dur - 0.25))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">−</button>
+                  <input
+                    type="number"
+                    step={0.1}
+                    min={0.3}
+                    value={b.dur}
+                    onChange={(e) => { const v = parseFloat(e.target.value); if (!Number.isNaN(v)) onChange(setBeatDur(project, id, v)) }}
+                    className="field !w-16 !px-1 !py-1 text-center text-xs"
+                  />
+                  <span className="text-[11px] text-ink-400">s</span>
+                  <button onClick={() => onChange(setBeatDur(project, id, b.dur + 0.25))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">+</button>
+                </div>
+              ) : (
+                <div className="text-[11px] text-ink-400">masqué</div>
+              )}
             </div>
             <button
               onClick={() => setBeat(id, !on)}
               role="switch"
               aria-checked={on}
-              className={`relative h-6 w-11 shrink-0 rounded-full transition ${on ? 'bg-brand-500' : 'bg-ink-300'}`}
+              className={`relative h-6 w-11 shrink-0 self-start rounded-full transition ${on ? 'bg-brand-500' : 'bg-ink-300'}`}
             >
               <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${on ? 'left-[22px]' : 'left-0.5'}`} />
             </button>
