@@ -174,9 +174,9 @@ export function evalFrame(project: Project, t: number): Frame {
   const loop = t > total - 0.6 ? clamp((t - (total - 0.6)) / 0.6) : 0
 
   // ── Caption karaoké (bas) — narration ───────────────────────────────────
-  // Supprimée là où un gros graphique porte déjà le message (hook, verdict,
-  // solution) pour éviter la surcharge visuelle.
-  const NO_CAPTION = phase === 'hook' || phase === 'verdict' || phase === 'solution' || phase === 'cta'
+  // Supprimée là où un gros graphique porte déjà le message (hook, pivot,
+  // verdict, solution, cta) pour éviter le texte en double.
+  const NO_CAPTION = phase === 'hook' || phase === 'pivot' || phase === 'verdict' || phase === 'solution' || phase === 'cta'
   let caption: Frame['caption'] = null
   if (project.caption.enabled && !NO_CAPTION) {
     const cw = w[phase]
