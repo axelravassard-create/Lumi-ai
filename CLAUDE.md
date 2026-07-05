@@ -293,6 +293,10 @@ pédagogique.
   Blumi loucher vers la souris.
 - **Raccourcis** (ClipStudio) : Espace = lecture/pause, ←/→ = image (±0,1 s ; ±1 s
   avec Maj), Début = t0 ; + boutons ⏪/⏩ de pas image par image.
+- **Blumi caché dans les trous** : `evalFrame` calcule `frame.avatarAlpha` (fondu 0,18 s
+  aux bords) ; si l'instant `t` n'est dans AUCUN moment actif (trou de timeline),
+  `avatarAlpha=0` → `StudioPreview` ne dessine pas l'avatar (on ne voit que la vidéo
+  de fond). Le watermark, lui, reste (branding voulu tout du long).
 - **Durée liée aux moments** : `project.autoDuration` (défaut true) → `normalizeDuration()`
   fixe `duration` = fin du dernier moment actif. Toute édition passe par `applyProject`
   (ClipStudio) qui normalise. La `Timeline` affiche avec une **marge à droite** (`span`

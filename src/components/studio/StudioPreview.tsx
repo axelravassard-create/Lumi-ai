@@ -106,11 +106,14 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
       drawEmptyBackground(ctx, w, h)
     }
 
-    // Personnage (couche WebGL composée).
+    // Personnage (couche WebGL composée). Caché dans les trous sans moment.
     const av = avatarCanvas()
-    if (av && av.width > 0) {
+    if (av && av.width > 0 && f.avatarAlpha > 0.001) {
       const r = avatarRect(p, f, w, h)
+      ctx.save()
+      ctx.globalAlpha = f.avatarAlpha
       ctx.drawImage(av, r.x, r.y, r.w, r.h)
+      ctx.restore()
     }
 
     // Overlays 2D (hook, scan, jauge, cartes, captions, CTA…).

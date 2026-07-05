@@ -142,6 +142,7 @@ export interface Frame {
   mood: AvatarMood
   speaking: boolean
   avatarIn: number // 0..1 progression d'entrée
+  avatarAlpha: number // 0 = Blumi caché (trou sans moment) ; 1 = visible
   avatarScale: number // multiplicateur d'échelle (entrée pop/zoom)
   avatarDX: number // décalage horizontal (fraction de largeur, entrée slide)
   avatarDY: number // décalage vertical (fraction de hauteur, entrée slide)

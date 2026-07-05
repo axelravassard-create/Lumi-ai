@@ -89,6 +89,22 @@ export function evalFrame(project: Project, t: number): Frame {
     }
   }
 
+  // Visibilité de Blumi : présent seulement quand un moment est actif. Dans un
+  // « trou » de la timeline (aucun moment), il s'efface → on ne voit que le fond.
+  // Fondu court aux bords pour une apparition/disparition douce.
+  const FADE = 0.18
+  let avatarAlpha = 0
+  for (const b of project.beats) {
+    if (b.enabled === false) continue
+    const bs = b.start
+    const be = b.start + b.dur
+    let a = 0
+    if (t >= bs && t <= be) a = 1
+    else if (t < bs && t > bs - FADE) a = 1 - (bs - t) / FADE
+    else if (t > be && t < be + FADE) a = 1 - (t - be) / FADE
+    if (a > avatarAlpha) avatarAlpha = a
+  }
+
   // Humeur : auto (pilotée par les beats) ou forcée par l'utilisateur.
   let mood: Frame['mood'] = 'neutral'
   if (phase === 'verdict' || phase === 'pivot') mood = 'concerned'
@@ -186,6 +202,7 @@ export function evalFrame(project: Project, t: number): Frame {
     mood,
     speaking,
     avatarIn,
+    avatarAlpha,
     avatarScale,
     avatarDX,
     avatarDY,
