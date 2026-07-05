@@ -111,14 +111,20 @@ export function renderOverlay(
   const topSafe = safe.top * ch
   const botSafe = safe.bottom * ch
 
-  // Vignette cinématique (lisibilité du texte).
-  const grad = ctx.createLinearGradient(0, 0, 0, ch)
-  grad.addColorStop(0, 'rgba(6,14,30,0.55)')
-  grad.addColorStop(0.28, 'rgba(6,14,30,0)')
-  grad.addColorStop(0.7, 'rgba(6,14,30,0)')
-  grad.addColorStop(1, 'rgba(6,14,30,0.7)')
-  ctx.fillStyle = grad
-  ctx.fillRect(0, 0, cw, ch)
+  // Dans un « trou » sans moment, tout le branding Blumi s'efface (vignette +
+  // watermark) pour laisser voir la vidéo de fond nette. `a` = présence d'un moment.
+  const a = f.avatarAlpha
+
+  // Vignette cinématique (lisibilité du texte) — proportionnelle à la présence.
+  if (a > 0.001) {
+    const grad = ctx.createLinearGradient(0, 0, 0, ch)
+    grad.addColorStop(0, `rgba(6,14,30,${0.55 * a})`)
+    grad.addColorStop(0.28, 'rgba(6,14,30,0)')
+    grad.addColorStop(0.7, 'rgba(6,14,30,0)')
+    grad.addColorStop(1, `rgba(6,14,30,${0.7 * a})`)
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, cw, ch)
+  }
 
   if (f.scanActive) drawScan(ctx, f, cw, ch, topSafe, botSafe)
   drawHook(ctx, f, cw, topSafe)
@@ -128,7 +134,7 @@ export function renderOverlay(
   if (f.caption) drawCaption(ctx, f, project, cw, ch, botSafe)
   if (f.ctaIn > 0) drawCTA(ctx, f, cw, ch, botSafe)
 
-  if (opts.watermark !== false) drawWatermark(ctx, cw, topSafe, safe.right * cw)
+  if (opts.watermark !== false && a > 0.001) drawWatermark(ctx, cw, topSafe, safe.right * cw, a)
 
   // Flash du glow-up (blanc maîtrisé, jamais saturé).
   if (f.flash > 0) {
@@ -449,10 +455,10 @@ function drawCTA(ctx: CanvasRenderingContext2D, f: Frame, cw: number, ch: number
   ctx.restore()
 }
 
-function drawWatermark(ctx: CanvasRenderingContext2D, cw: number, topSafe: number, _rightSafe: number) {
+function drawWatermark(ctx: CanvasRenderingContext2D, cw: number, topSafe: number, _rightSafe: number, alpha = 1) {
   const size = cw * 0.038
   ctx.save()
-  ctx.globalAlpha = 0.85
+  ctx.globalAlpha = 0.85 * alpha
   ctx.font = `900 ${size}px ${DISPLAY}`
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'

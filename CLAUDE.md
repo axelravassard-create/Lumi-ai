@@ -295,8 +295,9 @@ pédagogique.
   avec Maj), Début = t0 ; + boutons ⏪/⏩ de pas image par image.
 - **Blumi caché dans les trous** : `evalFrame` calcule `frame.avatarAlpha` (fondu 0,18 s
   aux bords) ; si l'instant `t` n'est dans AUCUN moment actif (trou de timeline),
-  `avatarAlpha=0` → `StudioPreview` ne dessine pas l'avatar (on ne voit que la vidéo
-  de fond). Le watermark, lui, reste (branding voulu tout du long).
+  `avatarAlpha=0` → `StudioPreview` ne dessine pas l'avatar, ET `renderOverlay`
+  efface aussi la **vignette** + le **watermark** (proportionnels à `a=avatarAlpha`)
+  → dans un trou, fond 100 % nu (seuls restent les repères d'édition, hors export).
 - **Durée liée aux moments** : `project.autoDuration` (défaut true) → `normalizeDuration()`
   fixe `duration` = fin du dernier moment actif. Toute édition passe par `applyProject`
   (ClipStudio) qui normalise. La `Timeline` affiche avec une **marge à droite** (`span`
