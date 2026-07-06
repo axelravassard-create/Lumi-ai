@@ -313,8 +313,10 @@ pédagogique.
   `BeatsPanel`). Un beat désactivé est ignoré par `windows()`/`activeBeat()` (aucun
   overlay ni transition — ex. retirer le pivot). Bouton « Compacter »
   (`compactBeats`) resserre les moments actifs bout à bout et ajuste `duration` ;
-  les moments masqués sont parqués à la fin. Réglage numérique de la durée par
-  moment (`setBeatDur` : −/+ 0,25 s + saisie exacte) qui décale les suivants (ripple).
+  les moments masqués sont parqués à la fin. Réglage numérique **Début** (position,
+  `setBeatStart`, libre) + **Durée** (`setBeatDur`, ripple sur les suivants) par
+  moment (−/+ 0,25 s + saisie exacte) → déplacer un moment dans le temps sans le
+  glisser sur la timeline (pratique au doigt).
 - **Voix off éditable + multi-voix** (onglet Audio) : `audio.voiceName` = voix TTS
   globale (liste via `tts.listVoices()`, dépend du navigateur/OS) ; `script.vo`
   (`Partial<Record<BeatKind, {text?,voice?}>>`) permet d'**éditer le texte dit par

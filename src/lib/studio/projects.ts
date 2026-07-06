@@ -92,6 +92,12 @@ function migrate(p: Project): Project {
   }
 }
 
+// Déplace un moment dans le temps (fixe son début, libre). Min 0 s.
+export function setBeatStart(project: Project, id: BeatKind, startRaw: number): Project {
+  const start = Math.max(0, Math.round(startRaw * 100) / 100)
+  return { ...project, beats: project.beats.map((b) => (b.id === id ? { ...b, start } : b)) }
+}
+
 // Change la durée d'un moment et décale les moments suivants pour rester calé
 // (préserve l'ordre et les éventuels espaces). Min 0,3 s.
 export function setBeatDur(project: Project, id: BeatKind, durRaw: number): Project {

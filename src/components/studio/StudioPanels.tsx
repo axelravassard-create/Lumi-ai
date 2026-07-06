@@ -10,7 +10,7 @@ import { analyze } from '../../lib/engine'
 import { HOOKS, CTAS, PIVOTS, PRESETS } from '../../lib/studio/library'
 import { interpolate, riskEmoji, voiceLineFor } from '../../lib/studio/script'
 import { estimateSpeechSec, listVoices, speak } from '../../lib/studio/tts'
-import { deleteProject, duplicateProject, fitToVoice, listProjects, newProject, setBeatDur } from '../../lib/studio/projects'
+import { deleteProject, duplicateProject, fitToVoice, listProjects, newProject, setBeatDur, setBeatStart } from '../../lib/studio/projects'
 import { Row, Section, Segmented, Slider } from './ui'
 
 type P = { project: Project; onChange: (p: Project) => void }
@@ -680,7 +680,7 @@ export function BeatsPanel({ project, onChange, onCompact }: P & { onCompact: ()
   const enabledCount = project.beats.filter((b) => b.enabled !== false).length
   return (
     <Section title="🎞️ Moments du clip">
-      <p className="text-xs text-ink-500">Active ou retire un moment de la cinématique (ex. le pivot). « Compacter » resserre le clip sur les moments actifs.</p>
+      <p className="text-xs text-ink-500">Active/retire un moment, et règle précisément son <b>Début</b> (position dans le temps) et sa <b>Durée</b>. « Compacter » resserre tout bout à bout.</p>
       {BEAT_ORDER.map((id) => {
         const b = project.beats.find((x) => x.id === id)
         if (!b) return null
@@ -692,18 +692,37 @@ export function BeatsPanel({ project, onChange, onCompact }: P & { onCompact: ()
             <div className="min-w-0 flex-1">
               <div className={`text-sm font-semibold ${on ? 'text-ink-800' : 'text-ink-400 line-through'}`}>{m.label}</div>
               {on ? (
-                <div className="mt-0.5 flex items-center gap-1">
-                  <button onClick={() => onChange(setBeatDur(project, id, b.dur - 0.25))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">−</button>
-                  <input
-                    type="number"
-                    step={0.1}
-                    min={0.3}
-                    value={b.dur}
-                    onChange={(e) => { const v = parseFloat(e.target.value); if (!Number.isNaN(v)) onChange(setBeatDur(project, id, v)) }}
-                    className="field !w-16 !px-1 !py-1 text-center text-xs"
-                  />
-                  <span className="text-[11px] text-ink-400">s</span>
-                  <button onClick={() => onChange(setBeatDur(project, id, b.dur + 0.25))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">+</button>
+                <div className="mt-1 space-y-1">
+                  {/* Début : position du moment dans le temps */}
+                  <div className="flex items-center gap-1">
+                    <span className="w-11 shrink-0 text-[11px] text-ink-400">Début</span>
+                    <button onClick={() => onChange(setBeatStart(project, id, b.start - 0.25))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">−</button>
+                    <input
+                      type="number"
+                      step={0.1}
+                      min={0}
+                      value={b.start}
+                      onChange={(e) => { const v = parseFloat(e.target.value); if (!Number.isNaN(v)) onChange(setBeatStart(project, id, v)) }}
+                      className="field !w-16 !px-1 !py-1 text-center text-xs"
+                    />
+                    <span className="text-[11px] text-ink-400">s</span>
+                    <button onClick={() => onChange(setBeatStart(project, id, b.start + 0.25))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">+</button>
+                  </div>
+                  {/* Durée du moment */}
+                  <div className="flex items-center gap-1">
+                    <span className="w-11 shrink-0 text-[11px] text-ink-400">Durée</span>
+                    <button onClick={() => onChange(setBeatDur(project, id, b.dur - 0.25))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">−</button>
+                    <input
+                      type="number"
+                      step={0.1}
+                      min={0.3}
+                      value={b.dur}
+                      onChange={(e) => { const v = parseFloat(e.target.value); if (!Number.isNaN(v)) onChange(setBeatDur(project, id, v)) }}
+                      className="field !w-16 !px-1 !py-1 text-center text-xs"
+                    />
+                    <span className="text-[11px] text-ink-400">s</span>
+                    <button onClick={() => onChange(setBeatDur(project, id, b.dur + 0.25))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">+</button>
+                  </div>
                 </div>
               ) : (
                 <div className="text-[11px] text-ink-400">masqué</div>
