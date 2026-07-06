@@ -373,12 +373,20 @@ const CAPTION_COLORS: Record<CaptionStyle, { fill: string; active: string; strok
 function drawCaption(ctx: CanvasRenderingContext2D, f: Frame, project: Project, cw: number, ch: number, botSafe: number) {
   if (!f.caption) return
   const st = CAPTION_COLORS[f.caption.style]
-  const size = cw * 0.062 * project.caption.scale
-  ctx.font = `900 ${size}px ${DISPLAY}`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   const maxW = cw * 0.82
-  const lines = wrap(ctx, f.caption.words.map((w) => w.text), maxW)
+  const words = f.caption.words.map((w) => w.text)
+  // Taille de base plus mesurée + auto-réduction si la phrase est longue (max 3
+  // lignes) → un sous-titre comme celui du glow-up ne s'affiche plus trop gros.
+  let size = cw * 0.05 * project.caption.scale
+  ctx.font = `900 ${size}px ${DISPLAY}`
+  let lines = wrap(ctx, words, maxW)
+  while (lines.length > 3 && size > cw * 0.03) {
+    size *= 0.9
+    ctx.font = `900 ${size}px ${DISPLAY}`
+    lines = wrap(ctx, words, maxW)
+  }
   const lh = size * 1.2
   const baseY = ch - botSafe - lines.length * lh - cw * 0.04 + (1 - project.caption.posY) * 0
   const y0 = ch * (0.6 + project.caption.posY * 0.18)

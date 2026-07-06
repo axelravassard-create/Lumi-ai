@@ -271,11 +271,13 @@ pédagogique.
   TTS (SpeechSynthesis) n'est PAS routable dans Web Audio → jouée à l'aperçu mais
   **absente du MP4 exporté** ; emplacement prévu pour brancher une voix API (buffer
   mixable) dans `tts.ts`.
-- **Export** (`export.ts`) : `captureStream(30)` + `MediaRecorder` (WebM) avec piste
-  audio (musique+SFX mixés), puis WebM→MP4 (H.264/AAC) via **ffmpeg.wasm** (cœur
-  mono-thread chargé depuis un CDN, repli unpkg→jsdelivr ; repli WebM si le CDN est
-  injoignable). Multi-projets en `localStorage` (`blumi.studio.*`), les médias
-  (object-URLs) ne sont PAS persistés. Cover PNG exportable.
+- **Export** (`export.ts`) : `captureStream(30)` + `MediaRecorder` avec piste audio
+  (musique+SFX mixés). ⚡ `pickMime()` tente **`video/mp4` en premier** → sur Safari
+  (et Chromium récent) l'enregistrement sort **directement en MP4**, donc AUCUNE
+  conversion (0→98 % = enregistrement, pas de blocage). Sinon (WebM) conversion
+  WebM→MP4 via **ffmpeg.wasm** (preset `ultrafast`, CDN unpkg→jsdelivr, **timeout
+  300 s → repli WebM** pour ne jamais rester figé). Multi-projets en `localStorage`
+  (`blumi.studio.*`), médias (object-URLs) non persistés. Cover PNG exportable.
 - **Idées à partir de l'actu IA** (onglet « Idées », `IdeasPanel` + `src/lib/studio/ideas.ts`
   + `generateReelIdeas` dans `llm.ts`) : Claude (Sonnet + `web_search_20260209`) cherche
   une **info IA récente** impactant un métier et en tire un concept de réel (info +
