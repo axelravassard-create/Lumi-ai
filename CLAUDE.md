@@ -241,6 +241,12 @@ pédagogique.
   `PROFESSIONS.length`.
 
 ## Studio de clips viraux — route `#/studio` (`src/components/studio/`)
+- **Responsive** : `ClipStudio` empile verticalement sur mobile (aperçu `h-[46vh]` +
+  transport + timeline, puis panneaux pleine largeur défilables) et repasse côte à
+  côte en `lg:` (aside `w-[340px]`). En-tête compact (labels masqués `< sm`). ⚠️
+  L'**export MP4 ne marche PAS sur iOS Safari** (`canvas.captureStream` absent) →
+  `runExport` détecte l'absence et affiche « dispo sur ordinateur ». Éditer/prévisualiser
+  OK sur iPhone ; exporter = desktop.
 - **Outil PRIVÉ (mono-utilisateur)** pour produire des shorts verticaux (9:16) :
   vidéo de fond importée + cinématique animée par-dessus (Blumi débarque, scanne le
   métier, révèle un score choc, puis Blumiman donne la solution), export MP4.

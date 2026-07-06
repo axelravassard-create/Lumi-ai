@@ -154,6 +154,12 @@ export function ClipStudio({ onBack }: Props) {
   const runExport = async () => {
     const h = previewRef.current
     if (!h || !h.master) return
+    // iOS Safari ne sait pas capturer le canvas → export impossible sur mobile.
+    if (typeof (h.master as HTMLCanvasElement & { captureStream?: unknown }).captureStream !== 'function') {
+      setStatus('Export vidéo dispo sur ordinateur (pas sur iPhone) 💻')
+      setTimeout(() => setStatus(''), 5000)
+      return
+    }
     setPlaying(false)
     setExporting(true)
     setProgress(0)
@@ -261,30 +267,30 @@ export function ClipStudio({ onBack }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-ink-950 text-white">
       {/* Barre du haut */}
-      <header className="flex items-center gap-3 border-b border-white/10 px-4 py-2.5">
-        <button onClick={onBack} className="rounded-lg px-2.5 py-1.5 text-sm text-white/70 hover:bg-white/10">← Quitter</button>
-        <div className="flex items-center gap-2 font-display text-sm font-bold">
+      <header className="flex flex-wrap items-center gap-2 border-b border-white/10 px-3 py-2">
+        <button onClick={onBack} className="rounded-lg px-2 py-1.5 text-sm text-white/70 hover:bg-white/10">←<span className="hidden sm:inline"> Quitter</span></button>
+        <div className="hidden items-center gap-2 font-display text-sm font-bold sm:flex">
           <span className="grid h-6 w-6 place-items-center rounded-full bg-brand-500 text-xs">B</span>
           Blumi Clip Studio
         </div>
         <input
           value={project.name}
           onChange={(e) => setProject({ ...project, name: e.target.value })}
-          className="ml-2 rounded-lg bg-white/5 px-2 py-1 text-sm text-white/90 outline-none focus:bg-white/10"
+          className="min-w-0 flex-1 rounded-lg bg-white/5 px-2 py-1 text-sm text-white/90 outline-none focus:bg-white/10 sm:ml-2 sm:w-44 sm:flex-none"
         />
-        <div className="ml-auto flex items-center gap-2">
-          <button onClick={doSave} className="rounded-lg bg-white/10 px-3 py-1.5 text-sm font-semibold hover:bg-white/20">💾 Enregistrer</button>
-          <button onClick={exportCover} disabled={exporting} className="rounded-lg bg-white/10 px-3 py-1.5 text-sm font-semibold hover:bg-white/20 disabled:opacity-40">🖼️ Cover</button>
-          <button onClick={runExport} disabled={exporting} className="rounded-lg bg-brand-500 px-4 py-1.5 text-sm font-bold hover:bg-brand-400 disabled:opacity-50">
-            {exporting ? 'Export…' : '⬇️ Exporter MP4'}
+        <div className="flex items-center gap-2">
+          <button onClick={doSave} className="rounded-lg bg-white/10 px-2.5 py-1.5 text-sm font-semibold hover:bg-white/20">💾<span className="hidden sm:inline"> Enregistrer</span></button>
+          <button onClick={exportCover} disabled={exporting} className="rounded-lg bg-white/10 px-2.5 py-1.5 text-sm font-semibold hover:bg-white/20 disabled:opacity-40">🖼️<span className="hidden sm:inline"> Cover</span></button>
+          <button onClick={runExport} disabled={exporting} className="rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-bold hover:bg-brand-400 disabled:opacity-50">
+            {exporting ? 'Export…' : <>⬇️<span className="hidden sm:inline"> Exporter MP4</span></>}
           </button>
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
         {/* Aperçu */}
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex min-h-0 flex-1 items-center justify-center p-4">
+        <div className="flex shrink-0 flex-col lg:min-w-0 lg:flex-1 lg:shrink lg:overflow-hidden">
+          <div className="flex h-[46vh] shrink-0 items-center justify-center p-2 lg:h-auto lg:min-h-0 lg:flex-1 lg:p-4">
             <StudioPreview ref={previewRef} project={project} playing={playing} seek={seek} onUiTime={onUiTime} onEnded={onEnded} />
           </div>
 
@@ -315,8 +321,8 @@ export function ClipStudio({ onBack }: Props) {
         </div>
 
         {/* Panneaux d'édition */}
-        <aside className="flex w-[340px] shrink-0 flex-col border-l border-white/10 bg-white text-ink-900">
-          <div className="flex flex-wrap gap-1 border-b border-ink-100 p-2">
+        <aside className="flex w-full shrink-0 flex-col border-t border-white/10 bg-white text-ink-900 lg:w-[340px] lg:border-l lg:border-t-0">
+          <div className="sticky top-0 z-10 flex flex-wrap gap-1 border-b border-ink-100 bg-white p-2">
             {TABS.map((tb) => (
               <button
                 key={tb.id}
@@ -327,7 +333,7 @@ export function ClipStudio({ onBack }: Props) {
               </button>
             ))}
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto p-4">{panel()}</div>
+          <div className="p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">{panel()}</div>
         </aside>
       </div>
 
