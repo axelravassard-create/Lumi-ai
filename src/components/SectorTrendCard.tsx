@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react'
 import { SectorTrend, generateSectorTrend, describeError } from '../lib/llm'
 import { loadCachedTrend, saveTrend } from '../lib/trends'
 import { domainLabel } from '../lib/engine'
-import { useLuminator } from '../lib/entitlement'
+import { useTier } from '../lib/entitlement'
 import { t, useLang, getLang } from '../lib/i18n'
 
 interface Props {
   sector: string
   aiEnabled: boolean
   onOpenSettings: () => void
-  /** Ouvre la page Tarifs (la veille est réservée aux abonnés). */
+  /** Ouvre la page Tarifs (la veille est réservée au palier Bluminator). */
   onUpgrade?: () => void
 }
 
@@ -21,12 +21,13 @@ const DIRECTION: Record<SectorTrend['direction'], { labelKey: string; icon: stri
 
 const LOCALES: Record<string, string> = { fr: 'fr-FR', en: 'en-US', de: 'de-DE', es: 'es-ES', zh: 'zh-CN' }
 
-// Carte « Tendance de votre secteur » : note hebdomadaire fondée sur l'actualité.
+// Carte « Tendance de votre secteur » : recherche IA de l'actualité, À LA DEMANDE.
 export function SectorTrendCard({ sector, aiEnabled, onOpenSettings, onUpgrade }: Props) {
   useLang()
-  // La veille sectorielle (recherche IA sur le web, coûteuse) est RÉSERVÉE AUX
-  // ABONNÉS. Un utilisateur gratuit ne déclenche aucun appel IA ici.
-  const paid = useLuminator()
+  // La veille sectorielle (recherche IA sur le web, coûteuse) est RÉSERVÉE au
+  // palier BLUMINATOR. Et elle ne se déclenche JAMAIS toute seule : l'utilisateur
+  // doit cliquer pour lancer la recherche → aucun appel IA « pour rien ».
+  const paid = useTier() === 'bluminator'
   const [trend, setTrend] = useState<SectorTrend | null>(null)
   const [status, setStatus] = useState<'idle' | 'loading' | 'error'>('idle')
   const [error, setError] = useState('')
@@ -57,13 +58,14 @@ export function SectorTrendCard({ sector, aiEnabled, onOpenSettings, onUpgrade }
     }
   }
 
+  // On AFFICHE une veille déjà en cache si elle existe, mais on ne LANCE jamais
+  // de recherche automatiquement : c'est le clic sur le bouton qui déclenche.
   useEffect(() => {
     if (!paid) return
     const cached = loadCachedTrend(sector)
-    if (cached) setTrend(cached.trend)
-    if (aiEnabled && (!cached || !cached.fresh)) fetchTrend()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sector, aiEnabled, paid])
+    setTrend(cached ? cached.trend : null)
+    setStatus('idle')
+  }, [sector, paid])
 
   const fmtDate = (iso: string) =>
     new Date(iso).toLocaleDateString(LOCALES[getLang()] || 'en-US', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -82,7 +84,7 @@ export function SectorTrendCard({ sector, aiEnabled, onOpenSettings, onUpgrade }
         )}
       </div>
 
-      {/* Utilisateur gratuit : fonction réservée aux abonnés (aucun appel IA) */}
+      {/* Hors Bluminator : fonction réservée au palier Bluminator (aucun appel IA) */}
       {!paid && (
         <div className="mt-4 rounded-2xl bg-ink-50 p-5 text-center">
           <p className="text-sm text-ink-600">🔒 {t('str.locked')}</p>
@@ -94,7 +96,7 @@ export function SectorTrendCard({ sector, aiEnabled, onOpenSettings, onUpgrade }
         </div>
       )}
 
-      {/* Abonné mais IA non connectée : invitation à l'activer */}
+      {/* Bluminator mais IA non connectée : invitation à l'activer */}
       {paid && !aiEnabled && !trend && (
         <div className="mt-4 rounded-2xl bg-ink-50 p-5 text-center">
           <p className="text-sm text-ink-600">
@@ -103,6 +105,16 @@ export function SectorTrendCard({ sector, aiEnabled, onOpenSettings, onUpgrade }
           <button onClick={onOpenSettings} className="btn-primary mt-3 py-2.5 text-sm">
             {t('str.activate')}
           </button>
+        </div>
+      )}
+
+      {/* Bluminator + IA active, pas encore de veille : lancement MANUEL (clic) */}
+      {paid && aiEnabled && !trend && status === 'idle' && (
+        <div className="mt-4 rounded-2xl bg-ink-50 p-5 text-center">
+          <button onClick={() => fetchTrend()} className="btn-primary py-2.5 text-sm">
+            🔎 {t('str.run')}
+          </button>
+          <p className="mt-2 text-xs text-ink-500">{t('str.runHint')}</p>
         </div>
       )}
 

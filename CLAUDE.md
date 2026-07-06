@@ -143,6 +143,11 @@ pédagogique.
   `VeilleScreen.tsx` (vue `veille`, réutilise `SectorTrendCard` → action),
   `GeneratorsScreen.tsx` (vue `generators`, livrables 1 clic → ouvrent le chat),
   + raccourci « Opportunités locales » (exploite `profile.location`).
+- ⚠️ **Veille sectorielle = RÉSERVÉE À BLUMINATOR** (`SectorTrendCard` gate sur
+  `useTier() === 'bluminator'`, pas `useLuminator`) ET **déclenchée uniquement au
+  clic** (bouton `str.run`) — jamais d'appel IA automatique au montage (évite de
+  consommer du quota/coût pour rien). Retirée des features Blumiman sur la page
+  Tarifs ; mise en avant comme exclusivité Bluminator (`pricing.bn.f4`).
 - Accès au chat : bouton flottant (FAB) quand `owns`, + bouton sur l'écran Tarifs.
 
 ## Différenciation réelle des paliers (limites appliquées, `src/lib/llm.ts`)

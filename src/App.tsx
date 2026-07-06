@@ -259,6 +259,7 @@ export default function App() {
           onOpenSettings={() => setModalOpen(true)}
           onOpenChat={openChat}
           onOpenProfile={() => setView('profile')}
+          onOpenPricing={() => setView('pricing')}
         />
       )}
 

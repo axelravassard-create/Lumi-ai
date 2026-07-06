@@ -10,11 +10,12 @@ interface Props {
   onOpenSettings: () => void
   onOpenChat: (message?: string) => void
   onOpenProfile: () => void
+  onOpenPricing: () => void
 }
 
-// Veille du métier : reprend la tendance sectorielle (recherche web hebdo) et la
-// transforme en point d'action — « voici ce qui bouge + que faire ».
-export function VeilleScreen({ onBack, aiEnabled, onOpenSettings, onOpenChat, onOpenProfile }: Props) {
+// Veille du métier : reprend la tendance sectorielle (recherche web à la demande,
+// réservée à Bluminator) et la transforme en point d'action.
+export function VeilleScreen({ onBack, aiEnabled, onOpenSettings, onOpenChat, onOpenProfile, onOpenPricing }: Props) {
   useLang()
   const profile = loadProfile()
   const sector = profile.sector?.trim() || profile.role?.trim() || ''
@@ -53,7 +54,7 @@ export function VeilleScreen({ onBack, aiEnabled, onOpenSettings, onOpenChat, on
             </div>
           ) : (
             <div className="mt-6 space-y-4">
-              <SectorTrendCard sector={sector} aiEnabled={aiEnabled} onOpenSettings={onOpenSettings} />
+              <SectorTrendCard sector={sector} aiEnabled={aiEnabled} onOpenSettings={onOpenSettings} onUpgrade={onOpenPricing} />
 
               {/* De la veille à l'action */}
               <div className="card flex flex-col items-start gap-3 bg-gradient-to-br from-brand-50 to-sky-50 p-6 sm:flex-row sm:items-center sm:justify-between">
