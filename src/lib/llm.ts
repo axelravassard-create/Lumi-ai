@@ -95,8 +95,8 @@ export function aiReady(): boolean {
 // ces chiffres EN PHASE avec `DAILY_LIMITS` du proxy (affichés sur la page Tarifs).
 //
 // Bluminator = exactement 4× le quota de Blumiman (argument « 4× plus »).
-// Plafonds resserrés (coût Sonnet ~2-3,5 cts/message) pour rester rentable.
-export const DAILY_LIMITS: Record<Tier, number> = { free: 10, blumiman: 25, bluminator: 100 }
+// Le copilote tourne sur Haiku (bien moins cher que Sonnet) → plafonds tenables.
+export const DAILY_LIMITS: Record<Tier, number> = { free: 10, blumiman: 20, bluminator: 80 }
 
 // Profondeur des réponses du copilote : Bluminator répond plus longuement (plans
 // complets, vrais livrables en une fois). C'est l'autre vraie différence concrète.
@@ -395,7 +395,10 @@ export async function streamLuminatorChat(history: ChatMsg[], opts: ChatOptions)
   // Boucle d'agent : on relance tant que Luminator appelle l'outil de mémoire.
   for (let guard = 0; guard < 5; guard++) {
     const stream = c.messages.stream({
-      model: MODEL,
+      // Le copilote (Blumiman ET Bluminator) tourne sur Haiku (MODEL_LIGHT) :
+      // moins cher → limites quotidiennes soutenables. La profondeur des réponses
+      // reste différenciée par palier via CHAT_MAX_TOKENS.
+      model: MODEL_LIGHT,
       max_tokens: CHAT_MAX_TOKENS[getTier()],
       system,
       tools: [PROFILE_TOOL, PLAN_TOOL, TOOLBOX_TOOL],

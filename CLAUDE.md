@@ -12,12 +12,14 @@ pédagogique.
 
 - **Stack** : Vite + React + TypeScript + Tailwind. Avatar 3D via three.js /
   @react-three/fiber / drei / postprocessing. IA via `@anthropic-ai/sdk`.
-- **Modèles Claude** : `claude-sonnet-4-6` (MODEL, tâches complexes : verdict,
-  comparaison, copilote, veille) et `claude-haiku-4-5` (MODEL_LIGHT, tâches
-  simples — ex. extraction de CV). Choix dicté par le COÛT (cf. section coûts) :
-  Opus était trop cher. Sonnet supporte `web_search_20260209` (≠ Haiku) → la
-  veille sectorielle tourne sur Sonnet. ⚠️ Le proxy n'autorise QUE ces 2 modèles
-  (`ALLOWED_MODELS` dans `api/anthropic/[...path].ts`) — Opus a été retiré.
+- **Modèles Claude** : `claude-sonnet-4-6` (MODEL) et `claude-haiku-4-5`
+  (MODEL_LIGHT). Choix dicté par le COÛT (cf. section coûts) : Opus était trop
+  cher. Sonnet supporte `web_search_20260209` (≠ Haiku) → **seule la veille
+  sectorielle tourne encore sur Sonnet**. Tout le reste est sur Haiku : le
+  **copilote (chat Blumiman ET Bluminator)** — passé de Sonnet à Haiku pour
+  soutenir les quotas quotidiens à moindre coût — et l'extraction de CV. ⚠️ Le
+  proxy n'autorise QUE ces 2 modèles (`ALLOWED_MODELS` dans
+  `api/anthropic/[...path].ts`) — Opus a été retiré.
 - **Accès API (prod)** : par défaut l'app appelle Claude via un **proxy serveur**
   (`api/anthropic/[...path].ts`, Edge function Vercel) qui détient la clé dans la
   variable d'env **`ANTHROPIC_API_KEY`** (à définir dans Vercel) → la clé ne vit
@@ -146,9 +148,9 @@ pédagogique.
 ## Différenciation réelle des paliers (limites appliquées, `src/lib/llm.ts`)
 - **Vraie valeur de Bluminator** = pas du vent, c'est mesurable et appliqué :
   - **`DAILY_LIMITS`** = plafond d'actions IA / jour, par palier :
-    `free: 10`, `blumiman: 25`, `bluminator: 100` (**exactement 4× Blumiman** →
-    argument « 4× plus »). Resserrés vs l'origine (20/50/200) car le coût Sonnet
-    est ~2-3,5 cts/message → un usage max devait rester soutenable.
+    `free: 10`, `blumiman: 20`, `bluminator: 80` (**exactement 4× Blumiman** →
+    argument « 4× plus »). Le copilote tourne désormais sur **Haiku** (bien moins
+    cher que Sonnet) → ces plafonds resserrés restent largement soutenables.
   - ✅ **VRAIE limite serveur (infalsifiable)** : appliquée dans le **proxy**
     (`api/anthropic/[...path].ts`, fn `quotaExceeded`) via un compteur jour/
     utilisateur en **KV** (`quota:<u:email|ip:…>:<YYYY-MM-DD>`, INCR + EXPIRE 2 j).

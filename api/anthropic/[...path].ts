@@ -25,7 +25,7 @@ const MAX_OUTPUT_TOKENS = 4096
 // `DAILY_LIMITS` dans src/lib/llm.ts (affiché sur la page Tarifs). C'est ICI
 // que se fait la VRAIE limite (serveur, infalsifiable) ; le localStorage côté
 // client n'est qu'un pré-contrôle d'UX. Bluminator = 4× Blumiman.
-const DAILY_LIMITS: Record<string, number> = { free: 10, blumiman: 25, bluminator: 100 }
+const DAILY_LIMITS: Record<string, number> = { free: 10, blumiman: 20, bluminator: 80 }
 const QUOTA_TEXT =
   'Tu as atteint ta limite d\'utilisation du jour (quota_exceeded). Réessaie demain, passe à un palier supérieur pour un usage étendu, ou ajoute ta propre clé API.'
 
