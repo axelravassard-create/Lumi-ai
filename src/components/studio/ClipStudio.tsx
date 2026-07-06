@@ -46,6 +46,12 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 
 const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[^\w]+/g, '-').replace(/^-+|-+$/g, '') || 'clip'
 
+// iPhone / iPad (y compris iPad qui se fait passer pour un Mac).
+function isIOS(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent))
+}
+
 export function ClipStudio({ onBack }: Props) {
   const [project, setProject] = useState<Project>(() => {
     const c = loadCurrent()
@@ -154,12 +160,6 @@ export function ClipStudio({ onBack }: Props) {
   const runExport = async () => {
     const h = previewRef.current
     if (!h || !h.master) return
-    // iOS Safari ne sait pas capturer le canvas → export impossible sur mobile.
-    if (typeof (h.master as HTMLCanvasElement & { captureStream?: unknown }).captureStream !== 'function') {
-      setStatus('Export vidéo dispo sur ordinateur (pas sur iPhone) 💻')
-      setTimeout(() => setStatus(''), 5000)
-      return
-    }
     setPlaying(false)
     setExporting(true)
     setProgress(0)
@@ -172,6 +172,8 @@ export function ClipStudio({ onBack }: Props) {
         drawFrame: h.drawFrame,
         project,
         musicEl: h.audio,
+        // iOS : vidéo seule (l'ajout d'une piste audio fait échouer l'export sur iPhone).
+        includeAudio: !isIOS(),
         onProgress: setProgress,
         onStatus: setStatus,
       })
@@ -179,7 +181,12 @@ export function ClipStudio({ onBack }: Props) {
       downloadBlob(blob, `blumi-${slug(project.script.metier)}.${ext}`)
     } catch (e) {
       console.error(e)
-      setStatus('Erreur d\'export ✕')
+      // Message clair si le navigateur ne sait pas capturer le canvas.
+      const msg = e instanceof Error && /captureStream/.test(e.message)
+        ? 'Ton navigateur ne permet pas l\'export vidéo. Essaie une autre app ou un ordinateur.'
+        : 'Erreur d\'export ✕'
+      setStatus(msg)
+      setTimeout(() => setStatus(''), 6000)
     } finally {
       h.setExportMode(false)
       setExporting(false)

@@ -11,6 +11,8 @@ export interface ExportHandle {
   project: Project
   musicEl?: HTMLAudioElement | null
   fps?: number
+  /** Inclure la piste audio (musique+SFX). false sur iOS → vidéo seule, plus compatible. */
+  includeAudio?: boolean
   onProgress?: (p: number) => void
   onStatus?: (s: string) => void
 }
@@ -40,33 +42,42 @@ export async function exportClip(h: ExportHandle): Promise<Blob> {
   const duration = project.duration
 
   onStatus('Préparation…')
+  if (typeof canvas.captureStream !== 'function') {
+    throw new Error('captureStream non supporté par ce navigateur')
+  }
   const stream = canvas.captureStream(fps)
 
   // ── Audio : musique + SFX mixés dans une piste capturable ─────────────────
-  const actx = sharedCtx()
-  let dest: MediaStreamAudioDestinationNode | null = null
+  // Sur iOS, l'ajout d'une piste audio à un flux canvas fait souvent échouer
+  // MediaRecorder → on peut exporter la vidéo SEULE (includeAudio: false).
+  const actx = h.includeAudio === false ? null : sharedCtx()
+  let musicPlaying = false
   if (actx) {
-    dest = actx.createMediaStreamDestination()
-    const master = actx.createGain()
-    master.gain.value = 1
-    master.connect(dest)
-    // Musique de fond.
-    if (musicEl && project.audio.musicUrl) {
-      try {
-        const src = actx.createMediaElementSource(musicEl)
-        const mg = actx.createGain()
-        mg.gain.value = project.audio.musicVolume
-        src.connect(mg).connect(master)
-      } catch {
-        /* déjà connectée */
+    try {
+      const dest = actx.createMediaStreamDestination()
+      const master = actx.createGain()
+      master.gain.value = 1
+      master.connect(dest)
+      if (musicEl && project.audio.musicUrl) {
+        try {
+          const src = actx.createMediaElementSource(musicEl)
+          const mg = actx.createGain()
+          mg.gain.value = project.audio.musicVolume
+          src.connect(mg).connect(master)
+          musicPlaying = true
+        } catch {
+          /* déjà connectée */
+        }
       }
-    }
-    const when0 = actx.currentTime + 0.15
-    scheduleSfx(actx, project, when0, 0, master, 1)
-    for (const track of dest.stream.getAudioTracks()) stream.addTrack(track)
-    if (musicEl && project.audio.musicUrl) {
-      musicEl.currentTime = 0
-      musicEl.play().catch(() => {})
+      const when0 = actx.currentTime + 0.15
+      scheduleSfx(actx, project, when0, 0, master, 1)
+      for (const track of dest.stream.getAudioTracks()) stream.addTrack(track)
+      if (musicPlaying && musicEl) {
+        musicEl.currentTime = 0
+        musicEl.play().catch(() => {})
+      }
+    } catch (e) {
+      console.warn('Piste audio indisponible, export vidéo seule :', e)
     }
   }
 
@@ -78,7 +89,9 @@ export async function exportClip(h: ExportHandle): Promise<Blob> {
 
   const recorded = await new Promise<Blob>((resolve) => {
     rec.onstop = () => resolve(new Blob(chunks, { type: recordedMp4 ? 'video/mp4' : 'video/webm' }))
-    rec.start()
+    // Timeslice : force MediaRecorder à écrire des données régulièrement (plus
+    // fiable, surtout sur mobile où un flush unique à l'arrêt peut être vide).
+    rec.start(500)
     onStatus('Enregistrement…')
     const start = performance.now()
     const loop = () => {
@@ -86,16 +99,19 @@ export async function exportClip(h: ExportHandle): Promise<Blob> {
       if (t >= duration) {
         drawFrame(duration)
         musicEl?.pause()
-        rec.stop()
+        try { rec.requestData() } catch { /* ignore */ }
+        setTimeout(() => { try { rec.stop() } catch { /* ignore */ } }, 120)
         return
       }
       drawFrame(t)
-      // Enregistrement = 0→90% si pas de conversion (MP4 natif), sinon 0→60%.
+      // Enregistrement = 0→98% si pas de conversion (MP4 natif), sinon 0→60%.
       onProgress((t / duration) * (recordedMp4 ? 0.98 : 0.6))
       requestAnimationFrame(loop)
     }
     requestAnimationFrame(loop)
   })
+
+  if (recorded.size === 0) throw new Error('Enregistrement vide (captureStream)')
 
   // MP4 natif (Safari) : terminé, aucune conversion.
   if (recordedMp4) {

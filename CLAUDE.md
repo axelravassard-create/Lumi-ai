@@ -243,10 +243,15 @@ pédagogique.
 ## Studio de clips viraux — route `#/studio` (`src/components/studio/`)
 - **Responsive** : `ClipStudio` empile verticalement sur mobile (aperçu `h-[46vh]` +
   transport + timeline, puis panneaux pleine largeur défilables) et repasse côte à
-  côte en `lg:` (aside `w-[340px]`). En-tête compact (labels masqués `< sm`). ⚠️
-  L'**export MP4 ne marche PAS sur iOS Safari** (`canvas.captureStream` absent) →
-  `runExport` détecte l'absence et affiche « dispo sur ordinateur ». Éditer/prévisualiser
-  OK sur iPhone ; exporter = desktop.
+  côte en `lg:` (aside `w-[340px]`). En-tête compact (labels masqués `< sm`).
+- **Export iPhone** : sur iOS (`isIOS()`), `exportClip` reçoit `includeAudio:false`
+  → **vidéo SEULE, sans piste audio** (l'ajout d'une piste audio Web Audio à un flux
+  canvas fait échouer MediaRecorder sur iOS). L'enregistrement utilise `rec.start(500)`
+  (timeslice) + `requestData()` avant `stop()` + garde anti-fichier vide (`size===0`
+  → throw) pour ne plus produire de MP4 0 octet. Si `canvas.captureStream` est
+  vraiment absent → throw capté par `runExport` → message clair (pas de plantage).
+  ⚠️ Dépend du support WebKit de `captureStream` (OK iOS récent) ; SFX/voix jamais
+  dans l'export (musique seulement, et pas sur iOS).
 - **Outil PRIVÉ (mono-utilisateur)** pour produire des shorts verticaux (9:16) :
   vidéo de fond importée + cinématique animée par-dessus (Blumi débarque, scanne le
   métier, révèle un score choc, puis Blumiman donne la solution), export MP4.
