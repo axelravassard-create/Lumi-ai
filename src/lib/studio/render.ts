@@ -218,17 +218,18 @@ function drawScan(ctx: CanvasRenderingContext2D, f: Frame, cw: number, ch: numbe
     ctx.lineTo(px + sx * c, py)
     ctx.stroke()
   }
-  // Libellé « Analyse de … »
+  // Libellé « Analyse de … » — placé sous la ligne du watermark pour ne pas le chevaucher.
   const size = cw * 0.05
+  const labelY = topSafe + cw * 0.16
   ctx.font = `800 ${size}px ${DISPLAY}`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   const label = f.scanLabel.replace(/…$/, '') + '…'
   ctx.fillStyle = 'rgba(6,14,30,0.6)'
-  roundRect(ctx, cw / 2 - ctx.measureText(label).width / 2 - 28, by - size * 0.7, ctx.measureText(label).width + 56, size * 1.5, size * 0.4)
+  roundRect(ctx, cw / 2 - ctx.measureText(label).width / 2 - 28, labelY - size * 0.7, ctx.measureText(label).width + 56, size * 1.5, size * 0.4)
   ctx.fill()
   ctx.fillStyle = '#eafaff'
-  ctx.fillText(label, cw / 2, by)
+  ctx.fillText(label, cw / 2, labelY)
 }
 
 // Jauge de risque + compteur % + libellé du verdict.
