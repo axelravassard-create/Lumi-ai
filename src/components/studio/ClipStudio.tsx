@@ -172,6 +172,7 @@ export function ClipStudio({ onBack }: Props) {
         drawFrame: h.drawFrame,
         project,
         musicEl: h.audio,
+        videoEl: h.video,
         // iOS : vidéo seule (l'ajout d'une piste audio fait échouer l'export sur iPhone).
         includeAudio: !isIOS(),
         onProgress: setProgress,
@@ -221,6 +222,8 @@ export function ClipStudio({ onBack }: Props) {
           drawFrame: h.drawFrame,
           project: np,
           musicEl: h.audio,
+          videoEl: h.video,
+          includeAudio: !isIOS(),
           onProgress: setProgress,
           onStatus: (st) => setStatus(`Clip ${i + 1}/${metiers.length} · ${label} · ${st}`),
         })

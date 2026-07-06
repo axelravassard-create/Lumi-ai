@@ -262,9 +262,19 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
         style={{ objectFit: 'contain' }}
       />
 
-      {/* Médias sources (cachés). */}
+      {/* Médias sources : invisibles mais PAS display:none (sinon iOS ne décode
+          pas les images de la vidéo → fond figé dans l'aperçu et l'export). */}
       {project.background?.url && (
-        <video ref={videoRef} src={project.background.url} playsInline loop preload="auto" className="hidden" />
+        <video
+          ref={videoRef}
+          src={project.background.url}
+          playsInline
+          muted
+          loop
+          preload="auto"
+          className="pointer-events-none absolute left-0 top-0 h-px w-px opacity-0"
+          aria-hidden
+        />
       )}
       {project.audio.musicUrl && <audio ref={audioRef} src={project.audio.musicUrl} loop className="hidden" />}
     </div>

@@ -10,6 +10,8 @@ export interface ExportHandle {
   drawFrame: (t: number) => void
   project: Project
   musicEl?: HTMLAudioElement | null
+  /** Vidéo de fond à faire jouer en temps réel pendant l'enregistrement (sinon figée). */
+  videoEl?: HTMLVideoElement | null
   fps?: number
   /** Inclure la piste audio (musique+SFX). false sur iOS → vidéo seule, plus compatible. */
   includeAudio?: boolean
@@ -35,7 +37,7 @@ function pickMime(): string {
 
 // Enregistre l'aperçu en temps réel (WebM) puis convertit en MP4.
 export async function exportClip(h: ExportHandle): Promise<Blob> {
-  const { canvas, drawFrame, project, musicEl } = h
+  const { canvas, drawFrame, project, musicEl, videoEl } = h
   const fps = h.fps ?? 30
   const onProgress = h.onProgress ?? (() => {})
   const onStatus = h.onStatus ?? (() => {})
@@ -87,6 +89,18 @@ export async function exportClip(h: ExportHandle): Promise<Blob> {
   const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12_000_000 })
   rec.ondataavailable = (e) => e.data.size && chunks.push(e.data)
 
+  // Fond vidéo : le jouer en temps réel pendant l'enregistrement, sinon il reste
+  // figé sur une seule image dans l'export.
+  const bg = project.background
+  if (videoEl && bg && bg.url) {
+    try {
+      videoEl.loop = true
+      videoEl.muted = true // pas de double audio ; autoplay muet autorisé (iOS)
+      videoEl.currentTime = bg.trimIn || 0
+      await videoEl.play().catch(() => {})
+    } catch { /* ignore */ }
+  }
+
   const recorded = await new Promise<Blob>((resolve) => {
     rec.onstop = () => resolve(new Blob(chunks, { type: recordedMp4 ? 'video/mp4' : 'video/webm' }))
     // Timeslice : force MediaRecorder à écrire des données régulièrement (plus
@@ -99,6 +113,7 @@ export async function exportClip(h: ExportHandle): Promise<Blob> {
       if (t >= duration) {
         drawFrame(duration)
         musicEl?.pause()
+        videoEl?.pause()
         try { rec.requestData() } catch { /* ignore */ }
         setTimeout(() => { try { rec.stop() } catch { /* ignore */ } }, 120)
         return
