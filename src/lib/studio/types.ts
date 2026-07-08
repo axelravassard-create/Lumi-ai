@@ -115,6 +115,9 @@ export interface PresBackground {
   crop: Crop
 }
 
+// Animation d'apparition du personnage au début d'une diapo.
+export type PresEntrance = 'none' | 'fade' | 'pop' | 'zoom' | 'slide-up' | 'slide-left' | 'slide-right'
+
 // Un « segment » = une diapo : une pose de Blumi + un fond + un texte qu'il dit
 // (voix + karaoké). Comme un moment : durée et position réglables (packés dans
 // l'ordre du tableau).
@@ -127,6 +130,10 @@ export interface PresSegment {
   dur: number
   voice?: string // voix TTS (override) ; sinon voix globale
   mood?: AvatarMood | 'auto' // 'auto' = humeur de la pose
+  tier?: AvatarTier // personnage : blumi / blumiman (lunettes) / bluminator (+ordi)
+  x?: number // position horizontale -1..1 (placement dans la scène)
+  y?: number // position verticale -1..1
+  entrance?: PresEntrance // apparition au début de la diapo
 }
 
 export interface PresentationModel {
@@ -220,7 +227,14 @@ export interface PresFrame {
   pose: PoseName
   mood: AvatarMood
   speaking: boolean
+  glasses: boolean // personnage : lunettes (blumiman/bluminator)
+  laptop: boolean // personnage : ordinateur portable (bluminator)
   avatarAlpha: number // 0 = Blumi caché (avant le 1er segment / trou)
+  posX: number // position horizontale de la scène (-1..1)
+  posY: number // position verticale de la scène (-1..1)
+  avatarScale: number // échelle d'entrée (pop/zoom)
+  avatarDX: number // décalage horizontal d'entrée (slide, fraction de largeur)
+  avatarDY: number // décalage vertical d'entrée (slide, fraction de hauteur)
   bgId: string | null // fond du segment courant
   bgPrevId: string | null // fond précédent (pour le fondu de diapo)
   bgFade: number // 0..1 : fondu du fond courant par-dessus le précédent

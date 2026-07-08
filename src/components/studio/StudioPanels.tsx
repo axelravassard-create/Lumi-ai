@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BeatKind, Fmt, PresSegment, Project } from '../../lib/studio/types'
 import { BEAT_ORDER } from '../../lib/studio/types'
 import {
-  POSE_LIST, addSegment, duplicateSegment, fitPresentationToVoice, moveSegment,
-  poseLabel, presDuration, removeSegment, segmentLine, updateSegment,
+  ENTRANCE_LIST, POSE_LIST, TIER_LIST, addSegment, duplicateSegment, fitPresentationToVoice,
+  moveSegment, poseLabel, presDuration, presProsody, removeSegment, segmentLine, tierOf, updateSegment,
 } from '../../lib/studio/presentation'
 import { BEAT_META } from './Timeline'
 import { ANGLES, PLATFORMS, SOCIAL_2026, SOURCES_2026, generatePost, platform, type PlatformKey } from '../../lib/studio/social'
@@ -839,9 +839,29 @@ function SegmentCard({ project, onChange, seg, index, count, voices }: P & { seg
           className="field text-sm"
         />
         <button
-          onClick={() => speak(line, project.audio.voiceRate, project.audio.voiceVolume, seg.voice || project.audio.voiceName)}
-          title="Écouter" className="shrink-0 rounded-lg border border-ink-200 px-2 py-1 text-xs text-ink-500 hover:border-brand-300 hover:text-brand-600"
+          onClick={() => { const pr = presProsody(seg, project); speak(line, pr.rate, project.audio.voiceVolume, seg.voice || project.audio.voiceName, pr.pitch) }}
+          title="Écouter (avec l'émotion de la pose)" className="shrink-0 rounded-lg border border-ink-200 px-2 py-1 text-xs text-ink-500 hover:border-brand-300 hover:text-brand-600"
         >🔊</button>
+      </div>
+
+      {/* Personnage + apparition */}
+      <div className="flex items-center gap-2">
+        <span className="w-14 shrink-0 text-[11px] text-ink-400">Perso</span>
+        <select
+          value={tierOf(seg)}
+          onChange={(e) => onChange(updateSegment(project, seg.id, { tier: e.target.value as PresSegment['tier'] }))}
+          className="field !py-1.5 text-sm"
+        >
+          {TIER_LIST.map((tr) => <option key={tr.value} value={tr.value}>{tr.emoji} {tr.label}</option>)}
+        </select>
+        <select
+          value={seg.entrance ?? 'none'}
+          onChange={(e) => onChange(updateSegment(project, seg.id, { entrance: e.target.value as PresSegment['entrance'] }))}
+          className="field !py-1.5 text-sm"
+          title="Apparition au début de la diapo"
+        >
+          {ENTRANCE_LIST.map((en) => <option key={en.value} value={en.value}>↳ {en.label}</option>)}
+        </select>
       </div>
 
       {/* Fond */}
@@ -856,6 +876,24 @@ function SegmentCard({ project, onChange, seg, index, count, voices }: P & { seg
           <option value="">Dégradé (aucun)</option>
           {pm.backgrounds.map((b) => <option key={b.id} value={b.id}>🖼️ {b.name}</option>)}
         </select>
+      </div>
+
+      {/* Position dans la scène */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <span className="w-14 shrink-0 text-[11px] text-ink-400">Position</span>
+          <span className="w-4 text-[11px] text-ink-400">↔</span>
+          <input type="range" min={-1} max={1} step={0.05} value={seg.x ?? 0}
+            onChange={(e) => onChange(updateSegment(project, seg.id, { x: parseFloat(e.target.value) }))}
+            className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-ink-200 accent-brand-600" />
+          <span className="w-4 text-[11px] text-ink-400">↕</span>
+          <input type="range" min={-1} max={1} step={0.05} value={seg.y ?? 0}
+            onChange={(e) => onChange(updateSegment(project, seg.id, { y: parseFloat(e.target.value) }))}
+            className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-ink-200 accent-brand-600" />
+          {(seg.x || seg.y) ? (
+            <button onClick={() => onChange(updateSegment(project, seg.id, { x: 0, y: 0 }))} title="Recentrer" className="shrink-0 text-[11px] text-ink-400 hover:text-brand-600">↺</button>
+          ) : null}
+        </div>
       </div>
 
       {/* Voix (optionnelle) */}

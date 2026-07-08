@@ -31,14 +31,14 @@ export function coverRect(
   }
 }
 
-// Rectangle d'affichage du personnage en mode présentation : centré, un peu
-// bas pour laisser la place au texte parlé. La pose (x/y/scale) est déjà intégrée
-// dans le rendu WebGL du personnage → ici un cadre fixe suffit.
-export function presAvatarRect(project: Project, cw: number, ch: number) {
+// Rectangle d'affichage du personnage en mode présentation : position de la
+// scène (posX/posY) + transformation d'apparition (scale/DX/DY). La pose est déjà
+// intégrée dans le rendu WebGL du personnage.
+export function presAvatarRect(project: Project, f: PresFrame, cw: number, ch: number) {
   const c = project.character
-  const base = Math.min(cw, ch) * 1.1 * c.scale
-  const cx = cw / 2 + (c.x || 0) * cw * 0.4
-  const cy = ch * 0.42 + (c.y || 0) * ch * 0.3
+  const base = Math.min(cw, ch) * 1.1 * c.scale * (f.avatarScale || 1)
+  const cx = cw / 2 + (f.posX || 0) * cw * 0.42 + (f.avatarDX || 0) * cw
+  const cy = ch * 0.42 + (f.posY || 0) * ch * 0.34 + (f.avatarDY || 0) * ch
   return { x: cx - base / 2, y: cy - base / 2, w: base, h: base }
 }
 

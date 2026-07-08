@@ -3,13 +3,79 @@
 // Blumi enchaîne des poses en parlant (voix + karaoké) devant des fonds qui
 // défilent comme un diaporama. Les segments sont packés bout à bout (ordre du
 // tableau) : « déplacer dans le temps » = réordonner + régler la durée.
-import type { AvatarMood, PoseName, PresFrame, PresSegment, Project } from './types'
+import type { AvatarMood, AvatarTier, PoseName, PresEntrance, PresFrame, PresSegment, Project } from './types'
 import { interpolate } from './script'
 import { splitWords } from './timeline'
 import { estimateSpeechSec } from './tts'
 
 const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v))
+const easeOut = (p: number) => 1 - Math.pow(1 - clamp(p), 3)
+// Rebond élastique pour l'entrée « pop » (petit → grand avec dépassement).
+function elastic(p: number): number {
+  p = clamp(p)
+  if (p === 0 || p === 1) return p
+  const c = (2 * Math.PI) / 3
+  return Math.pow(2, -10 * p) * Math.sin((p * 10 - 0.75) * c) + 1
+}
 const uid = () => 's_' + Math.random().toString(36).slice(2, 9)
+
+// Catalogue des apparitions (libellé pour l'UI).
+export const ENTRANCE_LIST: { value: PresEntrance; label: string }[] = [
+  { value: 'none', label: 'Direct' },
+  { value: 'fade', label: 'Fondu' },
+  { value: 'pop', label: 'Pop' },
+  { value: 'zoom', label: 'Zoom' },
+  { value: 'slide-up', label: 'Par le bas' },
+  { value: 'slide-left', label: 'Depuis la gauche' },
+  { value: 'slide-right', label: 'Depuis la droite' },
+]
+
+export const TIER_LIST: { value: AvatarTier; label: string; emoji: string }[] = [
+  { value: 'blumi', label: 'Blumi', emoji: '🤖' },
+  { value: 'blumiman', label: 'Blumiman', emoji: '🤓' },
+  { value: 'bluminator', label: 'Bluminator', emoji: '👨‍💻' },
+]
+
+// Émotion de la voix par pose (deltas de hauteur/débit) → la voix « colle » à la
+// pose visible : chaleureuse pour saluer, grave pour inquiéter, vive pour surprise.
+const POSE_PROSODY: Partial<Record<PoseName, { pitch: number; rate: number }>> = {
+  greet: { pitch: 0.18, rate: 0.03 },
+  happy: { pitch: 0.22, rate: 0.06 },
+  idea: { pitch: 0.16, rate: 0.04 },
+  surprised: { pitch: 0.32, rate: 0.08 },
+  proud: { pitch: 0.06, rate: -0.03 },
+  wink: { pitch: 0.14, rate: 0.02 },
+  'point-left': { pitch: 0.1, rate: 0.04 },
+  'point-right': { pitch: 0.1, rate: 0.04 },
+  concerned: { pitch: -0.16, rate: -0.08 },
+  skeptical: { pitch: -0.08, rate: -0.05 },
+  thinking: { pitch: -0.06, rate: -0.06 },
+  shy: { pitch: 0.06, rate: -0.06 },
+  'look-up': { pitch: 0.1, rate: 0.02 },
+}
+
+// Prosodie finale d'une réplique : hauteur + débit, d'après la pose ET la
+// ponctuation (! plus vif, ? plus haut, … plus posé). Rend la voix moins robotique.
+export function presProsody(seg: PresSegment, project: Project): { pitch: number; rate: number } {
+  const base = POSE_PROSODY[seg.pose] ?? { pitch: 0, rate: 0 }
+  const text = segmentLine(seg, project).trim()
+  let pitchP = 0
+  let rateP = 0
+  if (/!\s*$/.test(text)) { pitchP += 0.08; rateP += 0.05 }
+  if (/\?\s*$/.test(text)) { pitchP += 0.12 }
+  if (/(\.\.\.|…)\s*$/.test(text)) { rateP -= 0.06 }
+  const pitch = clamp(1.05 + base.pitch + pitchP, 0.6, 1.8)
+  const rate = Math.max(0.6, (project.audio.voiceRate || 1) * (1 + base.rate + rateP))
+  return { pitch, rate }
+}
+
+// Personnage d'une diapo → attributs visuels (lunettes / ordi).
+export function tierOf(seg: PresSegment): AvatarTier {
+  return seg.tier ?? 'blumi'
+}
+function tierLook(tier: AvatarTier): { glasses: boolean; laptop: boolean } {
+  return { glasses: tier !== 'blumi', laptop: tier === 'bluminator' }
+}
 
 // Catalogue des poses proposées à l'édition (libellé + emoji repère). L'ordre
 // ici = l'ordre du sélecteur. « Le maximum de poses » pour varier la présentation.
@@ -59,7 +125,7 @@ export function presDuration(project: Project): number {
 }
 
 export function newSegment(pose: PoseName = 'presenter', text = ''): PresSegment {
-  return { id: uid(), pose, bgId: null, text, start: 0, dur: 3, mood: 'auto' }
+  return { id: uid(), pose, bgId: null, text, start: 0, dur: 3, mood: 'auto', tier: 'blumi', x: 0, y: 0, entrance: 'none' }
 }
 
 export function addSegment(project: Project, seg?: PresSegment): Project {
@@ -99,6 +165,7 @@ export function duplicateSegment(project: Project, id: string): Project {
 
 const BG_FADE = 0.5 // fondu entre deux diapos (s)
 const EDGE_FADE = 0.16 // fondu d'apparition/disparition de Blumi aux bords
+const ENTRANCE_DUR = 0.5 // durée de l'animation d'apparition du personnage (s)
 
 // Découpe le texte en mots révélés au fil de la fenêtre du segment (karaoké).
 function karaoke(text: string, start: number, span: number, t: number) {
@@ -126,7 +193,9 @@ export function evalPresentation(project: Project, t: number): PresFrame {
   if (!seg) {
     return {
       t, segIndex: -1, pose: 'presenter', mood: 'neutral', speaking: false,
-      avatarAlpha: 0, bgId: null, bgPrevId: null, bgFade: 1, words: [], title, showTitle: pm.showTitle,
+      glasses: false, laptop: false, avatarAlpha: 0, posX: 0, posY: 0,
+      avatarScale: 1, avatarDX: 0, avatarDY: 0,
+      bgId: null, bgPrevId: null, bgFade: 1, words: [], title, showTitle: pm.showTitle,
     }
   }
 
@@ -137,6 +206,24 @@ export function evalPresentation(project: Project, t: number): PresFrame {
   let avatarAlpha = 1
   if (t < segStart) avatarAlpha = clamp(1 - (segStart - t) / EDGE_FADE)
   else if (t > segEnd) avatarAlpha = clamp(1 - (t - segEnd) / EDGE_FADE)
+
+  // Personnage de la diapo (blumi / blumiman / bluminator).
+  const { glasses, laptop } = tierLook(tierOf(seg))
+
+  // Apparition au début de la diapo (arrivée bas/côté, pop, zoom, fondu, direct).
+  const ein = clamp((t - segStart) / ENTRANCE_DUR)
+  const e = easeOut(ein)
+  let avatarScale = 1
+  let avatarDX = 0
+  let avatarDY = 0
+  switch (seg.entrance ?? 'none') {
+    case 'fade': avatarAlpha *= e; break
+    case 'pop': avatarScale = elastic(ein); break
+    case 'zoom': avatarScale = 0.3 + 0.7 * e; avatarAlpha *= clamp(ein / 0.4); break
+    case 'slide-up': avatarDY = (1 - e) * 0.55; break
+    case 'slide-left': avatarDX = -(1 - e) * 0.7; break
+    case 'slide-right': avatarDX = (1 - e) * 0.7; break
+  }
 
   // Fond courant + fondu depuis le fond précédent (diapo qui défile).
   const bgId = seg.bgId
@@ -159,7 +246,14 @@ export function evalPresentation(project: Project, t: number): PresFrame {
     pose: seg.pose,
     mood,
     speaking,
+    glasses,
+    laptop,
     avatarAlpha,
+    posX: seg.x ?? 0,
+    posY: seg.y ?? 0,
+    avatarScale,
+    avatarDX,
+    avatarDY,
     bgId,
     bgPrevId,
     bgFade,

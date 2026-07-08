@@ -3,7 +3,7 @@ import type { AvatarMood, AvatarState, PoseName } from '../avatar/RobotAvatar'
 import type { Crop, Project } from '../../lib/studio/types'
 import { fmtSize } from '../../lib/studio/types'
 import { evalFrame } from '../../lib/studio/timeline'
-import { evalPresentation, segmentLine } from '../../lib/studio/presentation'
+import { evalPresentation, presProsody, segmentLine } from '../../lib/studio/presentation'
 import { avatarRect, drawBackground, drawEmptyBackground, presAvatarRect, renderOverlay, renderPresentation } from '../../lib/studio/render'
 import { scheduleSfx, sharedCtx } from '../../lib/studio/audio'
 import { voiceLineFor } from '../../lib/studio/script'
@@ -113,7 +113,7 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
   // Compose une frame complète du mode PRÉSENTATION à l'instant t.
   const drawPresentationFrame = (ctx: CanvasRenderingContext2D, p: Project, t: number) => {
     const f = evalPresentation(p, t)
-    syncControl({ glasses: false, laptop: false, mood: f.mood, speaking: f.speaking, state: 'idle', pose: f.pose })
+    syncControl({ glasses: f.glasses, laptop: f.laptop, mood: f.mood, speaking: f.speaking, state: 'idle', pose: f.pose })
 
     // Ducking auto : baisse la musique quand Blumi parle.
     const music = audioRef.current
@@ -141,7 +141,7 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
     // Personnage posé.
     const av = avatarCanvas()
     if (av && av.width > 0 && f.avatarAlpha > 0.001) {
-      const r = presAvatarRect(p, w, h)
+      const r = presAvatarRect(p, f, w, h)
       ctx.save()
       ctx.globalAlpha = f.avatarAlpha
       ctx.drawImage(av, r.x, r.y, r.w, r.h)
@@ -273,13 +273,15 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
     const ttsTimers: number[] = []
     if (actx && p.mode !== 'presentation') scheduleSfx(actx, p, actx.currentTime + 0.05, startOffset, actx.destination, 1)
     if (p.audio.voice && p.mode === 'presentation') {
-      // Voix off calée sur chaque segment (diapo).
+      // Voix off calée sur chaque segment (diapo), avec émotion (hauteur/débit
+      // selon la pose et la ponctuation) pour un rendu plus vivant.
       for (const s of p.presentation.segments) {
         const text = segmentLine(s, p)
         if (!text || s.start < startOffset - 0.05) continue
+        const pr = presProsody(s, p)
         ttsTimers.push(
           window.setTimeout(
-            () => speak(text, p.audio.voiceRate, p.audio.voiceVolume, s.voice || p.audio.voiceName),
+            () => speak(text, pr.rate, p.audio.voiceVolume, s.voice || p.audio.voiceName, pr.pitch),
             (s.start - startOffset) * 1000,
           ),
         )

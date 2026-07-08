@@ -363,9 +363,24 @@ pédagogique.
     `RobotAvatar`/`Avatar`) + overlays. Panneau **`PresentationPanel`** : bascule
     de format, titre, gestion des fonds (images, non persistées), éditeur de diapos
     (pose via `POSE_LIST` — **18 poses**, texte, fond, voix par diapo, durée,
+    **personnage** `tier` blumi/blumiman/bluminator via `TIER_LIST`, **position**
+    dans la scène `x`/`y` (-1..1, sliders), **apparition** `entrance` via
+    `ENTRANCE_LIST` (direct/fondu/pop/zoom/par le bas/depuis la gauche-droite),
     réordonner/dupliquer/supprimer, « ⏱️ Caler sur la voix » = `fitPresentationToVoice`)
     + bandeau de diapos `PresentationStrip` sous l'aperçu (la `Timeline` de beats
-    est masquée en présentation). ⚠️ Aperçu figé : `settle()` recompose le maître
+    est masquée en présentation).
+    - **Personnage par diapo** (`PresSegment.tier`) : `tierOf(seg)` → lunettes
+      (blumiman) / +ordi (bluminator) ; le laptop coexiste avec les poses (la pose
+      garde la main sur le regard/la tête, le laptop n'ajoute que le mesh + scale 0.8).
+    - **Apparition** (`PresSegment.entrance`) jouée au début de la diapo
+      (`ENTRANCE_DUR` ≈ 0,5 s) : `evalPresentation` produit `avatarScale`/`avatarDX`/
+      `avatarDY` (+ fondu sur `avatarAlpha`), consommés par `presAvatarRect(project, f,…)`.
+    - **Position** (`PresSegment.x`/`y`) → `posX`/`posY` dans le `PresFrame`,
+      appliqués par `presAvatarRect` (placement de Blumi dans la scène).
+    - **Voix expressive** (`presProsody(seg, project)`) : hauteur (`pitch`) + débit
+      (`rate`) dérivés de la **pose** (`POSE_PROSODY`) et de la **ponctuation**
+      (! plus vif, ? plus haut, … plus posé) → la voix « colle » à l'émotion de la
+      pose (moins robotique). `speak()` accepte désormais un paramètre `pitch`. ⚠️ Aperçu figé : `settle()` recompose le maître
     ~1 s pour voir la **transition de pose même à l'arrêt** (le canvas WebGL du
     perso rend en continu mais le maître ne se redessine qu'une fois au scrub).
     Voix off calée **par diapo** ; les SFX (calés sur les beats) sont neutralisés

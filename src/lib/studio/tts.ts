@@ -49,7 +49,7 @@ export function stripForSpeech(text: string): string {
     .trim()
 }
 
-export function speak(text: string, rate = 1.08, volume = 1, voiceName?: string) {
+export function speak(text: string, rate = 1.08, volume = 1, voiceName?: string, pitch = 1.05) {
   const clean = stripForSpeech(text)
   if (typeof speechSynthesis === 'undefined' || !clean) return
   const u = new SpeechSynthesisUtterance(clean)
@@ -57,7 +57,7 @@ export function speak(text: string, rate = 1.08, volume = 1, voiceName?: string)
   if (v) u.voice = v
   u.lang = v?.lang || 'fr-FR'
   u.rate = rate
-  u.pitch = 1.05
+  u.pitch = pitch
   u.volume = volume
   speechSynthesis.speak(u)
 }
