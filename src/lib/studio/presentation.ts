@@ -10,6 +10,8 @@ import { estimateSpeechSec } from './tts'
 
 const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v))
 const easeOut = (p: number) => 1 - Math.pow(1 - clamp(p), 3)
+const easeInOut = (p: number) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2)
+const lerp = (a: number, b: number, g: number) => a + (b - a) * g
 // Rebond élastique pour l'entrée « pop » (petit → grand avec dépassement).
 function elastic(p: number): number {
   p = clamp(p)
@@ -21,7 +23,8 @@ const uid = () => 's_' + Math.random().toString(36).slice(2, 9)
 
 // Catalogue des apparitions (libellé pour l'UI).
 export const ENTRANCE_LIST: { value: PresEntrance; label: string }[] = [
-  { value: 'none', label: 'Direct' },
+  { value: 'glide', label: 'Glisser (fluide)' },
+  { value: 'none', label: 'Direct (coupe)' },
   { value: 'fade', label: 'Fondu' },
   { value: 'pop', label: 'Pop' },
   { value: 'zoom', label: 'Zoom' },
@@ -125,7 +128,7 @@ export function presDuration(project: Project): number {
 }
 
 export function newSegment(pose: PoseName = 'presenter', text = ''): PresSegment {
-  return { id: uid(), pose, bgId: null, text, start: 0, dur: 3, mood: 'auto', tier: 'blumi', x: 0, y: 0, z: 0, entrance: 'none' }
+  return { id: uid(), pose, bgId: null, text, start: 0, dur: 3, mood: 'auto', tier: 'blumi', x: 0, y: 0, z: 0, entrance: 'glide' }
 }
 
 export function addSegment(project: Project, seg?: PresSegment): Project {
@@ -166,6 +169,7 @@ export function duplicateSegment(project: Project, id: string): Project {
 const BG_FADE = 0.5 // fondu entre deux diapos (s)
 const EDGE_FADE = 0.16 // fondu d'apparition/disparition de Blumi aux bords
 const ENTRANCE_DUR = 0.5 // durée de l'animation d'apparition du personnage (s)
+const MOVE_DUR = 0.6 // durée du glissement fluide de position/profondeur entre diapos (s)
 
 // Découpe le texte en mots révélés au fil de la fenêtre du segment (karaoké).
 function karaoke(text: string, start: number, span: number, t: number) {
@@ -210,8 +214,23 @@ export function evalPresentation(project: Project, t: number): PresFrame {
   // Personnage de la diapo (blumi / blumiman / bluminator).
   const { glasses, laptop } = tierLook(tierOf(seg))
 
+  // Transition choisie sur la diapo. « Glisser » = la position (x/y) et la
+  // profondeur (z) glissent en douceur depuis la diapo précédente (même si Blumi
+  // change complètement d'endroit). Les autres transitions placent Blumi
+  // directement à sa position (coupe ou apparition dédiée).
+  const entrance = seg.entrance ?? 'none'
+  const prevSeg = idx > 0 ? segs[idx - 1] : null
+  const doGlide = !!prevSeg && entrance === 'glide'
+  const glide = doGlide ? easeInOut(clamp((t - segStart) / MOVE_DUR)) : 1
+  const tx = seg.x ?? 0
+  const ty = seg.y ?? 0
+  const tz = seg.z ?? 0
+  const fx = doGlide ? lerp(prevSeg!.x ?? 0, tx, glide) : tx
+  const fy = doGlide ? lerp(prevSeg!.y ?? 0, ty, glide) : ty
+  const fz = doGlide ? lerp(prevSeg!.z ?? 0, tz, glide) : tz
+
   // Profondeur : loin (petit) ↔ proche (grand). z -1..1 → échelle 0,45..1,7.
-  const posScale = clamp(1 + (seg.z ?? 0) * 0.65, 0.45, 1.7)
+  const posScale = clamp(1 + fz * 0.65, 0.45, 1.7)
 
   // Apparition au début de la diapo (arrivée bas/côté, pop, zoom, fondu, direct).
   const ein = clamp((t - segStart) / ENTRANCE_DUR)
@@ -219,7 +238,7 @@ export function evalPresentation(project: Project, t: number): PresFrame {
   let avatarScale = 1
   let avatarDX = 0
   let avatarDY = 0
-  switch (seg.entrance ?? 'none') {
+  switch (entrance) {
     case 'fade': avatarAlpha *= e; break
     case 'pop': avatarScale = elastic(ein); break
     case 'zoom': avatarScale = 0.3 + 0.7 * e; avatarAlpha *= clamp(ein / 0.4); break
@@ -252,8 +271,8 @@ export function evalPresentation(project: Project, t: number): PresFrame {
     glasses,
     laptop,
     avatarAlpha,
-    posX: seg.x ?? 0,
-    posY: seg.y ?? 0,
+    posX: fx,
+    posY: fy,
     posScale,
     avatarScale,
     avatarDX,

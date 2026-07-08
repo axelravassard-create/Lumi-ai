@@ -115,8 +115,10 @@ export interface PresBackground {
   crop: Crop
 }
 
-// Animation d'apparition du personnage au début d'une diapo.
-export type PresEntrance = 'none' | 'fade' | 'pop' | 'zoom' | 'slide-up' | 'slide-left' | 'slide-right'
+// Transition du personnage au début d'une diapo. 'none' = coupe franche (position
+// instantanée) ; 'glide' = déplacement fluide depuis la diapo précédente ; les
+// autres = animations d'apparition (fondu, pop, zoom, arrivée d'un bord).
+export type PresEntrance = 'none' | 'glide' | 'fade' | 'pop' | 'zoom' | 'slide-up' | 'slide-left' | 'slide-right'
 
 // Un « segment » = une diapo : une pose de Blumi + un fond + un texte qu'il dit
 // (voix + karaoké). Comme un moment : durée et position réglables (packés dans

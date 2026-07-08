@@ -12,16 +12,17 @@ import { presDuration, reflowPresentation } from './presentation'
 // à personnaliser, pour ne pas partir d'un écran vide.
 function defaultPresentation(): PresentationModel {
   const segs = [
-    { pose: 'greet' as const, text: 'Salut ! Aujourd’hui, une info qui change tout pour les {METIER}.' },
-    { pose: 'presenter' as const, text: 'L’IA transforme déjà une grande partie de tes tâches quotidiennes.' },
-    { pose: 'idea' as const, text: 'Mais bien utilisée, elle te fait gagner un temps fou.' },
-    { pose: 'point-right' as const, text: 'Voici comment en tirer parti dès maintenant.' },
-    { pose: 'happy' as const, text: 'Abonne-toi pour une nouvelle info chaque jour !' },
+    { pose: 'greet' as const, text: 'Salut ! Aujourd’hui, une info qui change tout pour les {METIER}.', x: 0, z: 0 },
+    { pose: 'presenter' as const, text: 'L’IA transforme déjà une grande partie de tes tâches quotidiennes.', x: -0.3, z: 0 },
+    { pose: 'idea' as const, text: 'Mais bien utilisée, elle te fait gagner un temps fou.', x: 0.3, z: 0.15 },
+    { pose: 'point-right' as const, text: 'Voici comment en tirer parti dès maintenant.', x: -0.2, z: 0 },
+    { pose: 'happy' as const, text: 'Abonne-toi pour une nouvelle info chaque jour !', x: 0, z: 0.1 },
   ]
   let t = 0
   const segments = segs.map((s, i) => {
     const dur = 3
-    const seg = { id: 'seg_' + i, pose: s.pose, bgId: null, text: s.text, start: +t.toFixed(2), dur, mood: 'auto' as const }
+    // 'glide' = déplacement fluide entre diapos par défaut (modifiable par diapo).
+    const seg = { id: 'seg_' + i, pose: s.pose, bgId: null, text: s.text, start: +t.toFixed(2), dur, mood: 'auto' as const, x: s.x, y: 0, z: s.z, entrance: 'glide' as const }
     t += dur
     return seg
   })

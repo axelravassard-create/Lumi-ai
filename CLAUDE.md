@@ -372,9 +372,14 @@ pédagogique.
     - **Personnage par diapo** (`PresSegment.tier`) : `tierOf(seg)` → lunettes
       (blumiman) / +ordi (bluminator) ; le laptop coexiste avec les poses (la pose
       garde la main sur le regard/la tête, le laptop n'ajoute que le mesh + scale 0.8).
-    - **Apparition** (`PresSegment.entrance`) jouée au début de la diapo
+    - **Transition** (`PresSegment.entrance`) jouée au début de la diapo
       (`ENTRANCE_DUR` ≈ 0,5 s) : `evalPresentation` produit `avatarScale`/`avatarDX`/
       `avatarDY` (+ fondu sur `avatarAlpha`), consommés par `presAvatarRect(project, f,…)`.
+      L'utilisateur **choisit par diapo** : `glide` = déplacement **fluide** de la
+      position/profondeur depuis la diapo précédente (`MOVE_DUR` ≈ 0,6 s, `easeInOut`,
+      même si Blumi change complètement d'endroit) ; `none` = **coupe franche**
+      (position instantanée) ; ou une apparition dédiée (fondu/pop/zoom/bord).
+      Défaut des nouvelles diapos = `glide`.
     - **Position** (`PresSegment.x`/`y`) → `posX`/`posY` dans le `PresFrame`,
       appliqués par `presAvatarRect` (placement de Blumi dans la scène). La
       **profondeur** (`PresSegment.z`, -1..1) → `posScale` (loin/petit ↔
