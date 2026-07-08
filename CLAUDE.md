@@ -384,6 +384,22 @@ pédagogique.
       appliqués par `presAvatarRect` (placement de Blumi dans la scène). La
       **profondeur** (`PresSegment.z`, -1..1) → `posScale` (loin/petit ↔
       proche/grand, échelle 0,45..1,7) multiplie l'échelle dans `presAvatarRect`.
+    - **Casier d'objets** (`PresSegment.prop`, `PROP_LIST`, composant `Prop` dans
+      `RobotAvatar`) : 7 accessoires 3D (pointeur, loupe, ampoule, micro, chapeau,
+      toque, couronne) attachables par diapo. Présence d'un objet ⇒ `PROP_ZOOM`
+      (0,62) réduit le perso dans son canvas (marge) et `presAvatarRect` compense
+      (`1/PROP_ZOOM`) → tête à taille constante, zoom **constant sur toute la
+      présentation** (aucun à-coup). Fond **importable par diapo** (bouton ＋ →
+      `addBackgroundToSegment`).
+    - ⚠️ **Fiabilité du perso (canal impératif)** : en rendu continu, R3F ne
+      réconcilie PAS de façon fiable les props du personnage (lunettes/ordi/objet
+      restaient affichés au changement). Le studio pilote donc l'avatar via
+      `accessoryRef` (type `AvatarLiveState` : glasses/laptop/prop/pose/mood/
+      speaking), mis à jour **chaque frame** dans `drawFrame`/`drawPresentationFrame`
+      depuis la frame déterministe ; `RobotAvatar` monte tous les accessoires en
+      permanence et bascule leur `.visible` dans `useFrame` en lisant ce ref.
+      `StudioPreview` recompose le maître **en continu** à l'arrêt (`settle` boucle
+      tant qu'on est en pause) → l'aperçu figé reflète toujours l'état vivant.
     - **Voix expressive** (`presProsody(seg, project)`) : hauteur (`pitch`) + débit
       (`rate`) dérivés de la **pose** (`POSE_PROSODY`) et de la **ponctuation**
       (! plus vif, ? plus haut, … plus posé) → la voix « colle » à l'émotion de la
