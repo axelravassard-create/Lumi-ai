@@ -345,6 +345,36 @@ pédagogique.
   export en lot, un clip par métier). ⚠️ `projects.ts` `migrate()` complète les
   projets enregistrés avant l'ajout de ces champs.
 - Deps ajoutées : `@ffmpeg/ffmpeg`, `@ffmpeg/util`.
+- **Deux formats de reel** (`project.mode: 'cinematic' | 'presentation'`, onglet
+  « Reel ») :
+  - **Cinématique** (défaut) = les 7 beats Doom→Glow-up décrits ci-dessus.
+  - **Présentation** (« 1 jour, 1 info sur ton métier ») = Blumi enchaîne des
+    **poses** en parlant devant des **fonds qui défilent** comme un diaporama ;
+    le texte s'écrit **au fil de la voix** (karaoké). Modèle : `PresentationModel`
+    (`src/lib/studio/types.ts` : `title`/`showTitle`, `segments: PresSegment[]`,
+    `backgrounds: PresBackground[]`). Une **diapo** (`PresSegment`) = une pose +
+    un fond (`bgId`) + un texte dit + `dur` réglable ; les diapos sont **packées
+    bout à bout** (ordre du tableau) → « déplacer dans le temps » = réordonner +
+    régler la durée (pas de start libre). Moteur déterministe **`evalPresentation`**
+    (`src/lib/studio/presentation.ts`) → `PresFrame` (pose, karaoké mot à mot,
+    fondu de diapo `bgFade`, présence `avatarAlpha`) ; rendu **`renderPresentation`**
+    (`render.ts`) : bandeau titre + sous-titre karaoké + watermark ; `StudioPreview`
+    compose fond(s) image (fondu) + **personnage posé** (prop `pose` sur
+    `RobotAvatar`/`Avatar`) + overlays. Panneau **`PresentationPanel`** : bascule
+    de format, titre, gestion des fonds (images, non persistées), éditeur de diapos
+    (pose via `POSE_LIST` — **18 poses**, texte, fond, voix par diapo, durée,
+    réordonner/dupliquer/supprimer, « ⏱️ Caler sur la voix » = `fitPresentationToVoice`)
+    + bandeau de diapos `PresentationStrip` sous l'aperçu (la `Timeline` de beats
+    est masquée en présentation). ⚠️ Aperçu figé : `settle()` recompose le maître
+    ~1 s pour voir la **transition de pose même à l'arrêt** (le canvas WebGL du
+    perso rend en continu mais le maître ne se redessine qu'une fois au scrub).
+    Voix off calée **par diapo** ; les SFX (calés sur les beats) sont neutralisés
+    en présentation. `normalizeDuration`/`migrate` gèrent le champ `presentation`.
+- **Système de poses** (`RobotAvatar.tsx` : `PoseName`, `POSES`, prop `pose`) :
+  18 poses interpolées image par image (yaw/pitch/roll, sourcils, ouverture des
+  yeux, clin d'œil, humeur, position, échelle, bouche) → transitions naturelles.
+  Quand `pose` est fourni, le regard/la tête suivent la pose (override du suivi
+  curseur) et l'humeur = celle de la pose. Réutilisable hors studio.
 
 ## Conformité / légal
 - Pages : `src/components/LegalScreen.tsx` (routes `#/legal/mentions|confidentialite|cgu`),
