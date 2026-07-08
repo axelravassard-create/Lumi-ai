@@ -71,8 +71,11 @@ export async function exportClip(h: ExportHandle): Promise<Blob> {
           /* déjà connectée */
         }
       }
-      const when0 = actx.currentTime + 0.15
-      scheduleSfx(actx, project, when0, 0, master, 1)
+      // SFX calés sur les beats : hors mode présentation (qui n'a pas de beats).
+      if (project.mode !== 'presentation') {
+        const when0 = actx.currentTime + 0.15
+        scheduleSfx(actx, project, when0, 0, master, 1)
+      }
       for (const track of dest.stream.getAudioTracks()) stream.addTrack(track)
       if (musicPlaying && musicEl) {
         musicEl.currentTime = 0

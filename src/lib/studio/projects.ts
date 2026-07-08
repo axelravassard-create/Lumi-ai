@@ -1,11 +1,32 @@
 // Sauvegarde / chargement multi-projets (localStorage). Les médias (vidéo,
 // musique) NE sont PAS persistés (object-URLs éphémères) : on garde les réglages,
 // l'utilisateur ré-importe son fichier au besoin.
-import type { BeatDef, BeatKind, Project } from './types'
+import type { BeatDef, BeatKind, PresentationModel, Project } from './types'
 import { BEAT_ORDER } from './types'
 import { DEFAULT_BEATS, DEFAULT_DURATION } from './library'
 import { defaultScript, voiceLineFor } from './script'
 import { estimateSpeechSec } from './tts'
+import { presDuration, reflowPresentation } from './presentation'
+
+// Présentation de départ (« 1 jour, 1 info ») : quelques diapos parlées prêtes
+// à personnaliser, pour ne pas partir d'un écran vide.
+function defaultPresentation(): PresentationModel {
+  const segs = [
+    { pose: 'greet' as const, text: 'Salut ! Aujourd’hui, une info qui change tout pour les {METIER}.' },
+    { pose: 'presenter' as const, text: 'L’IA transforme déjà une grande partie de tes tâches quotidiennes.' },
+    { pose: 'idea' as const, text: 'Mais bien utilisée, elle te fait gagner un temps fou.' },
+    { pose: 'point-right' as const, text: 'Voici comment en tirer parti dès maintenant.' },
+    { pose: 'happy' as const, text: 'Abonne-toi pour une nouvelle info chaque jour !' },
+  ]
+  let t = 0
+  const segments = segs.map((s, i) => {
+    const dur = 3
+    const seg = { id: 'seg_' + i, pose: s.pose, bgId: null, text: s.text, start: +t.toFixed(2), dur, mood: 'auto' as const }
+    t += dur
+    return seg
+  })
+  return { title: '1 jour, 1 info · {METIER}', showTitle: true, segments, backgrounds: [] }
+}
 
 // Allonge chaque moment actif pour que la voix off ait le temps de finir sa
 // réplique (sans jamais raccourcir en dessous de la durée visuelle voulue),
@@ -51,6 +72,7 @@ export function newProject(metier = 'Développeur·se', score = 73, level = 'Él
   return {
     id: 'p_' + Math.random().toString(36).slice(2, 9),
     name: metier || 'Nouveau clip',
+    mode: 'cinematic',
     fmt: '9:16',
     duration: DEFAULT_DURATION,
     autoDuration: true,
@@ -59,6 +81,7 @@ export function newProject(metier = 'Développeur·se', score = 73, level = 'Él
     background: null,
     script: defaultScript(metier, score, level),
     beats: DEFAULT_BEATS.map((b) => ({ ...b })),
+    presentation: defaultPresentation(),
     caption: { enabled: true, style: 'tiktok', posY: 0.2, scale: 1, timing: 'auto', offset: 0, pace: 1 },
     audio: {
       voice: true,
@@ -84,7 +107,11 @@ function migrate(p: Project): Project {
   const d = newProject()
   return {
     ...p,
+    mode: p.mode ?? 'cinematic',
     autoDuration: p.autoDuration ?? true,
+    presentation: p.presentation
+      ? { ...d.presentation, ...p.presentation, backgrounds: p.presentation.backgrounds ?? [] }
+      : d.presentation,
     caption: { ...d.caption, ...p.caption },
     audio: { ...d.audio, ...p.audio },
     character: { ...d.character, ...p.character },
@@ -114,8 +141,14 @@ export function setBeatDur(project: Project, id: BeatKind, durRaw: number): Proj
   return { ...project, beats }
 }
 
-// Lie la durée de la vidéo à la fin du dernier moment actif (si autoDuration).
+// Lie la durée de la vidéo à la fin du dernier moment/segment actif (si autoDuration).
 export function normalizeDuration(p: Project): Project {
+  if (p.mode === 'presentation') {
+    const rp = reflowPresentation(p) // garde les segments packés bout à bout
+    if (!rp.autoDuration) return rp
+    const end = presDuration(rp)
+    return end === rp.duration ? rp : { ...rp, duration: end }
+  }
   if (!p.autoDuration) return p
   const ends = p.beats.filter((b) => b.enabled !== false).map((b) => +(b.start + b.dur).toFixed(2))
   const end = Math.max(4, ...ends, 4)
@@ -125,7 +158,9 @@ export function normalizeDuration(p: Project): Project {
 // Retire les médias non sérialisables avant sauvegarde.
 function serializable(p: Project): Project {
   const bg = p.background ? { ...p.background, url: '' } : null
-  return { ...p, background: bg, audio: { ...p.audio, musicUrl: '' } }
+  // Les fonds de présentation sont des object-URLs éphémères → non persistés.
+  const presentation = { ...p.presentation, backgrounds: p.presentation.backgrounds.map((b) => ({ ...b, url: '' })) }
+  return { ...p, background: bg, presentation, audio: { ...p.audio, musicUrl: '' } }
 }
 
 export function listProjects(): Project[] {

@@ -6,6 +6,7 @@ import { warmTTS } from '../../lib/studio/tts'
 import { sharedCtx } from '../../lib/studio/audio'
 import { analyze } from '../../lib/engine'
 import { riskEmoji } from '../../lib/studio/script'
+import { POSE_LIST, presDuration } from '../../lib/studio/presentation'
 import { StudioPreview, type PreviewHandle } from './StudioPreview'
 import { Timeline } from './Timeline'
 import {
@@ -17,6 +18,7 @@ import {
   BeatsPanel,
   FormatPanel,
   IdeasPanel,
+  PresentationPanel,
   PresetPanel,
   ProjectsPanel,
   QueuePanel,
@@ -27,9 +29,10 @@ interface Props {
   onBack: () => void
 }
 
-type Tab = 'idees' | 'fond' | 'contenu' | 'moments' | 'captions' | 'perso' | 'audio' | 'format' | 'presets' | 'reseaux' | 'file' | 'projets'
+type Tab = 'reel' | 'idees' | 'fond' | 'contenu' | 'moments' | 'captions' | 'perso' | 'audio' | 'format' | 'presets' | 'reseaux' | 'file' | 'projets'
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
+  { id: 'reel', label: 'Reel', icon: '📊' },
   { id: 'idees', label: 'Idées', icon: '💡' },
   { id: 'fond', label: 'Fond', icon: '🎬' },
   { id: 'contenu', label: 'Contenu', icon: '🎯' },
@@ -50,6 +53,35 @@ const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[^\w]+/g, 
 function isIOS(): boolean {
   if (typeof navigator === 'undefined') return false
   return /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Mac/.test(navigator.userAgent))
+}
+
+// Bandeau de diapos (mode présentation) : aperçu proportionnel + tête de lecture,
+// cliquable pour se positionner. L'édition fine se fait dans le panneau « Reel ».
+function PresentationStrip({ project, time, onSeek }: { project: Project; time: number; onSeek: (t: number) => void }) {
+  const total = Math.max(0.1, presDuration(project))
+  const segs = project.presentation.segments
+  return (
+    <div className="space-y-1">
+      <div className="relative flex h-11 w-full gap-0.5 overflow-hidden rounded-lg bg-white/5">
+        {segs.map((s) => {
+          const meta = POSE_LIST.find((p) => p.pose === s.pose)
+          return (
+            <button
+              key={s.id}
+              onClick={() => onSeek(s.start + 0.01)}
+              title={`${meta?.label ?? s.pose} · ${s.dur.toFixed(1)}s`}
+              className="flex min-w-0 items-center justify-center rounded-md bg-brand-500/25 text-sm hover:bg-brand-500/40"
+              style={{ flex: `${s.dur} 0 0%` }}
+            >
+              <span className="truncate px-1">{meta?.emoji}</span>
+            </button>
+          )
+        })}
+        {!segs.length && <div className="grid w-full place-items-center text-xs text-white/40">Ajoute des diapos dans l’onglet « Reel »</div>}
+        <div className="pointer-events-none absolute top-0 h-full w-0.5 bg-white" style={{ left: `${(time / total) * 100}%` }} />
+      </div>
+    </div>
+  )
 }
 
 export function ClipStudio({ onBack }: Props) {
@@ -259,6 +291,7 @@ export function ClipStudio({ onBack }: Props) {
   const panel = () => {
     const p = { project, onChange: applyProject }
     switch (tab) {
+      case 'reel': return <PresentationPanel {...p} />
       case 'idees': return <IdeasPanel {...p} />
       case 'fond': return <BackgroundPanel {...p} />
       case 'contenu': return <ContentPanel {...p} />
@@ -317,16 +350,20 @@ export function ClipStudio({ onBack }: Props) {
               <span className="ml-2 hidden text-[11px] text-white/30 md:inline">Espace lecture · ← → image · Maj = 1 s · Début = 0</span>
               {status && <span className="ml-auto text-xs text-brand-200">{status}</span>}
             </div>
-            <div className="[&_*]:text-white">
-              <Timeline
-                project={project}
-                time={uiTime}
-                onChange={(beats) => applyProject({ ...project, beats })}
-                onSeek={scrub}
-                onSelect={setSelectedBeat}
-                selected={selectedBeat}
-              />
-            </div>
+            {project.mode === 'presentation' ? (
+              <PresentationStrip project={project} time={uiTime} onSeek={scrub} />
+            ) : (
+              <div className="[&_*]:text-white">
+                <Timeline
+                  project={project}
+                  time={uiTime}
+                  onChange={(beats) => applyProject({ ...project, beats })}
+                  onSeek={scrub}
+                  onSelect={setSelectedBeat}
+                  selected={selectedBeat}
+                />
+              </div>
+            )}
           </div>
         </div>
 

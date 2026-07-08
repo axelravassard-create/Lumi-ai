@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { BeatKind, Fmt, Project } from '../../lib/studio/types'
+import type { BeatKind, Fmt, PresSegment, Project } from '../../lib/studio/types'
 import { BEAT_ORDER } from '../../lib/studio/types'
+import {
+  POSE_LIST, addSegment, duplicateSegment, fitPresentationToVoice, moveSegment,
+  poseLabel, presDuration, removeSegment, segmentLine, updateSegment,
+} from '../../lib/studio/presentation'
 import { BEAT_META } from './Timeline'
 import { ANGLES, PLATFORMS, SOCIAL_2026, SOURCES_2026, generatePost, platform, type PlatformKey } from '../../lib/studio/social'
 import { aiReady, describeError, generateReelIdeas } from '../../lib/llm'
@@ -786,6 +790,196 @@ export function QueuePanel({ project, onRunQueue, busy }: P & { onRunQueue: (met
         {busy ? 'Export en cours…' : `⬇️ Exporter la file (${metiers.length} clips)`}
       </button>
       <p className="text-[11px] text-ink-400">Chaque clip est enregistré en temps réel : compte ~{project.duration.toFixed(0)} s par métier.</p>
+    </Section>
+  )
+}
+
+// ── Mode présentation (« 1 jour, 1 info ») ───────────────────────────────────
+const rid = (p: string) => p + Math.random().toString(36).slice(2, 8)
+
+function SegmentCard({ project, onChange, seg, index, count, voices }: P & { seg: PresSegment; index: number; count: number; voices: SpeechSynthesisVoice[] }) {
+  const pm = project.presentation
+  const bgName = seg.bgId ? pm.backgrounds.find((b) => b.id === seg.bgId)?.name ?? '—' : 'Dégradé'
+  const line = segmentLine(seg, project)
+  const est = estimateSpeechSec(line, project.audio.voiceRate)
+  const tight = est > seg.dur + 0.05
+  const meta = POSE_LIST.find((p) => p.pose === seg.pose)
+  return (
+    <div className="space-y-2 rounded-2xl border border-ink-100 bg-white p-3">
+      <div className="flex items-center gap-2">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-brand-100 text-xs font-bold text-brand-700">{index + 1}</span>
+        <span className="text-lg" title={poseLabel(seg.pose)}>{meta?.emoji}</span>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-ink-800">{poseLabel(seg.pose)}</span>
+        <button onClick={() => onChange(moveSegment(project, seg.id, -1))} disabled={index === 0} className="rounded-md bg-ink-100 px-1.5 py-0.5 text-xs text-ink-600 hover:bg-ink-200 disabled:opacity-30" title="Plus tôt">▲</button>
+        <button onClick={() => onChange(moveSegment(project, seg.id, 1))} disabled={index === count - 1} className="rounded-md bg-ink-100 px-1.5 py-0.5 text-xs text-ink-600 hover:bg-ink-200 disabled:opacity-30" title="Plus tard">▼</button>
+        <button onClick={() => onChange(duplicateSegment(project, seg.id))} className="rounded-md bg-ink-100 px-1.5 py-0.5 text-xs text-ink-600 hover:bg-ink-200" title="Dupliquer">⧉</button>
+        <button onClick={() => onChange(removeSegment(project, seg.id))} className="rounded-md px-1.5 py-0.5 text-xs text-red-400 hover:text-red-600" title="Supprimer">✕</button>
+      </div>
+
+      {/* Pose */}
+      <div className="flex items-center gap-2">
+        <span className="w-14 shrink-0 text-[11px] text-ink-400">Pose</span>
+        <select
+          value={seg.pose}
+          onChange={(e) => onChange(updateSegment(project, seg.id, { pose: e.target.value as PresSegment['pose'] }))}
+          className="field !py-1.5 text-sm"
+        >
+          {POSE_LIST.map((p) => <option key={p.pose} value={p.pose}>{p.emoji} {p.label}</option>)}
+        </select>
+      </div>
+
+      {/* Texte dit + affiché */}
+      <div className="flex items-start gap-2">
+        <span className="w-14 shrink-0 pt-1.5 text-[11px] text-ink-400">Dit</span>
+        <textarea
+          value={seg.text}
+          onChange={(e) => onChange(updateSegment(project, seg.id, { text: e.target.value }))}
+          rows={2}
+          placeholder="Ce que Blumi dit (et affiche mot à mot)…"
+          className="field text-sm"
+        />
+        <button
+          onClick={() => speak(line, project.audio.voiceRate, project.audio.voiceVolume, seg.voice || project.audio.voiceName)}
+          title="Écouter" className="shrink-0 rounded-lg border border-ink-200 px-2 py-1 text-xs text-ink-500 hover:border-brand-300 hover:text-brand-600"
+        >🔊</button>
+      </div>
+
+      {/* Fond */}
+      <div className="flex items-center gap-2">
+        <span className="w-14 shrink-0 text-[11px] text-ink-400">Fond</span>
+        <select
+          value={seg.bgId ?? ''}
+          onChange={(e) => onChange(updateSegment(project, seg.id, { bgId: e.target.value || null }))}
+          className="field !py-1.5 text-sm"
+          title={bgName}
+        >
+          <option value="">Dégradé (aucun)</option>
+          {pm.backgrounds.map((b) => <option key={b.id} value={b.id}>🖼️ {b.name}</option>)}
+        </select>
+      </div>
+
+      {/* Voix (optionnelle) */}
+      {voices.length > 0 && (
+        <div className="flex items-center gap-2">
+          <span className="w-14 shrink-0 text-[11px] text-ink-400">Voix</span>
+          <select
+            value={seg.voice ?? ''}
+            onChange={(e) => onChange(updateSegment(project, seg.id, { voice: e.target.value || undefined }))}
+            className="field !py-1.5 text-sm"
+          >
+            <option value="">Voix globale</option>
+            {voices.map((v) => <option key={v.name} value={v.name}>{v.name}</option>)}
+          </select>
+        </div>
+      )}
+
+      {/* Durée */}
+      <div className="flex items-center gap-1">
+        <span className="w-14 shrink-0 text-[11px] text-ink-400">Durée</span>
+        <button onClick={() => onChange(updateSegment(project, seg.id, { dur: seg.dur - 0.25 }))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">−</button>
+        <input
+          type="number" step={0.25} min={0.4} value={seg.dur}
+          onChange={(e) => { const v = parseFloat(e.target.value); if (!Number.isNaN(v)) onChange(updateSegment(project, seg.id, { dur: v })) }}
+          className="field !w-16 !px-1 !py-1 text-center text-xs"
+        />
+        <span className="text-[11px] text-ink-400">s</span>
+        <button onClick={() => onChange(updateSegment(project, seg.id, { dur: seg.dur + 0.25 }))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">+</button>
+        <span className={`ml-2 text-[11px] tabular-nums ${tight ? 'text-amber-600' : 'text-ink-400'}`} title="Temps de parole estimé / durée">
+          {tight ? '⚠️ ' : ''}voix ~{est.toFixed(1)}s
+        </span>
+      </div>
+    </div>
+  )
+}
+
+export function PresentationPanel({ project, onChange }: P) {
+  const pm = project.presentation
+  const voices = useVoices()
+  const fileRef = useRef<HTMLInputElement>(null)
+  const isPres = project.mode === 'presentation'
+
+  const setPM = (patch: Partial<Project['presentation']>) => onChange({ ...project, presentation: { ...pm, ...patch } })
+
+  const addBg = (files: FileList | null) => {
+    if (!files) return
+    const added = Array.from(files).map((f) => ({ id: rid('bg_'), name: f.name.replace(/\.[^.]+$/, ''), url: URL.createObjectURL(f), crop: { zoom: 1, x: 0, y: 0 } }))
+    setPM({ backgrounds: [...pm.backgrounds, ...added] })
+  }
+  const removeBg = (id: string) =>
+    onChange({
+      ...project,
+      presentation: {
+        ...pm,
+        backgrounds: pm.backgrounds.filter((b) => b.id !== id),
+        segments: pm.segments.map((s) => (s.bgId === id ? { ...s, bgId: null } : s)),
+      },
+    })
+
+  return (
+    <Section title="📊 Présentation « 1 jour, 1 info »">
+      {/* Choix du format de reel */}
+      <Segmented
+        options={[{ value: 'cinematic', label: '🎬 Cinématique' }, { value: 'presentation', label: '📊 Présentation' }]}
+        value={project.mode}
+        onChange={(v) => onChange({ ...project, mode: v })}
+      />
+      <p className="text-xs text-ink-500">
+        Blumi enchaîne des <b>poses</b> en parlant devant des <b>fonds qui défilent</b> comme un diaporama. Le texte s’écrit au fil de la voix.
+      </p>
+
+      {!isPres && (
+        <p className="rounded-xl bg-amber-50 p-2.5 text-xs text-amber-700">
+          Passe en mode <b>Présentation</b> ci-dessus pour voir ce montage dans l’aperçu.
+        </p>
+      )}
+
+      {/* Titre */}
+      <div className="space-y-2 rounded-2xl border border-ink-100 p-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-ink-600">Bandeau titre</span>
+          <button
+            onClick={() => setPM({ showTitle: !pm.showTitle })}
+            role="switch" aria-checked={pm.showTitle}
+            className={`relative h-6 w-11 rounded-full transition ${pm.showTitle ? 'bg-brand-500' : 'bg-ink-300'}`}
+          >
+            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${pm.showTitle ? 'left-[22px]' : 'left-0.5'}`} />
+          </button>
+        </div>
+        <input value={pm.title} onChange={(e) => setPM({ title: e.target.value })} placeholder="1 jour, 1 info · {METIER}" className="field text-sm" />
+      </div>
+
+      {/* Fonds (diaporama) */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-ink-600">🖼️ Fonds ({pm.backgrounds.length})</span>
+          <button onClick={() => fileRef.current?.click()} className="rounded-lg bg-brand-500 px-2.5 py-1 text-xs font-semibold text-white hover:bg-brand-400">+ Images</button>
+        </div>
+        <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => { addBg(e.target.files); e.target.value = '' }} />
+        {pm.backgrounds.length > 0 && (
+          <div className="grid grid-cols-3 gap-2">
+            {pm.backgrounds.map((b) => (
+              <div key={b.id} className="group relative overflow-hidden rounded-xl border border-ink-100">
+                {b.url ? <img src={b.url} alt={b.name} className="h-20 w-full object-cover" /> : <div className="grid h-20 w-full place-items-center bg-ink-100 text-[10px] text-ink-400">à ré-importer</div>}
+                <div className="truncate px-1.5 py-1 text-[10px] text-ink-500">{b.name}</div>
+                <button onClick={() => removeBg(b.id)} className="absolute right-1 top-1 rounded-md bg-black/50 px-1.5 text-xs text-white opacity-0 transition group-hover:opacity-100">✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="text-[11px] text-ink-400">Choisis un fond par diapo ci-dessous. Les images ne sont pas sauvegardées : ré-importe-les au besoin.</p>
+      </div>
+
+      {/* Segments (diapos) */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold text-ink-600">🎞️ Diapos ({pm.segments.length}) · {presDuration(project).toFixed(1)}s</span>
+          <button onClick={() => onChange(fitPresentationToVoice(project))} className="rounded-lg bg-ink-100 px-2.5 py-1 text-xs font-semibold text-ink-700 hover:bg-ink-200" title="Ajuste chaque durée au temps de parole">⏱️ Caler sur la voix</button>
+        </div>
+        {pm.segments.map((s, i) => (
+          <SegmentCard key={s.id} project={project} onChange={onChange} seg={s} index={i} count={pm.segments.length} voices={voices} />
+        ))}
+        <button onClick={() => onChange(addSegment(project))} className="btn-ghost w-full !py-2 text-sm">➕ Ajouter une diapo</button>
+      </div>
     </Section>
   )
 }

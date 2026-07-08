@@ -1,7 +1,7 @@
 // Moteur de rendu 2D des overlays — PARTAGÉ entre l'aperçu et l'export.
 // Dessine tout SAUF le personnage 3D (couche WebGL composée entre le fond et
 // cette couche). Coordonnées de référence : la taille réelle du canvas.
-import type { CaptionStyle, Crop, Frame, Project } from './types'
+import type { CaptionStyle, Crop, Frame, PresFrame, Project } from './types'
 import { PLATFORM_SAFE } from './types'
 
 const DISPLAY = '"Sora Variable", Sora, system-ui, sans-serif'
@@ -29,6 +29,17 @@ export function coverRect(
     sw,
     sh,
   }
+}
+
+// Rectangle d'affichage du personnage en mode présentation : centré, un peu
+// bas pour laisser la place au texte parlé. La pose (x/y/scale) est déjà intégrée
+// dans le rendu WebGL du personnage → ici un cadre fixe suffit.
+export function presAvatarRect(project: Project, cw: number, ch: number) {
+  const c = project.character
+  const base = Math.min(cw, ch) * 1.1 * c.scale
+  const cx = cw / 2 + (c.x || 0) * cw * 0.4
+  const cy = ch * 0.42 + (c.y || 0) * ch * 0.3
+  return { x: cx - base / 2, y: cy - base / 2, w: base, h: base }
 }
 
 // Rectangle d'affichage du personnage (aperçu CSS + export drawImage identiques).
@@ -486,6 +497,95 @@ function drawWatermark(ctx: CanvasRenderingContext2D, cw: number, topSafe: numbe
   ctx.fillStyle = '#fff'
   ctx.fillText('Blumi', x + r * 2 + size * 0.3, y)
   ctx.restore()
+}
+
+// ── Overlays du mode présentation ────────────────────────────────────────────
+export function renderPresentation(
+  ctx: CanvasRenderingContext2D,
+  f: PresFrame,
+  project: Project,
+  cw: number,
+  ch: number,
+  opts: RenderOpts = {},
+) {
+  const safe = PLATFORM_SAFE[project.platform]
+  const topSafe = safe.top * ch
+  const botSafe = safe.bottom * ch
+  const a = f.avatarAlpha
+
+  // Dégradés de lisibilité (haut pour le bandeau titre, bas pour le texte parlé).
+  const grad = ctx.createLinearGradient(0, 0, 0, ch)
+  grad.addColorStop(0, `rgba(6,14,30,${0.45 * (f.showTitle ? 1 : 0.5)})`)
+  grad.addColorStop(0.24, 'rgba(6,14,30,0)')
+  grad.addColorStop(0.62, 'rgba(6,14,30,0)')
+  grad.addColorStop(1, 'rgba(6,14,30,0.72)')
+  ctx.fillStyle = grad
+  ctx.fillRect(0, 0, cw, ch)
+
+  // Bandeau titre (« 1 jour, 1 info · métier »).
+  if (f.showTitle) drawPresTitle(ctx, f.title, cw, topSafe)
+
+  // Texte parlé, révélé mot à mot (karaoké de présentation).
+  if (f.words.length) drawPresSpeech(ctx, f, project, cw, ch, botSafe)
+
+  if (opts.watermark !== false && a > 0.001) drawWatermark(ctx, cw, topSafe, safe.right * cw, a)
+  if (opts.safeZones) drawSafeZones(ctx, cw, ch, safe)
+}
+
+function drawPresTitle(ctx: CanvasRenderingContext2D, title: string, cw: number, topSafe: number) {
+  const size = cw * 0.05
+  ctx.font = `900 ${size}px ${DISPLAY}`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  const tw = ctx.measureText(title).width
+  // Sous la ligne du watermark (haut-gauche) pour ne pas le chevaucher.
+  const y = topSafe + cw * 0.115
+  ctx.fillStyle = '#1583ef'
+  roundRect(ctx, cw / 2 - tw / 2 - 26, y - size * 0.72, tw + 52, size * 1.5, size * 0.5)
+  ctx.fill()
+  ctx.fillStyle = '#fff'
+  ctx.fillText(title, cw / 2, y)
+}
+
+// Sous-titre karaoké de présentation : gros, centré dans le tiers bas.
+function drawPresSpeech(ctx: CanvasRenderingContext2D, f: PresFrame, project: Project, cw: number, ch: number, botSafe: number) {
+  const words = f.words.map((w) => w.text)
+  const maxW = cw * 0.84
+  let size = cw * 0.058 * project.caption.scale
+  ctx.font = `900 ${size}px ${DISPLAY}`
+  let lines = wrap(ctx, words, maxW)
+  while (lines.length > 4 && size > cw * 0.032) {
+    size *= 0.9
+    ctx.font = `900 ${size}px ${DISPLAY}`
+    lines = wrap(ctx, words, maxW)
+  }
+  const lh = size * 1.22
+  const blockH = lines.length * lh
+  let y = ch - botSafe - blockH + lh / 2 - cw * 0.02
+  let idx = 0
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  for (const line of lines) {
+    const widths = line.map((w) => ctx.measureText(w + ' ').width)
+    const total = widths.reduce((s, b) => s + b, 0) - ctx.measureText(' ').width
+    let x = cw / 2 - total / 2
+    for (let i = 0; i < line.length; i++) {
+      const wobj = f.words[idx++]
+      const active = wobj?.active
+      const shown = wobj?.active || wobj?.done // révélation progressive
+      ctx.save()
+      ctx.globalAlpha = shown ? 1 : 0.32
+      ctx.lineJoin = 'round'
+      ctx.lineWidth = size * 0.16
+      ctx.strokeStyle = 'rgba(6,14,30,0.92)'
+      ctx.strokeText(line[i], x + widths[i] / 2, y)
+      ctx.fillStyle = active ? '#ffd633' : '#ffffff'
+      ctx.fillText(line[i], x + widths[i] / 2, y)
+      ctx.restore()
+      x += widths[i]
+    }
+    y += lh
+  }
 }
 
 function drawSafeZones(ctx: CanvasRenderingContext2D, cw: number, ch: number, safe: { top: number; bottom: number; right: number }) {

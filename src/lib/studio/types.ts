@@ -1,9 +1,14 @@
 // Modèle de données du Studio de clips viraux Blumi.
 // Tout est sérialisable (localStorage / export projet) : aucune fonction, aucun
 // objet non-JSON. Les URLs de médias sont des object-URLs recréées à l'import.
-import type { AvatarMood } from '../../components/avatar/RobotAvatar'
+import type { AvatarMood, PoseName } from '../../components/avatar/RobotAvatar'
 
 export type Fmt = '9:16' | '1:1' | '16:9'
+
+// Deux formats de reel : la cinématique virale (Doom→Glow-up, 7 beats) et le
+// mode « présentation » (« 1 jour une info sur ton métier ») où Blumi enchaîne
+// des poses en parlant devant des fonds qui défilent comme un diaporama.
+export type StudioMode = 'cinematic' | 'presentation'
 export type CaptionStyle = 'tiktok' | 'hormozi' | 'neon'
 export type AvatarTier = 'blumi' | 'blumiman' | 'bluminator'
 
@@ -101,9 +106,40 @@ export interface TempoCfg {
   enabled: boolean // affiche la grille + aimante les beats sur le tempo
 }
 
+// ── Mode « présentation » (diaporama parlé) ──────────────────────────────────
+// Un fond de diapo : image (défile comme une présentation) ou dégradé si vide.
+export interface PresBackground {
+  id: string
+  name: string
+  url: string // object-URL d'une image (non persisté)
+  crop: Crop
+}
+
+// Un « segment » = une diapo : une pose de Blumi + un fond + un texte qu'il dit
+// (voix + karaoké). Comme un moment : durée et position réglables (packés dans
+// l'ordre du tableau).
+export interface PresSegment {
+  id: string
+  pose: PoseName
+  bgId: string | null // fond affiché (null = dégradé)
+  text: string // ce que Blumi dit ET affiche (karaoké mot à mot)
+  start: number // recalculé par reflow (packing séquentiel)
+  dur: number
+  voice?: string // voix TTS (override) ; sinon voix globale
+  mood?: AvatarMood | 'auto' // 'auto' = humeur de la pose
+}
+
+export interface PresentationModel {
+  title: string // petit bandeau (ex. « 1 jour, 1 info · {METIER} »)
+  showTitle: boolean
+  segments: PresSegment[]
+  backgrounds: PresBackground[]
+}
+
 export interface Project {
   id: string
   name: string
+  mode: StudioMode // 'cinematic' (défaut) ou 'presentation'
   fmt: Fmt
   duration: number
   autoDuration: boolean // true = la durée vidéo = fin du dernier moment (liée)
@@ -112,6 +148,7 @@ export interface Project {
   background: Background | null
   script: ScriptModel
   beats: BeatDef[]
+  presentation: PresentationModel
   caption: CaptionCfg
   audio: AudioCfg
   character: CharacterCfg
@@ -176,6 +213,22 @@ export interface Frame {
   caption: { words: CaptionWord[]; style: CaptionStyle } | null
 }
 
+// État visuel complet du mode présentation à l'instant t (déterministe).
+export interface PresFrame {
+  t: number
+  segIndex: number
+  pose: PoseName
+  mood: AvatarMood
+  speaking: boolean
+  avatarAlpha: number // 0 = Blumi caché (avant le 1er segment / trou)
+  bgId: string | null // fond du segment courant
+  bgPrevId: string | null // fond précédent (pour le fondu de diapo)
+  bgFade: number // 0..1 : fondu du fond courant par-dessus le précédent
+  words: CaptionWord[] // texte dit, révélé mot à mot (karaoké)
+  title: string
+  showTitle: boolean
+}
+
 export const PLATFORM_SAFE: Record<Project['platform'], { top: number; bottom: number; right: number }> = {
   // Fractions de la hauteur/largeur couvertes par l'UI de la plateforme.
   tiktok: { top: 0.08, bottom: 0.2, right: 0.12 },
@@ -189,4 +242,4 @@ export function fmtSize(fmt: Fmt): { w: number; h: number } {
   return { w: 1080, h: 1920 }
 }
 
-export type { AvatarMood }
+export type { AvatarMood, PoseName }
