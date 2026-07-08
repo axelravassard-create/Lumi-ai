@@ -26,6 +26,8 @@ interface Props {
   capture?: boolean
   /** Regard fixé vers la caméra (studio) au lieu de suivre le curseur. */
   staticGaze?: boolean
+  /** Pose de présentation (regard/expression/position). Transition en douceur. */
+  pose?: PoseName
 }
 
 // Pointeur global normalisé (-1..1). Le visage suit le curseur partout sur la
@@ -79,6 +81,48 @@ const RAY_BLUE = ['#dff0ff', '#a9d2ff', '#6fb0ff', '#2e83ff', '#8ec2ff', '#1e6ff
 const PAT_DUR = 0.9
 const BROW_Y = 0.29 // hauteur de repos des sourcils
 const MOUTH_SCALE: [number, number, number] = [1, 0.5, 0.5] // échelle de repos de la bouche
+
+// ── Poses de Blumi (mode présentation) ───────────────────────────────────────
+// Chaque pose est une cible : orientation de la tête (yaw/pitch/roll), sourcils,
+// ouverture des yeux, humeur, position/échelle à l'écran, ouverture de bouche.
+// L'avatar interpole en douceur vers la pose → déplacements naturels.
+export type PoseName =
+  | 'neutral' | 'presenter' | 'greet' | 'point-left' | 'point-right'
+  | 'look-up' | 'idea' | 'happy' | 'surprised' | 'concerned' | 'skeptical'
+  | 'wink' | 'proud' | 'aside-left' | 'aside-right' | 'closeup' | 'thinking' | 'shy'
+
+export interface PoseTarget {
+  yaw: number; pitch: number; roll: number
+  brow: number; eyeOpen: number; winkL: number; winkR: number
+  mood: AvatarMood; x: number; y: number; scale: number; mouth: number
+}
+const P = (
+  yaw: number, pitch: number, roll: number, brow: number, eyeOpen: number,
+  mood: AvatarMood, x: number, y: number, scale: number,
+  mouth = 0, winkL = 0, winkR = 0,
+): PoseTarget => ({ yaw, pitch, roll, brow, eyeOpen, winkL, winkR, mood, x, y, scale, mouth })
+
+export const POSES: Record<PoseName, PoseTarget> = {
+  //           yaw   pitch  roll   brow eyeOpen mood        x     y    scale mouth
+  neutral:    P(0,    0,     0,     0,   1,     'neutral',  0,    0,   1),
+  presenter:  P(0,   -0.06,  0,     0.2, 1.05,  'neutral',  0,    0,   1,    0.05),
+  greet:      P(0.15, -0.1,  0.06,  0.5, 1.15,  'calm',     0,    0.02, 1,   0.15),
+  'point-left':  P(-0.7, 0,  -0.05, 0.15,1,     'neutral',  0.28, 0,   0.95),
+  'point-right': P(0.7,  0,   0.05, 0.15,1,     'neutral', -0.28, 0,   0.95),
+  'look-up':  P(0.1,  -0.6,  0.03,  0.4, 1.1,   'neutral',  0,    0,   1),
+  idea:       P(0,   -0.15,  0,     0.7, 1.35,  'neutral',  0,    0.03, 1.05, 0.2),
+  happy:      P(0,   -0.05,  0.03,  0.1, 0.7,   'calm',     0,    0,   1,    0.1),
+  surprised:  P(0,    0.05,  0,     0.8, 1.4,   'neutral',  0,   -0.02, 0.98, 0.6),
+  concerned:  P(-0.05, 0.25, -0.06, -0.5,0.9,   'concerned',0,    0,   1),
+  skeptical:  P(0.12,  0.05, -0.08, 0.2, 0.85,  'neutral',  0,    0,   1,    0,   0.5, 0),
+  wink:       P(0.08, -0.05, 0.05,  0.2, 1,     'calm',     0,    0,   1,    0.1, 0,   1),
+  proud:      P(0,   -0.2,   0,     0.2, 0.85,  'calm',     0,    0.03, 1.05, 0.05),
+  'aside-left':  P(-0.5, 0,  -0.04, 0.15,1,     'neutral',  0.42, 0,   0.85),
+  'aside-right': P(0.5,  0,   0.04, 0.15,1,     'neutral', -0.42, 0,   0.85),
+  closeup:    P(0,   -0.03,  0,     0.1, 1.05,  'neutral',  0,    0.05, 1.35, 0.05),
+  thinking:   P(-0.25,-0.4,  -0.1,  0.35,0.95,  'neutral',  0.05, 0,   1),
+  shy:        P(0.2,   0.2,   0.1,  0.1, 0.75,  'calm',    -0.05, 0,   0.95),
+}
 
 // Un œil réaliste : globe blanc + iris lumineux + pupille + reflet de vie
 // (« catchlight »). Le globe pivote pour fixer le curseur, les paupières clignent.
@@ -146,7 +190,7 @@ function Eye({
   )
 }
 
-function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaking = false, interactive = true, staticGaze = false }: Props) {
+function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaking = false, interactive = true, staticGaze = false, pose }: Props) {
   const group = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
   const lEye = useRef<THREE.Group | null>(null)
@@ -167,6 +211,8 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
   const saccade = useRef({ next: 1.5, x: 0, y: 0 })
   // Réaction « tapote sur la tête » : minuteur + étincelles de joie.
   const pat = useRef(0)
+  // Pose courante interpolée (transitions douces entre poses).
+  const pc = useRef<PoseTarget>({ ...POSES.neutral })
   const sparkleRefs = useRef<(THREE.Mesh | null)[]>([])
   const sparkleData = useRef(
     SPARKLE_COLORS.map(() => ({ active: false, age: 0, life: 1, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0 })),
@@ -247,6 +293,23 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     think.current += (target - think.current) * Math.min(1, d * 4)
     const k = think.current
 
+    // Interpolation douce vers la pose demandée → déplacements naturels.
+    const pt = POSES[pose ?? 'neutral']
+    const pcr = pc.current
+    const pl = Math.min(1, d * 3.2)
+    pcr.yaw += (pt.yaw - pcr.yaw) * pl
+    pcr.pitch += (pt.pitch - pcr.pitch) * pl
+    pcr.roll += (pt.roll - pcr.roll) * pl
+    pcr.brow += (pt.brow - pcr.brow) * pl
+    pcr.eyeOpen += (pt.eyeOpen - pcr.eyeOpen) * pl
+    pcr.winkL += (pt.winkL - pcr.winkL) * pl
+    pcr.winkR += (pt.winkR - pcr.winkR) * pl
+    pcr.x += (pt.x - pcr.x) * pl
+    pcr.y += (pt.y - pcr.y) * pl
+    pcr.scale += (pt.scale - pcr.scale) * pl
+    pcr.mouth += (pt.mouth - pcr.mouth) * pl
+    const posed = !!pose
+
     // Direction du regard : curseur, sinon balayage doux + micro-saccades.
     saccade.current.next -= d
     if (saccade.current.next <= 0) {
@@ -270,6 +333,12 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     if (laptop) {
       gx = Math.sin(t * 0.7) * 0.07
       gy = 0.95 + Math.sin(t * 1.1) * 0.05
+    }
+
+    // Pose : la direction du regard suit la pose (avec une micro-vie).
+    if (posed) {
+      gx = pcr.yaw + Math.sin(t * 0.5) * 0.03
+      gy = pcr.pitch + Math.sin(t * 0.7) * 0.02
     }
 
     // Réaction « tapote » : étonnement (yeux écarquillés, sourcils levés,
@@ -301,8 +370,12 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
       const sway = reducedMotion ? 0 : Math.sin(t * 0.6) * 0.015
       // Penche un peu plus la tête vers le bas quand il fixe son écran.
       const tilt = laptop ? 0.2 : 0
-      head.current.rotation.y += (gx * 0.18 + sway - head.current.rotation.y) * Math.min(1, d * 3)
-      head.current.rotation.x += (gy * 0.12 + tilt + k * 0.06 - head.current.rotation.x) * Math.min(1, d * 3)
+      // En pose, la tête tourne davantage (mouvement affirmé) + inclinaison (roll).
+      const hy = posed ? pcr.yaw * 0.55 + sway : gx * 0.18 + sway
+      const hx = posed ? pcr.pitch * 0.5 + k * 0.06 : gy * 0.12 + tilt + k * 0.06
+      head.current.rotation.y += (hy - head.current.rotation.y) * Math.min(1, d * 3)
+      head.current.rotation.x += (hx - head.current.rotation.x) * Math.min(1, d * 3)
+      head.current.rotation.z += ((posed ? pcr.roll : 0) - head.current.rotation.z) * Math.min(1, d * 3)
       head.current.position.y = patBob
       head.current.position.z = recoilZ
       head.current.scale.set(1 + (1 - patSquash), patSquash, 1 + (1 - patSquash))
@@ -313,10 +386,10 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     const talk = speaking
       ? Math.max(0, (0.5 + 0.5 * Math.sin(t * 17)) * (0.55 + 0.45 * Math.sin(t * 6.7 + 1.3)))
       : 0
-    const mouthAmt = Math.max(mouthOpen, talk)
+    const mouthAmt = Math.max(mouthOpen, talk, posed ? pcr.mouth : 0)
 
-    // Sourcils levés + bouche ouverte (étonnement ou parole).
-    for (const b of browRefs.current) if (b) b.position.y = BROW_Y + browLift
+    // Sourcils levés + bouche ouverte (étonnement, parole ou pose).
+    for (const b of browRefs.current) if (b) b.position.y = BROW_Y + browLift + (posed ? pcr.brow * 0.14 : 0)
     if (mouthRef.current) {
       mouthRef.current.scale.set(
         MOUTH_SCALE[0] * (1 + mouthAmt * 0.3),
@@ -349,14 +422,25 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     // Pendant la réaction « tapote », l'ouverture des yeux est pilotée par
     // patLid (négatif = écarquillés de surprise, positif = plissés de joie).
     const lidClose = pat.current > 0 ? patLid : close
-    const upTarget = -0.04 + lidClose * 1.15
-    const lowTarget = 0.04 - lidClose * 0.5
-    for (const l of [lUp.current, rUp.current]) if (l) l.rotation.x += (upTarget - l.rotation.x) * Math.min(1, d * 18)
-    for (const l of [lLow.current, rLow.current]) if (l) l.rotation.x += (lowTarget - l.rotation.x) * Math.min(1, d * 18)
+    // Plissement (eyeOpen<1) / grands yeux (eyeOpen>1) / clin d'œil par œil (pose).
+    const squint = posed ? Math.max(0, 1 - pcr.eyeOpen) : 0
+    const wide = posed ? Math.max(0, pcr.eyeOpen - 1) : 0
+    const baseUp = -0.04 + lidClose * 1.15 - wide * 0.5
+    const baseLow = 0.04 - lidClose * 0.5 + squint * 0.55
+    const upL = baseUp + (posed ? pcr.winkL : 0) * 1.15
+    const upR = baseUp + (posed ? pcr.winkR : 0) * 1.15
+    const lowL = baseLow - (posed ? pcr.winkL : 0) * 0.5
+    const lowR = baseLow - (posed ? pcr.winkR : 0) * 0.5
+    const lidK = Math.min(1, d * 18)
+    if (lUp.current) lUp.current.rotation.x += (upL - lUp.current.rotation.x) * lidK
+    if (rUp.current) rUp.current.rotation.x += (upR - rUp.current.rotation.x) * lidK
+    if (lLow.current) lLow.current.rotation.x += (lowL - lLow.current.rotation.x) * lidK
+    if (rLow.current) rLow.current.rotation.x += (lowR - rLow.current.rotation.x) * lidK
 
     // Iris : couleur (humeur) + éclat selon la réflexion, avec pulsation vivante.
     const pulse = 1 + Math.sin(t * (2.5 + k * 6)) * (0.12 + k * 0.45)
-    const col = MOOD_COLOR[mood].clone().lerp(IRIS_THINK, k)
+    const effMood = pose ? POSES[pose].mood : mood
+    const col = MOOD_COLOR[effMood].clone().lerp(IRIS_THINK, k)
     for (const m of [lIris.current, rIris.current]) {
       if (!m) continue
       m.emissive.copy(col)
@@ -420,11 +504,13 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
       }
     }
 
-    if (group.current && !reducedMotion) {
-      group.current.position.y = -0.02 + Math.sin(t * 1.1) * 0.03
-      group.current.rotation.z = Math.sin(t * 0.5) * 0.01
-    } else if (group.current) {
-      group.current.position.y = -0.02
+    if (group.current) {
+      const float = reducedMotion ? 0 : Math.sin(t * 1.1) * 0.03
+      group.current.position.y = -0.02 + float + (posed ? pcr.y * 0.4 : 0)
+      group.current.position.x = posed ? pcr.x * 0.5 : 0
+      group.current.rotation.z = reducedMotion ? 0 : Math.sin(t * 0.5) * 0.01
+      const baseScale = laptop ? 0.8 : 1
+      group.current.scale.setScalar(baseScale * (posed ? pcr.scale : 1))
     }
 
     // Halo orbital.
@@ -623,7 +709,7 @@ function Laptop() {
   )
 }
 
-export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, laptop = false, speaking = false, interactive = true, capture = false, staticGaze = false }: Props) {
+export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, laptop = false, speaking = false, interactive = true, capture = false, staticGaze = false, pose }: Props) {
   usePointerTracking()
   return (
     <Canvas
@@ -634,7 +720,7 @@ export default function RobotAvatar({ state, mood = 'neutral', active = true, gl
       camera={{ position: [0, 0.02, 4.9], fov: 30 }}
       style={{ background: 'transparent' }}
     >
-      <Face state={state} mood={mood} glasses={glasses} laptop={laptop} speaking={speaking} interactive={interactive} staticGaze={staticGaze} />
+      <Face state={state} mood={mood} glasses={glasses} laptop={laptop} speaking={speaking} interactive={interactive} staticGaze={staticGaze} pose={pose} />
       {/* Environnement studio généré localement (aucun téléchargement réseau). */}
       <Environment resolution={128}>
         <Lightformer intensity={0.8} position={[0, 1, 4]} scale={[10, 8, 1]} color="#ffffff" />

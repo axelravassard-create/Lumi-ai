@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import type { AvatarState, AvatarMood } from './avatar/RobotAvatar'
+import type { AvatarState, AvatarMood, PoseName } from './avatar/RobotAvatar'
 import { useLuminator, useTier } from '../lib/entitlement'
 
 // Le moteur 3D (three.js + R3F) est lourd : on le charge à la demande pour ne
@@ -24,6 +24,10 @@ interface Props {
   interactive?: boolean
   /** Rend le canvas capturable (preserveDrawingBuffer) pour l'export du studio. */
   capture?: boolean
+  /** Regard fixé caméra (studio). */
+  staticGaze?: boolean
+  /** Pose de présentation. */
+  pose?: PoseName
 }
 
 // Détection WebGL : si le navigateur ne sait pas faire de 3D, on retombe
@@ -56,7 +60,7 @@ function Fallback({ state, glasses, laptop }: { state: AvatarState; glasses: boo
   )
 }
 
-export function Avatar({ state = 'idle', mood = 'neutral', className = '', forceFallback = false, glasses, laptop, speaking = false, paused = false, interactive = true, capture = false }: Props) {
+export function Avatar({ state = 'idle', mood = 'neutral', className = '', forceFallback = false, glasses, laptop, speaking = false, paused = false, interactive = true, capture = false, staticGaze = false, pose }: Props) {
   const owns = useLuminator()
   const tier = useTier()
   // Si `glasses` n'est pas imposé, on suit la possession d'un palier payant.
@@ -84,7 +88,7 @@ export function Avatar({ state = 'idle', mood = 'neutral', className = '', force
     <div ref={ref} className={`relative select-none ${className}`}>
       {canRender3D ? (
         <Suspense fallback={<Fallback state={state} glasses={showGlasses} laptop={showLaptop} />}>
-          <RobotAvatar state={state} mood={mood} active={visible && !paused} glasses={showGlasses} laptop={showLaptop} speaking={speaking} interactive={interactive} capture={capture} />
+          <RobotAvatar state={state} mood={mood} active={visible && !paused} glasses={showGlasses} laptop={showLaptop} speaking={speaking} interactive={interactive} capture={capture} staticGaze={staticGaze} pose={pose} />
         </Suspense>
       ) : (
         <Fallback state={state} glasses={showGlasses} laptop={showLaptop} />
