@@ -528,7 +528,7 @@ export function renderPresentation(
   ctx.fillRect(0, 0, cw, ch)
 
   // Bandeau titre (« 1 jour, 1 info · métier »).
-  if (f.showTitle) drawPresTitle(ctx, f.title, cw, topSafe)
+  if (f.showTitle) drawPresTitle(ctx, f.title, cw, topSafe, f.t)
 
   // Texte parlé, révélé mot à mot (karaoké de présentation).
   if (f.words.length) drawPresSpeech(ctx, f, project, cw, ch, botSafe)
@@ -537,19 +537,42 @@ export function renderPresentation(
   if (opts.safeZones) drawSafeZones(ctx, cw, ch, safe)
 }
 
-function drawPresTitle(ctx: CanvasRenderingContext2D, title: string, cw: number, topSafe: number) {
+function drawPresTitle(ctx: CanvasRenderingContext2D, title: string, cw: number, topSafe: number, t: number) {
   const size = cw * 0.05
   ctx.font = `900 ${size}px ${DISPLAY}`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   const tw = ctx.measureText(title).width
+  const cx = cw / 2
   // Sous la ligne du watermark (haut-gauche) pour ne pas le chevaucher.
-  const y = topSafe + cw * 0.115
+  const cy = topSafe + cw * 0.115
+
+  // Entrée IMPACTANTE : le bandeau surgit vite du haut avec un léger dépassement
+  // (easeOutBack), pop d'échelle + fondu — en ~0,3 s au tout début de la vidéo.
+  const clamp = (v: number, a = 0, b = 1) => Math.max(a, Math.min(b, v))
+  const c1 = 2.2 // amplitude du dépassement (plus grand = plus punchy)
+  const c3 = c1 + 1
+  const p = clamp(t / 0.3)
+  const back = p >= 1 ? 1 : 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2)
+  const alpha = clamp(t / 0.14)
+  const scale = 0.4 + 0.6 * back // 0,4 → 1 avec rebond
+  const dy = (1 - back) * cw * 0.16 // arrive d'au-dessus (glisse vers le bas)
+
+  ctx.save()
+  ctx.globalAlpha = alpha
+  ctx.translate(cx, cy - dy)
+  ctx.scale(scale, scale)
   ctx.fillStyle = '#1583ef'
-  roundRect(ctx, cw / 2 - tw / 2 - 26, y - size * 0.72, tw + 52, size * 1.5, size * 0.5)
+  ctx.shadowColor = 'rgba(6,104,214,0.55)'
+  ctx.shadowBlur = 26
+  ctx.shadowOffsetY = 8
+  roundRect(ctx, -tw / 2 - 26, -size * 0.72, tw + 52, size * 1.5, size * 0.5)
   ctx.fill()
+  ctx.shadowBlur = 0
+  ctx.shadowOffsetY = 0
   ctx.fillStyle = '#fff'
-  ctx.fillText(title, cw / 2, y)
+  ctx.fillText(title, 0, 0)
+  ctx.restore()
 }
 
 // Sous-titre karaoké de présentation : gros, centré dans le tiers bas.
