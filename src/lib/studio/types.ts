@@ -133,6 +133,7 @@ export interface PresSegment {
   tier?: AvatarTier // personnage : blumi / blumiman (lunettes) / bluminator (+ordi)
   x?: number // position horizontale -1..1 (placement dans la scène)
   y?: number // position verticale -1..1
+  z?: number // profondeur -1..1 (loin/petit ↔ proche/grand)
   entrance?: PresEntrance // apparition au début de la diapo
 }
 
@@ -232,6 +233,7 @@ export interface PresFrame {
   avatarAlpha: number // 0 = Blumi caché (avant le 1er segment / trou)
   posX: number // position horizontale de la scène (-1..1)
   posY: number // position verticale de la scène (-1..1)
+  posScale: number // échelle de profondeur (loin/petit ↔ proche/grand)
   avatarScale: number // échelle d'entrée (pop/zoom)
   avatarDX: number // décalage horizontal d'entrée (slide, fraction de largeur)
   avatarDY: number // décalage vertical d'entrée (slide, fraction de hauteur)

@@ -125,7 +125,7 @@ export function presDuration(project: Project): number {
 }
 
 export function newSegment(pose: PoseName = 'presenter', text = ''): PresSegment {
-  return { id: uid(), pose, bgId: null, text, start: 0, dur: 3, mood: 'auto', tier: 'blumi', x: 0, y: 0, entrance: 'none' }
+  return { id: uid(), pose, bgId: null, text, start: 0, dur: 3, mood: 'auto', tier: 'blumi', x: 0, y: 0, z: 0, entrance: 'none' }
 }
 
 export function addSegment(project: Project, seg?: PresSegment): Project {
@@ -193,7 +193,7 @@ export function evalPresentation(project: Project, t: number): PresFrame {
   if (!seg) {
     return {
       t, segIndex: -1, pose: 'presenter', mood: 'neutral', speaking: false,
-      glasses: false, laptop: false, avatarAlpha: 0, posX: 0, posY: 0,
+      glasses: false, laptop: false, avatarAlpha: 0, posX: 0, posY: 0, posScale: 1,
       avatarScale: 1, avatarDX: 0, avatarDY: 0,
       bgId: null, bgPrevId: null, bgFade: 1, words: [], title, showTitle: pm.showTitle,
     }
@@ -209,6 +209,9 @@ export function evalPresentation(project: Project, t: number): PresFrame {
 
   // Personnage de la diapo (blumi / blumiman / bluminator).
   const { glasses, laptop } = tierLook(tierOf(seg))
+
+  // Profondeur : loin (petit) ↔ proche (grand). z -1..1 → échelle 0,45..1,7.
+  const posScale = clamp(1 + (seg.z ?? 0) * 0.65, 0.45, 1.7)
 
   // Apparition au début de la diapo (arrivée bas/côté, pop, zoom, fondu, direct).
   const ein = clamp((t - segStart) / ENTRANCE_DUR)
@@ -251,6 +254,7 @@ export function evalPresentation(project: Project, t: number): PresFrame {
     avatarAlpha,
     posX: seg.x ?? 0,
     posY: seg.y ?? 0,
+    posScale,
     avatarScale,
     avatarDX,
     avatarDY,

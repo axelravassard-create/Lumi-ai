@@ -36,7 +36,7 @@ export function coverRect(
 // intégrée dans le rendu WebGL du personnage.
 export function presAvatarRect(project: Project, f: PresFrame, cw: number, ch: number) {
   const c = project.character
-  const base = Math.min(cw, ch) * 1.1 * c.scale * (f.avatarScale || 1)
+  const base = Math.min(cw, ch) * 1.1 * c.scale * (f.posScale || 1) * (f.avatarScale || 1)
   const cx = cw / 2 + (f.posX || 0) * cw * 0.42 + (f.avatarDX || 0) * cw
   const cy = ch * 0.42 + (f.posY || 0) * ch * 0.34 + (f.avatarDY || 0) * ch
   return { x: cx - base / 2, y: cy - base / 2, w: base, h: base }

@@ -376,7 +376,9 @@ pédagogique.
       (`ENTRANCE_DUR` ≈ 0,5 s) : `evalPresentation` produit `avatarScale`/`avatarDX`/
       `avatarDY` (+ fondu sur `avatarAlpha`), consommés par `presAvatarRect(project, f,…)`.
     - **Position** (`PresSegment.x`/`y`) → `posX`/`posY` dans le `PresFrame`,
-      appliqués par `presAvatarRect` (placement de Blumi dans la scène).
+      appliqués par `presAvatarRect` (placement de Blumi dans la scène). La
+      **profondeur** (`PresSegment.z`, -1..1) → `posScale` (loin/petit ↔
+      proche/grand, échelle 0,45..1,7) multiplie l'échelle dans `presAvatarRect`.
     - **Voix expressive** (`presProsody(seg, project)`) : hauteur (`pitch`) + débit
       (`rate`) dérivés de la **pose** (`POSE_PROSODY`) et de la **ponctuation**
       (! plus vif, ? plus haut, … plus posé) → la voix « colle » à l'émotion de la

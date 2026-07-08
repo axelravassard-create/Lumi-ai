@@ -894,6 +894,18 @@ function SegmentCard({ project, onChange, seg, index, count, voices }: P & { seg
             <button onClick={() => onChange(updateSegment(project, seg.id, { x: 0, y: 0 }))} title="Recentrer" className="shrink-0 text-[11px] text-ink-400 hover:text-brand-600">↺</button>
           ) : null}
         </div>
+        {/* Profondeur (loin/petit ↔ proche/grand) */}
+        <div className="flex items-center gap-2">
+          <span className="w-14 shrink-0 text-[11px] text-ink-400">Profondeur</span>
+          <span className="w-4 text-[11px] text-ink-400" title="loin">🫥</span>
+          <input type="range" min={-1} max={1} step={0.05} value={seg.z ?? 0}
+            onChange={(e) => onChange(updateSegment(project, seg.id, { z: parseFloat(e.target.value) }))}
+            className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-ink-200 accent-brand-600" />
+          <span className="w-4 text-[11px] text-ink-400" title="proche">🔍</span>
+          {seg.z ? (
+            <button onClick={() => onChange(updateSegment(project, seg.id, { z: 0 }))} title="Distance normale" className="shrink-0 text-[11px] text-ink-400 hover:text-brand-600">↺</button>
+          ) : null}
+        </div>
       </div>
 
       {/* Voix (optionnelle) */}
