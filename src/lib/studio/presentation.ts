@@ -3,7 +3,7 @@
 // Blumi enchaîne des poses en parlant (voix + karaoké) devant des fonds qui
 // défilent comme un diaporama. Les segments sont packés bout à bout (ordre du
 // tableau) : « déplacer dans le temps » = réordonner + régler la durée.
-import type { AvatarMood, AvatarTier, PoseName, PresEntrance, PresFrame, PresSegment, Project } from './types'
+import type { AvatarMood, AvatarTier, PoseName, PresEntrance, PresFrame, PresSegment, Project, PropName } from './types'
 import { interpolate } from './script'
 import { splitWords } from './timeline'
 import { estimateSpeechSec } from './tts'
@@ -37,6 +37,18 @@ export const TIER_LIST: { value: AvatarTier; label: string; emoji: string }[] = 
   { value: 'blumi', label: 'Blumi', emoji: '🤖' },
   { value: 'blumiman', label: 'Blumiman', emoji: '🤓' },
   { value: 'bluminator', label: 'Bluminator', emoji: '👨‍💻' },
+]
+
+// Le « casier » de Blumi : objets amusants à attacher au personnage (par diapo).
+export const PROP_LIST: { value: PropName; label: string; emoji: string }[] = [
+  { value: 'none', label: 'Aucun', emoji: '🚫' },
+  { value: 'pointer', label: 'Pointeur', emoji: '🪄' },
+  { value: 'magnifier', label: 'Loupe', emoji: '🔍' },
+  { value: 'lightbulb', label: 'Ampoule', emoji: '💡' },
+  { value: 'mic', label: 'Micro', emoji: '🎤' },
+  { value: 'party-hat', label: 'Chapeau', emoji: '🎉' },
+  { value: 'grad-cap', label: 'Diplôme', emoji: '🎓' },
+  { value: 'crown', label: 'Couronne', emoji: '👑' },
 ]
 
 // Émotion de la voix par pose (deltas de hauteur/débit) → la voix « colle » à la
@@ -141,6 +153,15 @@ export function removeSegment(project: Project, id: string): Project {
   return reflowPresentation({ ...project, presentation: { ...project.presentation, segments } })
 }
 
+// Importe une image de fond ET l'assigne directement à une diapo (le fond
+// rejoint aussi le pool, réutilisable sur d'autres diapos).
+export function addBackgroundToSegment(project: Project, segId: string, bg: { name: string; url: string }): Project {
+  const id = 'bg_' + Math.random().toString(36).slice(2, 9)
+  const backgrounds = [...project.presentation.backgrounds, { id, name: bg.name, url: bg.url, crop: { zoom: 1, x: 0, y: 0 } }]
+  const segments = project.presentation.segments.map((s) => (s.id === segId ? { ...s, bgId: id } : s))
+  return reflowPresentation({ ...project, presentation: { ...project.presentation, backgrounds, segments } })
+}
+
 export function updateSegment(project: Project, id: string, patch: Partial<PresSegment>): Project {
   const segments = project.presentation.segments.map((s) => (s.id === id ? { ...s, ...patch } : s))
   // Un changement de durée décale les suivants → reflow.
@@ -197,7 +218,7 @@ export function evalPresentation(project: Project, t: number): PresFrame {
   if (!seg) {
     return {
       t, segIndex: -1, pose: 'presenter', mood: 'neutral', speaking: false,
-      glasses: false, laptop: false, avatarAlpha: 0, posX: 0, posY: 0, posScale: 1,
+      glasses: false, laptop: false, prop: 'none', avatarAlpha: 0, posX: 0, posY: 0, posScale: 1,
       avatarScale: 1, avatarDX: 0, avatarDY: 0,
       bgId: null, bgPrevId: null, bgFade: 1, words: [], title, showTitle: pm.showTitle,
     }
@@ -270,6 +291,7 @@ export function evalPresentation(project: Project, t: number): PresFrame {
     speaking,
     glasses,
     laptop,
+    prop: seg.prop ?? 'none',
     avatarAlpha,
     posX: fx,
     posY: fy,

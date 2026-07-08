@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BeatKind, Fmt, PresSegment, Project } from '../../lib/studio/types'
 import { BEAT_ORDER } from '../../lib/studio/types'
 import {
-  ENTRANCE_LIST, POSE_LIST, TIER_LIST, addSegment, duplicateSegment, fitPresentationToVoice,
-  moveSegment, poseLabel, presDuration, presProsody, removeSegment, segmentLine, tierOf, updateSegment,
+  ENTRANCE_LIST, POSE_LIST, PROP_LIST, TIER_LIST, addBackgroundToSegment, addSegment, duplicateSegment,
+  fitPresentationToVoice, moveSegment, poseLabel, presDuration, presProsody, removeSegment, segmentLine,
+  tierOf, updateSegment,
 } from '../../lib/studio/presentation'
 import { BEAT_META } from './Timeline'
 import { ANGLES, PLATFORMS, SOCIAL_2026, SOURCES_2026, generatePost, platform, type PlatformKey } from '../../lib/studio/social'
@@ -799,6 +800,7 @@ const rid = (p: string) => p + Math.random().toString(36).slice(2, 8)
 
 function SegmentCard({ project, onChange, seg, index, count, voices }: P & { seg: PresSegment; index: number; count: number; voices: SpeechSynthesisVoice[] }) {
   const pm = project.presentation
+  const bgRef = useRef<HTMLInputElement>(null)
   const bgName = seg.bgId ? pm.backgrounds.find((b) => b.id === seg.bgId)?.name ?? '—' : 'Dégradé'
   const line = segmentLine(seg, project)
   const est = estimateSpeechSec(line, project.audio.voiceRate)
@@ -864,7 +866,7 @@ function SegmentCard({ project, onChange, seg, index, count, voices }: P & { seg
         </select>
       </div>
 
-      {/* Fond */}
+      {/* Fond (par diapo) : choisir dans le pool OU importer directement ici */}
       <div className="flex items-center gap-2">
         <span className="w-14 shrink-0 text-[11px] text-ink-400">Fond</span>
         <select
@@ -876,6 +878,31 @@ function SegmentCard({ project, onChange, seg, index, count, voices }: P & { seg
           <option value="">Dégradé (aucun)</option>
           {pm.backgrounds.map((b) => <option key={b.id} value={b.id}>🖼️ {b.name}</option>)}
         </select>
+        <input
+          ref={bgRef} type="file" accept="image/*" className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) onChange(addBackgroundToSegment(project, seg.id, { name: f.name.replace(/\.[^.]+$/, ''), url: URL.createObjectURL(f) })); e.target.value = '' }}
+        />
+        <button onClick={() => bgRef.current?.click()} title="Importer une image pour cette diapo" className="shrink-0 rounded-lg bg-brand-500 px-2 py-1.5 text-xs font-semibold text-white hover:bg-brand-400">＋</button>
+      </div>
+
+      {/* Casier : objet attaché au personnage sur cette diapo */}
+      <div className="space-y-1">
+        <span className="text-[11px] text-ink-400">🧰 Casier de Blumi</span>
+        <div className="flex flex-wrap gap-1">
+          {PROP_LIST.map((pr) => {
+            const on = (seg.prop ?? 'none') === pr.value
+            return (
+              <button
+                key={pr.value}
+                onClick={() => onChange(updateSegment(project, seg.id, { prop: pr.value }))}
+                title={pr.label}
+                className={`grid h-8 w-8 place-items-center rounded-lg border text-base transition ${on ? 'border-brand-400 bg-brand-50' : 'border-ink-100 hover:border-brand-200'}`}
+              >
+                {pr.emoji}
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Position dans la scène */}

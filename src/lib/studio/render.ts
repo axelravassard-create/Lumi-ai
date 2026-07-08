@@ -2,7 +2,7 @@
 // Dessine tout SAUF le personnage 3D (couche WebGL composée entre le fond et
 // cette couche). Coordonnées de référence : la taille réelle du canvas.
 import type { CaptionStyle, Crop, Frame, PresFrame, Project } from './types'
-import { PLATFORM_SAFE } from './types'
+import { PLATFORM_SAFE, PROP_ZOOM } from './types'
 
 const DISPLAY = '"Sora Variable", Sora, system-ui, sans-serif'
 const BODY = '"Manrope Variable", Manrope, system-ui, sans-serif'
@@ -36,7 +36,12 @@ export function coverRect(
 // intégrée dans le rendu WebGL du personnage.
 export function presAvatarRect(project: Project, f: PresFrame, cw: number, ch: number) {
   const c = project.character
-  const base = Math.min(cw, ch) * 1.1 * c.scale * (f.posScale || 1) * (f.avatarScale || 1)
+  // Compense le zoom-arrière constant appliqué quand la présentation utilise des
+  // accessoires (la tête garde sa taille, l'objet tient dans le cadre). Basé sur
+  // le projet (pas la frame) → constant, aucun à-coup au changement de diapo.
+  const usesProps = project.presentation.segments.some((s) => s.prop && s.prop !== 'none')
+  const propPad = usesProps ? 1 / PROP_ZOOM : 1
+  const base = Math.min(cw, ch) * 1.1 * c.scale * (f.posScale || 1) * (f.avatarScale || 1) * propPad
   const cx = cw / 2 + (f.posX || 0) * cw * 0.42 + (f.avatarDX || 0) * cw
   const cy = ch * 0.42 + (f.posY || 0) * ch * 0.34 + (f.avatarDY || 0) * ch
   return { x: cx - base / 2, y: cy - base / 2, w: base, h: base }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, type RefObject } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Environment, Lightformer } from '@react-three/drei'
 import { Bloom, EffectComposer } from '@react-three/postprocessing'
@@ -7,6 +7,9 @@ import { playPat } from '../../lib/sfx'
 
 export type AvatarState = 'idle' | 'thinking'
 export type AvatarMood = 'neutral' | 'calm' | 'concerned'
+// Accessoires « casier » : petits objets amusants attachés au personnage.
+export type PropName = 'none' | 'pointer' | 'magnifier' | 'lightbulb' | 'party-hat' | 'grad-cap' | 'crown' | 'mic'
+const PROP_NAMES: Exclude<PropName, 'none'>[] = ['pointer', 'magnifier', 'lightbulb', 'mic', 'party-hat', 'grad-cap', 'crown']
 
 interface Props {
   state: AvatarState
@@ -28,6 +31,25 @@ interface Props {
   staticGaze?: boolean
   /** Pose de présentation (regard/expression/position). Transition en douceur. */
   pose?: PoseName
+  /** Accessoire attaché au personnage (studio présentation). */
+  prop?: PropName
+  /** Échelle globale du corps (studio présentation : zoom-arrière pour loger les
+   *  accessoires). Constant sur toute la présentation → aucun à-coup. */
+  bodyScale?: number
+  /** Canal impératif (studio) : pose/humeur/parole/accessoires pilotés par ce ref,
+   *  mis à jour chaque frame côté studio. Contourne la réconciliation R3F peu
+   *  fiable des props en rendu continu → le personnage suit fidèlement la timeline. */
+  accessoryRef?: RefObject<AvatarLiveState>
+}
+
+// État vivant du personnage piloté image par image (studio).
+export interface AvatarLiveState {
+  glasses: boolean
+  laptop: boolean
+  prop: PropName
+  pose?: PoseName
+  mood: AvatarMood
+  speaking: boolean
 }
 
 // Pointeur global normalisé (-1..1). Le visage suit le curseur partout sur la
@@ -190,7 +212,7 @@ function Eye({
   )
 }
 
-function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaking = false, interactive = true, staticGaze = false, pose }: Props) {
+function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaking = false, interactive = true, staticGaze = false, pose, prop, bodyScale = 1, accessoryRef }: Props) {
   const group = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
   const lEye = useRef<THREE.Group | null>(null)
@@ -205,6 +227,17 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
   const rimLight = useRef<THREE.PointLight>(null)
   const browRefs = useRef<(THREE.Mesh | null)[]>([])
   const mouthRef = useRef<THREE.Mesh | null>(null)
+  // Accessoires « déclaratifs » (lunettes, ordi, objets du casier) : montés en
+  // permanence et affichés/masqués via .visible dans useFrame — car ce montage 3D
+  // (canvas en rendu continu) ne réconcilie pas le montage/démontage conditionnel
+  // au re-render ; seule la voie impérative (useFrame) suit les changements.
+  const glassesRef = useRef<THREE.Group>(null)
+  const laptopRef = useRef<THREE.Group>(null)
+  const propRefs = useRef<Record<string, THREE.Group | null>>({})
+  // Valeurs vives lues dans useFrame (le corps du composant s'exécute à chaque
+  // re-render → toujours à jour, même si la closure de useFrame ne l'est pas).
+  const live = useRef<AvatarLiveState>({ glasses, laptop, prop: prop ?? 'none', pose, mood, speaking })
+  live.current = { glasses, laptop, prop: prop ?? 'none', pose, mood, speaking }
 
   const think = useRef(0)
   const blink = useRef({ next: 2.5, t: 0 })
@@ -289,12 +322,16 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     const t = three.clock.elapsedTime
     const d = Math.min(delta, 0.05)
 
+    // État des accessoires : canal impératif (studio) prioritaire, sinon valeurs
+    // vives des props (mises à jour dans le corps du composant).
+    const acc = accessoryRef?.current ?? live.current
+
     const target = state === 'thinking' ? 1 : 0
     think.current += (target - think.current) * Math.min(1, d * 4)
     const k = think.current
 
     // Interpolation douce vers la pose demandée → déplacements naturels.
-    const pt = POSES[pose ?? 'neutral']
+    const pt = POSES[acc.pose ?? 'neutral']
     const pcr = pc.current
     const pl = Math.min(1, d * 3.2)
     pcr.yaw += (pt.yaw - pcr.yaw) * pl
@@ -308,7 +345,7 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     pcr.y += (pt.y - pcr.y) * pl
     pcr.scale += (pt.scale - pcr.scale) * pl
     pcr.mouth += (pt.mouth - pcr.mouth) * pl
-    const posed = !!pose
+    const posed = !!acc.pose
 
     // Direction du regard : curseur, sinon balayage doux + micro-saccades.
     saccade.current.next -= d
@@ -330,7 +367,7 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     // Bluminator : absorbé par son écran. Il ne suit PAS le curseur — son regard
     // reste baissé sur l'ordinateur portable posé devant lui, avec un léger
     // balayage (il « lit ») pour rester vivant.
-    if (laptop) {
+    if (acc.laptop) {
       gx = Math.sin(t * 0.7) * 0.07
       gy = 0.95 + Math.sin(t * 1.1) * 0.05
     }
@@ -369,7 +406,7 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     if (head.current) {
       const sway = reducedMotion ? 0 : Math.sin(t * 0.6) * 0.015
       // Penche un peu plus la tête vers le bas quand il fixe son écran.
-      const tilt = laptop ? 0.2 : 0
+      const tilt = acc.laptop ? 0.2 : 0
       // En pose, la tête tourne davantage (mouvement affirmé) + inclinaison (roll).
       const hy = posed ? pcr.yaw * 0.55 + sway : gx * 0.18 + sway
       const hx = posed ? pcr.pitch * 0.5 + k * 0.06 : gy * 0.12 + tilt + k * 0.06
@@ -383,7 +420,7 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
 
     // Parole : la bouche s'ouvre et se ferme de façon irrégulière, comme une
     // articulation (deux sinusoïdes désynchronisées pour éviter l'effet métronome).
-    const talk = speaking
+    const talk = acc.speaking
       ? Math.max(0, (0.5 + 0.5 * Math.sin(t * 17)) * (0.55 + 0.45 * Math.sin(t * 6.7 + 1.3)))
       : 0
     const mouthAmt = Math.max(mouthOpen, talk, posed ? pcr.mouth : 0)
@@ -439,7 +476,7 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
 
     // Iris : couleur (humeur) + éclat selon la réflexion, avec pulsation vivante.
     const pulse = 1 + Math.sin(t * (2.5 + k * 6)) * (0.12 + k * 0.45)
-    const effMood = pose ? POSES[pose].mood : mood
+    const effMood = acc.pose ? POSES[acc.pose].mood : acc.mood
     const col = MOOD_COLOR[effMood].clone().lerp(IRIS_THINK, k)
     for (const m of [lIris.current, rIris.current]) {
       if (!m) continue
@@ -509,8 +546,17 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
       group.current.position.y = -0.02 + float + (posed ? pcr.y * 0.4 : 0)
       group.current.position.x = posed ? pcr.x * 0.5 : 0
       group.current.rotation.z = reducedMotion ? 0 : Math.sin(t * 0.5) * 0.01
-      const baseScale = laptop ? 0.8 : 1
+      const baseScale = (acc.laptop ? 0.8 : 1) * bodyScale
       group.current.scale.setScalar(baseScale * (posed ? pcr.scale : 1))
+    }
+
+    // Visibilité des accessoires (impérative → suit les changements même si la
+    // réconciliation R3F des enfants conditionnels ne suit pas en rendu continu).
+    if (glassesRef.current) glassesRef.current.visible = acc.glasses
+    if (laptopRef.current) laptopRef.current.visible = acc.laptop
+    for (const n of PROP_NAMES) {
+      const g = propRefs.current[n]
+      if (g) g.visible = acc.prop === n
     }
 
     // Halo orbital.
@@ -572,10 +618,10 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
         <Eye side={-1} eyeball={lEye} irisMat={lIris} upperLid={lUp} lowerLid={lLow} />
         <Eye side={1} eyeball={rEye} irisMat={rIris} upperLid={rUp} lowerLid={rLow} />
 
-        {/* Lunettes de vue rondes (variante « Luminator ») */}
-        {glasses && (
-          <group position={[0, 0.07, 0.86]}>
-            {[-1, 1].map((s) => (
+        {/* Lunettes de vue rondes (variante « Luminator ») — montées en
+            permanence, affichées via .visible (voir useFrame). */}
+        <group ref={glassesRef} position={[0, 0.07, 0.86]} visible={glasses}>
+          {[-1, 1].map((s) => (
               <group key={s}>
                 {/* Cerclage rond */}
                 <mesh position={[s * 0.35, 0, 0.14]}>
@@ -601,13 +647,12 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
                 </mesh>
               </group>
             ))}
-            {/* Pont entre les deux verres */}
-            <mesh position={[0, 0.04, 0.14]} rotation={[0, 0, Math.PI / 2]}>
-              <cylinderGeometry args={[0.016, 0.016, 0.18, 10]} />
-              <meshStandardMaterial color="#23283c" roughness={0.3} metalness={0.5} />
-            </mesh>
-          </group>
-        )}
+          {/* Pont entre les deux verres */}
+          <mesh position={[0, 0.04, 0.14]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.016, 0.016, 0.18, 10]} />
+            <meshStandardMaterial color="#23283c" roughness={0.3} metalness={0.5} />
+          </mesh>
+        </group>
 
         {/* Oreilles */}
         {[-1, 1].map((s) => (
@@ -615,6 +660,14 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
             <sphereGeometry args={[0.18, 24, 24]} />
             <meshStandardMaterial color={SKIN} roughness={0.5} metalness={0.05} />
           </mesh>
+        ))}
+
+        {/* Accessoires du casier (attachés à la tête → suivent les poses).
+            Tous montés, affichés via .visible (voir useFrame). */}
+        {PROP_NAMES.map((n) => (
+          <group key={n} ref={(el) => { propRefs.current[n] = el }} visible={prop === n}>
+            <Prop name={n} />
+          </group>
         ))}
       </group>
 
@@ -625,8 +678,10 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
       </mesh>
 
       {/* Petit ordinateur portable lumineux (variante « Bluminator ») : posé
-          devant, sous le menton — discret, jamais coupé au bord du cadre. */}
-      {laptop && <Laptop />}
+          devant, sous le menton. Monté en permanence, affiché via .visible. */}
+      <group ref={laptopRef} visible={laptop}>
+        <Laptop />
+      </group>
 
       {/* Halo orbital de particules (flux de pensée) */}
       <group ref={halo} rotation={[0.5, 0, 0]}>
@@ -709,7 +764,165 @@ function Laptop() {
   )
 }
 
-export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, laptop = false, speaking = false, interactive = true, capture = false, staticGaze = false, pose }: Props) {
+// Accessoires du « casier » de Blumi : petits objets amusants, en géométrie
+// simple (léger). Un seul à la fois, attaché à la tête (il suit les poses).
+function Prop({ name }: { name: PropName }) {
+  const GOLD = '#ffcf3f'
+  switch (name) {
+    case 'party-hat':
+      return (
+        <group position={[0.12, 1.05, 0]} rotation={[0, 0, -0.18]}>
+          <mesh position={[0, 0.4, 0]}>
+            <coneGeometry args={[0.44, 1.0, 32]} />
+            <meshStandardMaterial color="#ff5d8f" roughness={0.4} metalness={0.1} />
+          </mesh>
+          {/* Bandes décoratives */}
+          {[0.12, 0.42, 0.72].map((y) => (
+            <mesh key={y} position={[0, 0.1 + y, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[0.4 - y * 0.42, 0.028, 8, 32]} />
+              <meshStandardMaterial color={GOLD} roughness={0.4} metalness={0.3} />
+            </mesh>
+          ))}
+          {/* Pompon */}
+          <mesh position={[0, 0.94, 0]}>
+            <sphereGeometry args={[0.13, 16, 16]} />
+            <meshStandardMaterial color={GOLD} emissive={GOLD} emissiveIntensity={0.25} roughness={0.5} />
+          </mesh>
+        </group>
+      )
+    case 'grad-cap':
+      return (
+        <group position={[0, 1.02, 0]}>
+          <mesh position={[0, 0.06, 0]}>
+            <cylinderGeometry args={[0.3, 0.36, 0.2, 28]} />
+            <meshStandardMaterial color="#14142a" roughness={0.5} metalness={0.2} />
+          </mesh>
+          <mesh position={[0, 0.2, 0]} rotation={[0, 0.35, 0]}>
+            <boxGeometry args={[0.92, 0.05, 0.92]} />
+            <meshStandardMaterial color="#0e0e24" roughness={0.5} metalness={0.2} />
+          </mesh>
+          <mesh position={[0, 0.24, 0]}>
+            <sphereGeometry args={[0.05, 12, 12]} />
+            <meshStandardMaterial color={GOLD} metalness={0.6} roughness={0.3} />
+          </mesh>
+          {/* Gland (tassel) qui pend sur le côté */}
+          <mesh position={[0.32, 0.11, 0.32]}>
+            <cylinderGeometry args={[0.012, 0.012, 0.34, 8]} />
+            <meshStandardMaterial color={GOLD} metalness={0.5} roughness={0.4} />
+          </mesh>
+          <mesh position={[0.32, -0.08, 0.32]}>
+            <sphereGeometry args={[0.055, 10, 10]} />
+            <meshStandardMaterial color={GOLD} metalness={0.5} roughness={0.4} />
+          </mesh>
+        </group>
+      )
+    case 'crown':
+      return (
+        <group position={[0, 1.08, 0.02]}>
+          <mesh>
+            <cylinderGeometry args={[0.38, 0.4, 0.2, 28, 1, true]} />
+            <meshStandardMaterial color={GOLD} metalness={0.85} roughness={0.22} side={THREE.DoubleSide} />
+          </mesh>
+          {[0, 1, 2, 3, 4, 5].map((i) => {
+            const a = (i / 6) * Math.PI * 2
+            return (
+              <mesh key={i} position={[Math.sin(a) * 0.38, 0.19, Math.cos(a) * 0.38]}>
+                <coneGeometry args={[0.07, 0.22, 12]} />
+                <meshStandardMaterial color={GOLD} metalness={0.85} roughness={0.22} />
+              </mesh>
+            )
+          })}
+          {[0, 1, 2].map((i) => {
+            const a = (i / 3) * Math.PI * 2 + 0.5
+            return (
+              <mesh key={`j${i}`} position={[Math.sin(a) * 0.38, 0.02, Math.cos(a) * 0.38 + 0.02]}>
+                <sphereGeometry args={[0.05, 12, 12]} />
+                <meshStandardMaterial color="#ff4d6d" emissive="#ff4d6d" emissiveIntensity={0.4} roughness={0.2} />
+              </mesh>
+            )
+          })}
+        </group>
+      )
+    case 'lightbulb':
+      return (
+        <group position={[0, 1.72, 0.12]}>
+          <mesh>
+            <sphereGeometry args={[0.29, 24, 24]} />
+            <meshStandardMaterial color="#fff6cf" emissive="#ffdf80" emissiveIntensity={0.85} transparent opacity={0.92} toneMapped />
+          </mesh>
+          {/* Culot à vis */}
+          <mesh position={[0, -0.34, 0]}>
+            <cylinderGeometry args={[0.14, 0.14, 0.16, 16]} />
+            <meshStandardMaterial color="#b9bcc6" metalness={0.75} roughness={0.35} />
+          </mesh>
+          {[0, 1, 2].map((i) => (
+            <mesh key={i} position={[0, -0.29 - i * 0.05, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[0.14, 0.014, 8, 20]} />
+              <meshStandardMaterial color="#9a9da8" metalness={0.7} roughness={0.4} />
+            </mesh>
+          ))}
+        </group>
+      )
+    case 'pointer':
+      // Baguette de présentateur, tenue en bas à droite, pointant vers le contenu.
+      return (
+        <group position={[0.95, -0.5, 0.8]} rotation={[0, 0, 0.95]}>
+          <mesh>
+            <cylinderGeometry args={[0.028, 0.028, 1.8, 12]} />
+            <meshStandardMaterial color="#2a2a34" roughness={0.4} metalness={0.5} />
+          </mesh>
+          {/* Poignée dorée */}
+          <mesh position={[0, -0.82, 0]}>
+            <cylinderGeometry args={[0.05, 0.05, 0.28, 12]} />
+            <meshStandardMaterial color="#ffcf3f" metalness={0.6} roughness={0.3} />
+          </mesh>
+          {/* Embout rouge lumineux */}
+          <mesh position={[0, 0.94, 0]}>
+            <sphereGeometry args={[0.06, 16, 16]} />
+            <meshStandardMaterial color="#ff3b3b" emissive="#ff3b3b" emissiveIntensity={0.5} roughness={0.3} />
+          </mesh>
+        </group>
+      )
+    case 'magnifier':
+      return (
+        <group position={[1.0, -0.05, 0.9]} rotation={[0, 0, -0.5]}>
+          <mesh>
+            <torusGeometry args={[0.28, 0.045, 16, 40]} />
+            <meshStandardMaterial color="#c9ccd6" metalness={0.8} roughness={0.2} />
+          </mesh>
+          <mesh>
+            <circleGeometry args={[0.27, 32]} />
+            <meshStandardMaterial color="#bfe3ff" transparent opacity={0.32} roughness={0.05} metalness={0.1} side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, -0.52, 0]}>
+            <cylinderGeometry args={[0.045, 0.05, 0.52, 12]} />
+            <meshStandardMaterial color="#7a4a2a" roughness={0.6} metalness={0.1} />
+          </mesh>
+        </group>
+      )
+    case 'mic':
+      return (
+        <group position={[0.15, -0.62, 1.2]} rotation={[0.5, 0, -0.15]}>
+          <mesh position={[0, 0.28, 0]}>
+            <sphereGeometry args={[0.18, 20, 20]} />
+            <meshStandardMaterial color="#3a3a44" metalness={0.65} roughness={0.35} />
+          </mesh>
+          <mesh position={[0, -0.02, 0]}>
+            <cylinderGeometry args={[0.09, 0.1, 0.5, 16]} />
+            <meshStandardMaterial color="#1b1b26" metalness={0.5} roughness={0.4} />
+          </mesh>
+          <mesh position={[0, 0.13, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.11, 0.022, 8, 20]} />
+            <meshStandardMaterial color="#ffcf3f" metalness={0.6} roughness={0.3} />
+          </mesh>
+        </group>
+      )
+    default:
+      return null
+  }
+}
+
+export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, laptop = false, speaking = false, interactive = true, capture = false, staticGaze = false, pose, prop, bodyScale, accessoryRef }: Props) {
   usePointerTracking()
   return (
     <Canvas
@@ -720,7 +933,7 @@ export default function RobotAvatar({ state, mood = 'neutral', active = true, gl
       camera={{ position: [0, 0.02, 4.9], fov: 30 }}
       style={{ background: 'transparent' }}
     >
-      <Face state={state} mood={mood} glasses={glasses} laptop={laptop} speaking={speaking} interactive={interactive} staticGaze={staticGaze} pose={pose} />
+      <Face state={state} mood={mood} glasses={glasses} laptop={laptop} speaking={speaking} interactive={interactive} staticGaze={staticGaze} pose={pose} prop={prop} bodyScale={bodyScale} accessoryRef={accessoryRef} />
       {/* Environnement studio généré localement (aucun téléchargement réseau). */}
       <Environment resolution={128}>
         <Lightformer intensity={0.8} position={[0, 1, 4]} scale={[10, 8, 1]} color="#ffffff" />

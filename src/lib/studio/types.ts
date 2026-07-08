@@ -1,7 +1,7 @@
 // Modèle de données du Studio de clips viraux Blumi.
 // Tout est sérialisable (localStorage / export projet) : aucune fonction, aucun
 // objet non-JSON. Les URLs de médias sont des object-URLs recréées à l'import.
-import type { AvatarMood, PoseName } from '../../components/avatar/RobotAvatar'
+import type { AvatarMood, PoseName, PropName } from '../../components/avatar/RobotAvatar'
 
 export type Fmt = '9:16' | '1:1' | '16:9'
 
@@ -9,6 +9,13 @@ export type Fmt = '9:16' | '1:1' | '16:9'
 // mode « présentation » (« 1 jour une info sur ton métier ») où Blumi enchaîne
 // des poses en parlant devant des fonds qui défilent comme un diaporama.
 export type StudioMode = 'cinematic' | 'presentation'
+
+// Quand un accessoire (« casier ») est attaché au personnage, on réduit
+// l'ensemble dans son canvas pour laisser de la marge (chapeau au-dessus,
+// pointeur sur le côté) sans rien couper ; le compositing du studio compense
+// (cf. `presAvatarRect`) → la tête garde sa taille. Partagé entre le rendu 3D
+// (RobotAvatar) et le compositing (render.ts) pour rester en phase.
+export const PROP_ZOOM = 0.62
 export type CaptionStyle = 'tiktok' | 'hormozi' | 'neon'
 export type AvatarTier = 'blumi' | 'blumiman' | 'bluminator'
 
@@ -137,6 +144,7 @@ export interface PresSegment {
   y?: number // position verticale -1..1
   z?: number // profondeur -1..1 (loin/petit ↔ proche/grand)
   entrance?: PresEntrance // apparition au début de la diapo
+  prop?: PropName // accessoire du casier attaché au personnage
 }
 
 export interface PresentationModel {
@@ -232,6 +240,7 @@ export interface PresFrame {
   speaking: boolean
   glasses: boolean // personnage : lunettes (blumiman/bluminator)
   laptop: boolean // personnage : ordinateur portable (bluminator)
+  prop: PropName // accessoire du casier
   avatarAlpha: number // 0 = Blumi caché (avant le 1er segment / trou)
   posX: number // position horizontale de la scène (-1..1)
   posY: number // position verticale de la scène (-1..1)
@@ -260,4 +269,4 @@ export function fmtSize(fmt: Fmt): { w: number; h: number } {
   return { w: 1080, h: 1920 }
 }
 
-export type { AvatarMood, PoseName }
+export type { AvatarMood, PoseName, PropName }

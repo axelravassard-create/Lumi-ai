@@ -1,7 +1,7 @@
 import { forwardRef, lazy, Suspense, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import type { AvatarMood, AvatarState, PoseName } from '../avatar/RobotAvatar'
+import type { AvatarLiveState, AvatarMood, AvatarState, PoseName, PropName } from '../avatar/RobotAvatar'
 import type { Crop, Project } from '../../lib/studio/types'
-import { fmtSize } from '../../lib/studio/types'
+import { PROP_ZOOM, fmtSize } from '../../lib/studio/types'
 import { evalFrame } from '../../lib/studio/timeline'
 import { evalPresentation, presProsody, segmentLine } from '../../lib/studio/presentation'
 import { avatarRect, drawBackground, drawEmptyBackground, presAvatarRect, renderOverlay, renderPresentation } from '../../lib/studio/render'
@@ -34,6 +34,7 @@ interface Control {
   speaking: boolean
   state: AvatarState
   pose?: PoseName
+  prop?: PropName
 }
 
 const AVATAR_RES = 620 // résolution du canvas personnage (px) — composité dans le maître
@@ -54,6 +55,10 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
   const projectRef = useRef(project)
   projectRef.current = project
   const exportRef = useRef(false)
+  // Canal impératif vers l'avatar 3D : mis à jour chaque frame (déterministe),
+  // pilote pose/humeur/parole/accessoires de façon fiable (la réconciliation R3F
+  // des props en rendu continu n'est pas fiable).
+  const accRef = useRef<AvatarLiveState>({ glasses: false, laptop: false, prop: 'none', pose: undefined, mood: 'neutral', speaking: false })
   // Cache des images de fond (mode présentation) — décodées une fois par URL.
   const bgImagesRef = useRef<Record<string, HTMLImageElement>>({})
 
@@ -103,7 +108,7 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
     const c = controlRef.current
     if (
       c.glasses !== next.glasses || c.laptop !== next.laptop || c.mood !== next.mood ||
-      c.speaking !== next.speaking || c.state !== next.state || c.pose !== next.pose
+      c.speaking !== next.speaking || c.state !== next.state || c.pose !== next.pose || c.prop !== next.prop
     ) {
       controlRef.current = next
       setControl(next)
@@ -113,7 +118,9 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
   // Compose une frame complète du mode PRÉSENTATION à l'instant t.
   const drawPresentationFrame = (ctx: CanvasRenderingContext2D, p: Project, t: number) => {
     const f = evalPresentation(p, t)
-    syncControl({ glasses: f.glasses, laptop: f.laptop, mood: f.mood, speaking: f.speaking, state: 'idle', pose: f.pose })
+    const a = accRef.current
+    a.glasses = f.glasses; a.laptop = f.laptop; a.prop = f.prop; a.pose = f.pose; a.mood = f.mood; a.speaking = f.speaking
+    syncControl({ glasses: f.glasses, laptop: f.laptop, mood: f.mood, speaking: f.speaking, state: 'idle', pose: f.pose, prop: f.prop })
 
     // Ducking auto : baisse la musique quand Blumi parle.
     const music = audioRef.current
@@ -165,6 +172,10 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
     const f = evalFrame(p, t)
 
     // Synchronise les props (discrètes) du personnage.
+    {
+      const a = accRef.current
+      a.glasses = f.glasses; a.laptop = f.laptop; a.prop = 'none'; a.pose = undefined; a.mood = f.mood; a.speaking = f.speaking
+    }
     syncControl({
       glasses: f.glasses,
       laptop: f.laptop,
@@ -172,6 +183,7 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
       speaking: f.speaking,
       state: f.phase === 'scan' ? 'thinking' : 'idle',
       pose: undefined,
+      prop: undefined,
     })
 
     // Ducking auto : baisse la musique quand le personnage parle.
@@ -218,15 +230,16 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
     },
   }))
 
-  // Aperçu figé : le personnage 3D (rendu en continu) met ~1 s à rejoindre sa
-  // pose/humeur. Pendant ce temps on recompose le maître à répétition pour que la
-  // transition de pose se voie même à l'arrêt (sinon l'image reste sur l'ancienne).
-  const settle = (t: number, ms = 900) => {
+  // Aperçu à l'arrêt : le personnage 3D est rendu en continu (canvas WebGL séparé)
+  // et met un instant à rejoindre pose/humeur/accessoires. On recompose donc le
+  // maître EN CONTINU tant qu'on est en pause → l'aperçu reflète toujours l'état
+  // vivant du personnage (transitions de pose, changement d'objet, etc.). Lit
+  // `projectRef.current` à chaque frame → les éditions se voient sans redémarrer.
+  const settle = (t: number) => {
     let raf = 0
-    const start = performance.now()
     const step = () => {
       drawFrame(t)
-      if (performance.now() - start < ms) raf = requestAnimationFrame(step)
+      raf = requestAnimationFrame(step)
     }
     raf = requestAnimationFrame(step)
     return () => cancelAnimationFrame(raf)
@@ -333,17 +346,22 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, seek])
 
-  // Redessine quand le projet change (édition en direct, à l'arrêt) — settle de
-  // pose pour que le changement de pose/humeur se compose même à l'arrêt.
+  // À l'édition (projet modifié, à l'arrêt) : re-cale la vidéo de fond. Le maître
+  // est déjà recomposé en continu par la boucle de pause (qui lit le projet frais)
+  // → pas besoin d'y relancer une seconde boucle.
   useEffect(() => {
-    if (!playing) {
-      syncVideo(seek, false)
-      return settle(seek)
-    }
+    if (!playing) syncVideo(seek, false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project])
 
   const aspect = useMemo(() => `${w} / ${h}`, [w, h])
+  // Zoom-arrière constant si la présentation utilise au moins un accessoire (pour
+  // loger chapeaux/pointeurs sans rien couper). Constant sur toute la présentation
+  // → la tête ne change jamais de taille (aucun à-coup au changement de diapo).
+  const presZoom = useMemo(
+    () => (project.mode === 'presentation' && project.presentation.segments.some((s) => s.prop && s.prop !== 'none') ? PROP_ZOOM : 1),
+    [project.mode, project.presentation.segments],
+  )
 
   return (
     <div className="relative mx-auto flex items-center justify-center" style={{ aspectRatio: aspect, height: '100%', maxHeight: '100%' }}>
@@ -362,6 +380,9 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
             laptop={control.laptop}
             speaking={control.speaking}
             pose={control.pose}
+            prop={control.prop}
+            bodyScale={presZoom}
+            accessoryRef={accRef}
             interactive={false}
             capture
             active
