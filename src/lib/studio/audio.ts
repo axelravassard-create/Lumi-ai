@@ -7,7 +7,7 @@
 // audio réel, lui, mixable) est prévu dans tts.ts.
 import type { BeatDef, BeatKind, Project } from './types'
 
-export type SfxKind = 'pop' | 'riser' | 'sting' | 'shimmer' | 'whoosh'
+export type SfxKind = 'pop' | 'riser' | 'sting' | 'shimmer' | 'whoosh' | 'applause'
 
 let shared: AudioContext | null = null
 export function sharedCtx(): AudioContext | null {
@@ -114,6 +114,56 @@ export function playSfx(ctx: AudioContext, kind: SfxKind, at: number, out: Audio
       src.connect(bp).connect(g)
       src.start(at)
       src.stop(at + dur)
+      break
+    }
+    case 'applause': {
+      // Foule qui applaudit : un « lit » de bruit (rumeur) qui enfle et retombe,
+      // + de nombreux claps individuels (transitoires de bruit) répartis au hasard,
+      // plus denses au milieu → effet de public enthousiaste.
+      const dur = 2.4
+      const sr = ctx.sampleRate
+      // Clap partagé (~30 ms, décroissance rapide) réutilisé par toutes les mains.
+      const clapBuf = ctx.createBuffer(1, Math.ceil(sr * 0.03), sr)
+      const cd = clapBuf.getChannelData(0)
+      for (let j = 0; j < cd.length; j++) cd[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / cd.length, 2)
+      // Lit de rumeur (bruit filtré) qui enfle puis décroît.
+      const bedBuf = ctx.createBuffer(1, Math.ceil(sr * dur), sr)
+      const bd = bedBuf.getChannelData(0)
+      for (let i = 0; i < bd.length; i++) bd[i] = Math.random() * 2 - 1
+      const bed = ctx.createBufferSource()
+      bed.buffer = bedBuf
+      const bedBp = ctx.createBiquadFilter()
+      bedBp.type = 'bandpass'
+      bedBp.frequency.value = 1600
+      bedBp.Q.value = 0.6
+      const bedG = ctx.createGain()
+      bedG.gain.setValueAtTime(0.0001, at)
+      bedG.gain.linearRampToValueAtTime(0.1 * vol, at + 0.3)
+      bedG.gain.setValueAtTime(0.1 * vol, at + dur * 0.55)
+      bedG.gain.exponentialRampToValueAtTime(0.0001, at + dur)
+      bed.connect(bedBp).connect(bedG).connect(g)
+      bed.start(at)
+      bed.stop(at + dur)
+      // Claps individuels (montée/pic/descente d'intensité).
+      const N = 60
+      for (let i = 0; i < N; i++) {
+        const rt = Math.random()
+        const env = Math.sin(Math.min(1, rt / 0.92) * Math.PI) // pic au milieu
+        if (env <= 0.03) continue
+        const ct = at + rt * dur
+        const src = ctx.createBufferSource()
+        src.buffer = clapBuf
+        src.playbackRate.value = 0.8 + Math.random() * 0.6
+        const bp = ctx.createBiquadFilter()
+        bp.type = 'bandpass'
+        bp.frequency.value = 1000 + Math.random() * 2200
+        bp.Q.value = 1
+        const cg = ctx.createGain()
+        cg.gain.value = (0.05 + Math.random() * 0.12) * env * vol
+        src.connect(bp).connect(cg).connect(g)
+        src.start(ct)
+        src.stop(ct + 0.05)
+      }
       break
     }
   }

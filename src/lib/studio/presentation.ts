@@ -47,6 +47,7 @@ export const SFX_LIST: { kind: SfxKind; label: string; emoji: string; hint: stri
   { kind: 'riser', label: 'Montée', emoji: '📈', hint: 'tension / anticipation' },
   { kind: 'sting', label: 'Impact', emoji: '💢', hint: 'choc / révélation' },
   { kind: 'shimmer', label: 'Éclat', emoji: '✨', hint: 'magique / positif' },
+  { kind: 'applause', label: 'Applaudissements', emoji: '👏', hint: 'public / bravo' },
 ]
 
 export function sfxLabel(kind: SfxKind): string {

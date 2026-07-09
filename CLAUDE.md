@@ -407,8 +407,9 @@ pédagogique.
     ~1 s pour voir la **transition de pose même à l'arrêt** (le canvas WebGL du
     perso rend en continu mais le maître ne se redessine qu'une fois au scrub).
     Voix off calée **par diapo**. **Bruitages par diapo** (`PresSfxCue`
-    `{segId,at,kind}` dans `PresentationModel.sfx`, `SFX_LIST` = les 5 SFX
-    synthétisés existants pop/whoosh/riser/sting/shimmer) : l'utilisateur ajoute un
+    `{segId,at,kind}` dans `PresentationModel.sfx`, `SFX_LIST` = 6 SFX synthétisés
+    Web Audio pop/whoosh/riser/sting/shimmer/**applause** (foule qui applaudit :
+    lit de rumeur + claps individuels)) : l'utilisateur ajoute un
     bruitage sur une diapo et le **positionne dans le temps** (`at` = offset depuis
     le début de la diapo → suit la diapo si déplacée). `presSfxMarkers()` résout en
     temps absolus ; planifiés à l'aperçu (boucle de lecture) ET à l'export via
