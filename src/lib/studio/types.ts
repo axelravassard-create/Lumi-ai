@@ -253,7 +253,8 @@ export interface PresFrame {
   bgFade: number // 0..1 : fondu du fond courant par-dessus le précédent
   words: CaptionWord[] // texte dit, révélé mot à mot (karaoké)
   title: string
-  showTitle: boolean
+  showTitle: boolean // titre affiché (1re diapo uniquement)
+  titleOut: number // 0..1 : fondu de sortie du titre à la fin de la 1re diapo
 }
 
 export const PLATFORM_SAFE: Record<Project['platform'], { top: number; bottom: number; right: number }> = {

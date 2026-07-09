@@ -220,7 +220,7 @@ export function evalPresentation(project: Project, t: number): PresFrame {
       t, segIndex: -1, pose: 'presenter', mood: 'neutral', speaking: false,
       glasses: false, laptop: false, prop: 'none', avatarAlpha: 0, posX: 0, posY: 0, posScale: 1,
       avatarScale: 1, avatarDX: 0, avatarDY: 0,
-      bgId: null, bgPrevId: null, bgFade: 1, words: [], title, showTitle: pm.showTitle,
+      bgId: null, bgPrevId: null, bgFade: 1, words: [], title, showTitle: false, titleOut: 0,
     }
   }
 
@@ -283,6 +283,10 @@ export function evalPresentation(project: Project, t: number): PresFrame {
   const forced = seg.mood && seg.mood !== 'auto' ? (seg.mood as AvatarMood) : null
   const mood: AvatarMood = forced ?? 'neutral'
 
+  // Titre : uniquement sur la 1re diapo, avec un fondu de sortie à sa fin.
+  const showTitle = pm.showTitle && !!title && idx === 0
+  const titleOut = idx === 0 && segs[0] ? clamp((t - (segs[0].dur - 0.35)) / 0.35) : 0
+
   return {
     t,
     segIndex: idx,
@@ -304,7 +308,8 @@ export function evalPresentation(project: Project, t: number): PresFrame {
     bgFade,
     words,
     title,
-    showTitle: pm.showTitle && !!title,
+    showTitle,
+    titleOut,
   }
 }
 

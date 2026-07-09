@@ -528,7 +528,7 @@ export function renderPresentation(
   ctx.fillRect(0, 0, cw, ch)
 
   // Bandeau titre (« 1 jour, 1 info · métier »).
-  if (f.showTitle) drawPresTitle(ctx, f.title, cw, topSafe, f.t)
+  if (f.showTitle) drawPresTitle(ctx, f.title, cw, topSafe, f.t, f.titleOut)
 
   // Texte parlé, révélé mot à mot (karaoké de présentation).
   if (f.words.length) drawPresSpeech(ctx, f, project, cw, ch, botSafe)
@@ -537,7 +537,7 @@ export function renderPresentation(
   if (opts.safeZones) drawSafeZones(ctx, cw, ch, safe)
 }
 
-function drawPresTitle(ctx: CanvasRenderingContext2D, title: string, cw: number, topSafe: number, t: number) {
+function drawPresTitle(ctx: CanvasRenderingContext2D, title: string, cw: number, topSafe: number, t: number, out = 0) {
   const size = cw * 0.05
   ctx.font = `900 ${size}px ${DISPLAY}`
   ctx.textAlign = 'center'
@@ -554,9 +554,12 @@ function drawPresTitle(ctx: CanvasRenderingContext2D, title: string, cw: number,
   const c3 = c1 + 1
   const p = clamp(t / 0.3)
   const back = p >= 1 ? 1 : 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2)
-  const alpha = clamp(t / 0.14)
+  // Sortie : remonte + s'efface à la fin de la 1re diapo.
+  const eo = clamp(out)
+  const alpha = clamp(t / 0.14) * (1 - eo)
+  if (alpha <= 0.001) return
   const scale = 0.4 + 0.6 * back // 0,4 → 1 avec rebond
-  const dy = (1 - back) * cw * 0.16 // arrive d'au-dessus (glisse vers le bas)
+  const dy = (1 - back) * cw * 0.16 - eo * cw * 0.1 // arrive d'au-dessus, repart vers le haut
 
   ctx.save()
   ctx.globalAlpha = alpha
