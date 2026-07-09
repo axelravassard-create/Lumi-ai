@@ -3,6 +3,7 @@
 // cette couche). Coordonnées de référence : la taille réelle du canvas.
 import type { CaptionStyle, Crop, Frame, PresFrame, Project } from './types'
 import { PLATFORM_SAFE, PROP_ZOOM } from './types'
+import { segProps } from './presentation'
 
 const DISPLAY = '"Sora Variable", Sora, system-ui, sans-serif'
 const BODY = '"Manrope Variable", Manrope, system-ui, sans-serif'
@@ -39,7 +40,7 @@ export function presAvatarRect(project: Project, f: PresFrame, cw: number, ch: n
   // Compense le zoom-arrière constant appliqué quand la présentation utilise des
   // accessoires (la tête garde sa taille, l'objet tient dans le cadre). Basé sur
   // le projet (pas la frame) → constant, aucun à-coup au changement de diapo.
-  const usesProps = project.presentation.segments.some((s) => s.prop && s.prop !== 'none')
+  const usesProps = project.presentation.segments.some((s) => segProps(s).length > 0)
   const propPad = usesProps ? 1 / PROP_ZOOM : 1
   const base = Math.min(cw, ch) * 1.1 * c.scale * (f.posScale || 1) * (f.avatarScale || 1) * propPad
   const cx = cw / 2 + (f.posX || 0) * cw * 0.42 + (f.avatarDX || 0) * cw

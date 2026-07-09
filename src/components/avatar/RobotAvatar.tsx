@@ -31,8 +31,9 @@ interface Props {
   staticGaze?: boolean
   /** Pose de présentation (regard/expression/position). Transition en douceur. */
   pose?: PoseName
-  /** Accessoire attaché au personnage (studio présentation). */
+  /** Accessoire(s) attaché(s) au personnage (studio présentation). */
   prop?: PropName
+  props?: PropName[]
   /** Échelle globale du corps (studio présentation : zoom-arrière pour loger les
    *  accessoires). Constant sur toute la présentation → aucun à-coup. */
   bodyScale?: number
@@ -46,7 +47,7 @@ interface Props {
 export interface AvatarLiveState {
   glasses: boolean
   laptop: boolean
-  prop: PropName
+  props: PropName[] // accessoires visibles simultanément
   pose?: PoseName
   mood: AvatarMood
   speaking: boolean
@@ -212,7 +213,7 @@ function Eye({
   )
 }
 
-function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaking = false, interactive = true, staticGaze = false, pose, prop, bodyScale = 1, accessoryRef }: Props) {
+function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaking = false, interactive = true, staticGaze = false, pose, prop, props, bodyScale = 1, accessoryRef }: Props) {
   const group = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
   const lEye = useRef<THREE.Group | null>(null)
@@ -236,8 +237,9 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
   const propRefs = useRef<Record<string, THREE.Group | null>>({})
   // Valeurs vives lues dans useFrame (le corps du composant s'exécute à chaque
   // re-render → toujours à jour, même si la closure de useFrame ne l'est pas).
-  const live = useRef<AvatarLiveState>({ glasses, laptop, prop: prop ?? 'none', pose, mood, speaking })
-  live.current = { glasses, laptop, prop: prop ?? 'none', pose, mood, speaking }
+  const propList = props ?? (prop && prop !== 'none' ? [prop] : [])
+  const live = useRef<AvatarLiveState>({ glasses, laptop, props: propList, pose, mood, speaking })
+  live.current = { glasses, laptop, props: propList, pose, mood, speaking }
 
   const think = useRef(0)
   const blink = useRef({ next: 2.5, t: 0 })
@@ -556,7 +558,7 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     if (laptopRef.current) laptopRef.current.visible = acc.laptop
     for (const n of PROP_NAMES) {
       const g = propRefs.current[n]
-      if (g) g.visible = acc.prop === n
+      if (g) g.visible = acc.props.includes(n)
     }
 
     // Halo orbital.
@@ -665,7 +667,7 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
         {/* Accessoires du casier (attachés à la tête → suivent les poses).
             Tous montés, affichés via .visible (voir useFrame). */}
         {PROP_NAMES.map((n) => (
-          <group key={n} ref={(el) => { propRefs.current[n] = el }} visible={prop === n}>
+          <group key={n} ref={(el) => { propRefs.current[n] = el }} visible={propList.includes(n)}>
             <Prop name={n} />
           </group>
         ))}
@@ -922,7 +924,7 @@ function Prop({ name }: { name: PropName }) {
   }
 }
 
-export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, laptop = false, speaking = false, interactive = true, capture = false, staticGaze = false, pose, prop, bodyScale, accessoryRef }: Props) {
+export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, laptop = false, speaking = false, interactive = true, capture = false, staticGaze = false, pose, prop, props, bodyScale, accessoryRef }: Props) {
   usePointerTracking()
   return (
     <Canvas
@@ -933,7 +935,7 @@ export default function RobotAvatar({ state, mood = 'neutral', active = true, gl
       camera={{ position: [0, 0.02, 4.9], fov: 30 }}
       style={{ background: 'transparent' }}
     >
-      <Face state={state} mood={mood} glasses={glasses} laptop={laptop} speaking={speaking} interactive={interactive} staticGaze={staticGaze} pose={pose} prop={prop} bodyScale={bodyScale} accessoryRef={accessoryRef} />
+      <Face state={state} mood={mood} glasses={glasses} laptop={laptop} speaking={speaking} interactive={interactive} staticGaze={staticGaze} pose={pose} prop={prop} props={props} bodyScale={bodyScale} accessoryRef={accessoryRef} />
       {/* Environnement studio généré localement (aucun téléchargement réseau). */}
       <Environment resolution={128}>
         <Lightformer intensity={0.8} position={[0, 1, 4]} scale={[10, 8, 1]} color="#ffffff" />

@@ -145,7 +145,8 @@ export interface PresSegment {
   y?: number // position verticale -1..1
   z?: number // profondeur -1..1 (loin/petit ↔ proche/grand)
   entrance?: PresEntrance // apparition au début de la diapo
-  prop?: PropName // accessoire du casier attaché au personnage
+  props?: PropName[] // accessoires du casier attachés (plusieurs possibles)
+  prop?: PropName // legacy (mono-objet) — migré vers `props`
 }
 
 // Un bruitage placé sur une diapo, à un instant réglable (offset depuis le début
@@ -251,7 +252,7 @@ export interface PresFrame {
   speaking: boolean
   glasses: boolean // personnage : lunettes (blumiman/bluminator)
   laptop: boolean // personnage : ordinateur portable (bluminator)
-  prop: PropName // accessoire du casier
+  props: PropName[] // accessoires du casier (plusieurs à la fois)
   avatarAlpha: number // 0 = Blumi caché (avant le 1er segment / trou)
   posX: number // position horizontale de la scène (-1..1)
   posY: number // position verticale de la scène (-1..1)

@@ -103,6 +103,23 @@ export function presProsody(seg: PresSegment, project: Project): { pitch: number
 export function tierOf(seg: PresSegment): AvatarTier {
   return seg.tier ?? 'blumi'
 }
+
+// Accessoires d'une diapo (liste). Rétrocompat : ancien champ mono `prop`.
+export function segProps(seg: PresSegment): PropName[] {
+  if (seg.props) return seg.props
+  return seg.prop && seg.prop !== 'none' ? [seg.prop] : []
+}
+
+// Ajoute/retire un accessoire de la diapo (plusieurs objets possibles à la fois).
+export function toggleProp(project: Project, segId: string, prop: PropName): Project {
+  const segments = project.presentation.segments.map((s) => {
+    if (s.id !== segId) return s
+    const cur = segProps(s)
+    const next = prop === 'none' ? [] : cur.includes(prop) ? cur.filter((x) => x !== prop) : [...cur, prop]
+    return { ...s, props: next, prop: undefined }
+  })
+  return reflowPresentation({ ...project, presentation: { ...project.presentation, segments } })
+}
 function tierLook(tier: AvatarTier): { glasses: boolean; laptop: boolean } {
   return { glasses: tier !== 'blumi', laptop: tier === 'bluminator' }
 }
@@ -233,7 +250,7 @@ export function evalPresentation(project: Project, t: number): PresFrame {
   if (!seg) {
     return {
       t, segIndex: -1, pose: 'presenter', mood: 'neutral', speaking: false,
-      glasses: false, laptop: false, prop: 'none', avatarAlpha: 0, posX: 0, posY: 0, posScale: 1,
+      glasses: false, laptop: false, props: [], avatarAlpha: 0, posX: 0, posY: 0, posScale: 1,
       avatarScale: 1, avatarDX: 0, avatarDY: 0,
       bgId: null, bgPrevId: null, bgFade: 1, words: [], title, showTitle: false, titleOut: 0,
     }
@@ -310,7 +327,7 @@ export function evalPresentation(project: Project, t: number): PresFrame {
     speaking,
     glasses,
     laptop,
-    prop: seg.prop ?? 'none',
+    props: segProps(seg),
     avatarAlpha,
     posX: fx,
     posY: fy,

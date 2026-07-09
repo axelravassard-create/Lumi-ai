@@ -384,9 +384,10 @@ pédagogique.
       appliqués par `presAvatarRect` (placement de Blumi dans la scène). La
       **profondeur** (`PresSegment.z`, -1..1) → `posScale` (loin/petit ↔
       proche/grand, échelle 0,45..1,7) multiplie l'échelle dans `presAvatarRect`.
-    - **Casier d'objets** (`PresSegment.prop`, `PROP_LIST`, composant `Prop` dans
+    - **Casier d'objets** (`PresSegment.props` — **plusieurs à la fois**, `segProps()`
+      + rétrocompat mono `prop` ; `PROP_LIST`, `toggleProp`, composant `Prop` dans
       `RobotAvatar`) : 7 accessoires 3D (pointeur, loupe, ampoule, micro, chapeau,
-      toque, couronne) attachables par diapo. Présence d'un objet ⇒ `PROP_ZOOM`
+      toque, couronne) attachables par diapo, **cumulables**. Présence d'objet(s) ⇒ `PROP_ZOOM`
       (0,62) réduit le perso dans son canvas (marge) et `presAvatarRect` compense
       (`1/PROP_ZOOM`) → tête à taille constante, zoom **constant sur toute la
       présentation** (aucun à-coup). Fond **importable par diapo** (bouton ＋ →

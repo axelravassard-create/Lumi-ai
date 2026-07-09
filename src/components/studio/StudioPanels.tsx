@@ -4,7 +4,7 @@ import { BEAT_ORDER } from '../../lib/studio/types'
 import {
   ENTRANCE_LIST, POSE_LIST, PROP_LIST, SFX_LIST, TIER_LIST, addBackgroundToSegment, addSegment, addSfxCue,
   duplicateSegment, fitPresentationToVoice, moveSegment, poseLabel, presDuration, presProsody, removeSegment,
-  removeSfxCue, segmentLine, sfxCuesForSegment, tierOf, updateSegment, updateSfxCue,
+  removeSfxCue, segProps, segmentLine, sfxCuesForSegment, tierOf, toggleProp, updateSegment, updateSfxCue,
 } from '../../lib/studio/presentation'
 import { playSfx, sharedCtx } from '../../lib/studio/audio'
 import { BEAT_META } from './Timeline'
@@ -886,17 +886,18 @@ function SegmentCard({ project, onChange, seg, index, count, voices }: P & { seg
         <button onClick={() => bgRef.current?.click()} title="Importer une image pour cette diapo" className="shrink-0 rounded-lg bg-brand-500 px-2 py-1.5 text-xs font-semibold text-white hover:bg-brand-400">＋</button>
       </div>
 
-      {/* Casier : objet attaché au personnage sur cette diapo */}
+      {/* Casier : objets attachés au personnage (plusieurs possibles à la fois) */}
       <div className="space-y-1">
-        <span className="text-[11px] text-ink-400">🧰 Casier de Blumi</span>
+        <span className="text-[11px] text-ink-400">🧰 Casier de Blumi <span className="text-ink-300">(plusieurs possibles)</span></span>
         <div className="flex flex-wrap gap-1">
           {PROP_LIST.map((pr) => {
-            const on = (seg.prop ?? 'none') === pr.value
+            const active = segProps(seg)
+            const on = pr.value === 'none' ? active.length === 0 : active.includes(pr.value)
             return (
               <button
                 key={pr.value}
-                onClick={() => onChange(updateSegment(project, seg.id, { prop: pr.value }))}
-                title={pr.label}
+                onClick={() => onChange(toggleProp(project, seg.id, pr.value))}
+                title={pr.value === 'none' ? 'Aucun objet' : pr.label}
                 className={`grid h-8 w-8 place-items-center rounded-lg border text-base transition ${on ? 'border-brand-400 bg-brand-50' : 'border-ink-100 hover:border-brand-200'}`}
               >
                 {pr.emoji}
