@@ -276,6 +276,14 @@ pédagogique.
   TTS (SpeechSynthesis) n'est PAS routable dans Web Audio → jouée à l'aperçu mais
   **absente du MP4 exporté** ; emplacement prévu pour brancher une voix API (buffer
   mixable) dans `tts.ts`.
+  - **Musique réglable** (`AudioCfg.musicStart`/`musicFrom`/`musicTo`) : `musicStart`
+    = départ DANS le morceau (quelle partie jouer), `musicFrom`/`musicTo` = fenêtre
+    de lecture DANS la vidéo (0 = jusqu'à la fin). `musicGain()` (volume+fenêtre+
+    fondus+ducking) pilote `<audio>.volume` — appliqué dans `drawFrame` donc valable
+    à l'aperçu ET à l'export ; `syncMusicPlayback()` pilote lecture/position/offset
+    chaque frame (aperçu + boucle d'export). ⚠️ À l'export, le gain Web Audio de la
+    musique est à 1 (le niveau est porté par `<audio>.volume`, pas de double
+    application). Persistée dans le projet (l'URL du média, elle, n'est pas persistée).
 - **Export** (`export.ts`) : `captureStream(30)` + `MediaRecorder` avec piste audio
   (musique+SFX mixés). ⚡ `pickMime()` tente **`video/mp4` en premier** → sur Safari
   (et Chromium récent) l'enregistrement sort **directement en MP4**, donc AUCUNE

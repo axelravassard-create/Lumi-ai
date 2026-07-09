@@ -423,9 +423,38 @@ export function AudioPanel({ project, onChange }: P) {
         {a.musicName ? `🎵 ${a.musicName}` : '🎵 Importer une musique'}
       </button>
       {a.musicUrl && (
-        <Row label="Volume musique" hint={`${Math.round(a.musicVolume * 100)}%`}>
-          <Slider value={a.musicVolume} min={0} max={1} onChange={(v) => set({ musicVolume: v })} />
-        </Row>
+        <div className="space-y-2 rounded-2xl bg-ink-50 p-3">
+          <div className="flex items-center justify-between">
+            <span className="truncate text-xs font-semibold text-ink-700">🎵 {a.musicName || 'Musique'}</span>
+            <button onClick={() => set({ musicUrl: '', musicName: '' })} className="text-[11px] text-red-400 hover:text-red-600">Retirer ✕</button>
+          </div>
+          <Row label="Volume musique" hint={`${Math.round(a.musicVolume * 100)}%`}>
+            <Slider value={a.musicVolume} min={0} max={1} onChange={(v) => set({ musicVolume: v })} />
+          </Row>
+          {/* Départ dans le morceau : quelle partie de la musique jouer */}
+          <div className="flex items-center gap-1">
+            <span className="w-28 shrink-0 text-[11px] text-ink-500">Départ dans le morceau</span>
+            <button onClick={() => set({ musicStart: Math.max(0, a.musicStart - 1) })} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">−</button>
+            <input type="number" step={0.5} min={0} value={a.musicStart}
+              onChange={(e) => { const v = parseFloat(e.target.value); if (!Number.isNaN(v)) set({ musicStart: Math.max(0, v) }) }}
+              className="field !w-16 !px-1 !py-1 text-center text-xs" />
+            <span className="text-[11px] text-ink-400">s</span>
+            <button onClick={() => set({ musicStart: a.musicStart + 1 })} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">+</button>
+          </div>
+          {/* Fenêtre de lecture dans la vidéo (de → à) */}
+          <div className="flex items-center gap-1">
+            <span className="w-28 shrink-0 text-[11px] text-ink-500">Jouer de</span>
+            <input type="number" step={0.5} min={0} value={a.musicFrom}
+              onChange={(e) => { const v = parseFloat(e.target.value); if (!Number.isNaN(v)) set({ musicFrom: Math.max(0, v) }) }}
+              className="field !w-16 !px-1 !py-1 text-center text-xs" />
+            <span className="text-[11px] text-ink-400">à</span>
+            <input type="number" step={0.5} min={0} value={a.musicTo}
+              onChange={(e) => { const v = parseFloat(e.target.value); if (!Number.isNaN(v)) set({ musicTo: Math.max(0, v) }) }}
+              className="field !w-16 !px-1 !py-1 text-center text-xs" />
+            <span className="text-[11px] text-ink-400">s</span>
+          </div>
+          <p className="text-[11px] text-ink-400">« Départ dans le morceau » = à quelle seconde de la chanson commencer. « Jouer de/à » = quand la musique joue dans la vidéo ({a.musicTo > 0 ? `${a.musicFrom}s → ${a.musicTo}s` : `dès ${a.musicFrom}s, jusqu'à la fin`}). Fondus d'entrée/sortie auto.</p>
+        </div>
       )}
       <label className="flex items-center gap-2 text-xs font-semibold text-ink-600">
         <input type="checkbox" checked={a.duck} onChange={(e) => set({ duck: e.target.checked })} className="accent-brand-600" />

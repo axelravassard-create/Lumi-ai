@@ -2,7 +2,7 @@
 // (WebM), audio mixé (musique + SFX) via Web Audio, puis conversion WebM→MP4
 // (H.264/AAC) via ffmpeg.wasm. Barre de progression via onProgress (0→1).
 import type { Project } from './types'
-import { scheduleMarkers, scheduleSfx, sharedCtx } from './audio'
+import { scheduleMarkers, scheduleSfx, sharedCtx, syncMusicPlayback } from './audio'
 import { presSfxMarkers } from './presentation'
 
 export interface ExportHandle {
@@ -65,7 +65,9 @@ export async function exportClip(h: ExportHandle): Promise<Blob> {
         try {
           const src = actx.createMediaElementSource(musicEl)
           const mg = actx.createGain()
-          mg.gain.value = project.audio.musicVolume
+          // Le niveau (volume + fenêtre + fondus + ducking) est porté par
+          // musicEl.volume via drawFrame → gain unité ici (pas de double application).
+          mg.gain.value = 1
           src.connect(mg).connect(master)
           musicPlaying = true
         } catch {
@@ -81,10 +83,8 @@ export async function exportClip(h: ExportHandle): Promise<Blob> {
         scheduleSfx(actx, project, when0, 0, master, 1)
       }
       for (const track of dest.stream.getAudioTracks()) stream.addTrack(track)
-      if (musicPlaying && musicEl) {
-        musicEl.currentTime = 0
-        musicEl.play().catch(() => {})
-      }
+      // La lecture/position de la musique est pilotée dans la boucle d'enregistrement
+      // (respecte le départ dans le morceau + la fenêtre from→to).
     } catch (e) {
       console.warn('Piste audio indisponible, export vidéo seule :', e)
     }
@@ -125,6 +125,7 @@ export async function exportClip(h: ExportHandle): Promise<Blob> {
         setTimeout(() => { try { rec.stop() } catch { /* ignore */ } }, 120)
         return
       }
+      if (musicPlaying && musicEl) syncMusicPlayback(musicEl, project.audio, duration, t)
       drawFrame(t)
       // Enregistrement = 0→98% si pas de conversion (MP4 natif), sinon 0→60%.
       onProgress((t / duration) * (recordedMp4 ? 0.98 : 0.6))

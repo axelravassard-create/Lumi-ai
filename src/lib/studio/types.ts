@@ -95,6 +95,9 @@ export interface AudioCfg {
   musicUrl: string
   musicName: string
   musicVolume: number
+  musicStart: number // départ dans le morceau (s) : quelle partie de la musique jouer
+  musicFrom: number // instant de la vidéo où la musique démarre (s)
+  musicTo: number // instant de la vidéo où la musique s'arrête (s) ; 0 = jusqu'à la fin
   sfx: boolean
   sfxVolume: number
   duck: boolean

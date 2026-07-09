@@ -5,9 +5,48 @@
 // n'est PAS routable dans Web Audio → elle est jouée à l'APERÇU mais n'est pas
 // capturée dans le MP4 exporté. L'emplacement pour brancher une voix API (buffer
 // audio réel, lui, mixable) est prévu dans tts.ts.
-import type { BeatDef, BeatKind, Project } from './types'
+import type { AudioCfg, BeatDef, BeatKind, Project } from './types'
 
 export type SfxKind = 'pop' | 'riser' | 'sting' | 'shimmer' | 'whoosh' | 'applause' | 'ding' | 'heartbeat'
+
+// ── Musique de fond : fenêtre de lecture (from→to) + départ dans le morceau ───
+// Volume voulu de la musique à l'instant `t` de la vidéo (0 hors fenêtre), avec
+// fondus d'entrée/sortie et ducking sous la voix.
+export function musicGain(a: AudioCfg, duration: number, t: number, speaking: boolean): number {
+  if (!a.musicUrl) return 0
+  const from = a.musicFrom || 0
+  const to = a.musicTo && a.musicTo > from ? a.musicTo : duration
+  if (t < from || t >= to) return 0
+  let v = a.musicVolume
+  const fade = 0.6
+  if (t < from + fade) v *= (t - from) / fade
+  if (t > to - fade) v *= (to - t) / fade
+  const ducked = a.duck && a.voice && speaking
+  return Math.max(0, Math.min(1, v)) * (ducked ? 0.3 : 1)
+}
+
+// Pilote lecture/pause + position de l'élément <audio> pour respecter la fenêtre
+// (from→to) et le départ dans le morceau (musicStart). Appelé chaque frame.
+export function syncMusicPlayback(m: HTMLAudioElement, a: AudioCfg, duration: number, t: number) {
+  if (!a.musicUrl) {
+    if (!m.paused) m.pause()
+    return
+  }
+  const from = a.musicFrom || 0
+  const to = a.musicTo && a.musicTo > from ? a.musicTo : duration
+  if (t >= from && t < to) {
+    let target = (a.musicStart || 0) + (t - from)
+    if (m.duration && isFinite(m.duration) && m.duration > 0) target %= m.duration
+    if (m.paused) {
+      try { m.currentTime = target } catch { /* pas prêt */ }
+      m.play().catch(() => {})
+    } else if (Math.abs(m.currentTime - target) > 0.35) {
+      try { m.currentTime = target } catch { /* ignore */ }
+    }
+  } else if (!m.paused) {
+    m.pause()
+  }
+}
 
 let shared: AudioContext | null = null
 export function sharedCtx(): AudioContext | null {

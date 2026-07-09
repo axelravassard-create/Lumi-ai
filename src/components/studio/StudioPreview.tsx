@@ -5,7 +5,7 @@ import { PROP_ZOOM, fmtSize } from '../../lib/studio/types'
 import { evalFrame } from '../../lib/studio/timeline'
 import { evalPresentation, presProsody, presSfxMarkers, segProps, segmentLine } from '../../lib/studio/presentation'
 import { avatarRect, drawBackground, drawEmptyBackground, presAvatarRect, renderOverlay, renderPresentation } from '../../lib/studio/render'
-import { scheduleMarkers, scheduleSfx, sharedCtx } from '../../lib/studio/audio'
+import { musicGain, scheduleMarkers, scheduleSfx, sharedCtx, syncMusicPlayback } from '../../lib/studio/audio'
 import { voiceLineFor } from '../../lib/studio/script'
 import { speak, stopTTS, warmTTS } from '../../lib/studio/tts'
 
@@ -123,12 +123,9 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
     a.glasses = f.glasses; a.laptop = f.laptop; a.props = f.props; a.pose = f.pose; a.mood = f.mood; a.speaking = f.speaking
     syncControl({ glasses: f.glasses, laptop: f.laptop, mood: f.mood, speaking: f.speaking, state: 'idle', pose: f.pose, props: f.props, propsKey: f.props.join(',') })
 
-    // Ducking auto : baisse la musique quand Blumi parle.
+    // Volume musique : fenêtre (from→to) + fondus + ducking sous la voix.
     const music = audioRef.current
-    if (music && p.audio.musicUrl) {
-      const ducked = p.audio.duck && p.audio.voice && f.speaking
-      music.volume = p.audio.musicVolume * (ducked ? 0.3 : 1)
-    }
+    if (music && p.audio.musicUrl) music.volume = musicGain(p.audio, p.duration, t, f.speaking)
 
     ctx.clearRect(0, 0, w, h)
 
@@ -191,12 +188,9 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
       propsKey: '',
     })
 
-    // Ducking auto : baisse la musique quand le personnage parle.
+    // Volume musique : fenêtre (from→to) + fondus + ducking sous la voix.
     const music = audioRef.current
-    if (music && p.audio.musicUrl) {
-      const ducked = p.audio.duck && p.audio.voice && f.speaking
-      music.volume = p.audio.musicVolume * (ducked ? 0.3 : 1)
-    }
+    if (music && p.audio.musicUrl) music.volume = musicGain(p.audio, p.duration, t, f.speaking)
 
     ctx.clearRect(0, 0, w, h)
     ctx.save()
@@ -323,11 +317,7 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
       }
     }
     const music = audioRef.current
-    if (music && p.audio.musicUrl) {
-      music.volume = p.audio.musicVolume
-      music.currentTime = startOffset
-      music.play().catch(() => {})
-    }
+    if (music && p.audio.musicUrl) syncMusicPlayback(music, p.audio, p.duration, startOffset)
     syncVideo(startOffset, true)
 
     const loop = () => {
@@ -337,6 +327,7 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
         onEnded()
         return
       }
+      if (music && p.audio.musicUrl) syncMusicPlayback(music, p.audio, p.duration, t)
       drawFrame(t)
       if (t - lastUi > 0.08) {
         lastUi = t
