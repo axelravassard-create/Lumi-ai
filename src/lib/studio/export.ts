@@ -2,7 +2,8 @@
 // (WebM), audio mixé (musique + SFX) via Web Audio, puis conversion WebM→MP4
 // (H.264/AAC) via ffmpeg.wasm. Barre de progression via onProgress (0→1).
 import type { Project } from './types'
-import { scheduleSfx, sharedCtx } from './audio'
+import { scheduleMarkers, scheduleSfx, sharedCtx } from './audio'
+import { presSfxMarkers } from './presentation'
 
 export interface ExportHandle {
   canvas: HTMLCanvasElement
@@ -71,9 +72,12 @@ export async function exportClip(h: ExportHandle): Promise<Blob> {
           /* déjà connectée */
         }
       }
-      // SFX calés sur les beats : hors mode présentation (qui n'a pas de beats).
-      if (project.mode !== 'presentation') {
-        const when0 = actx.currentTime + 0.15
+      // SFX : cinématique = calés sur les beats ; présentation = bruitages placés
+      // sur les diapos (positionnés dans le temps par l'utilisateur).
+      const when0 = actx.currentTime + 0.15
+      if (project.mode === 'presentation') {
+        if (project.audio.sfx) scheduleMarkers(actx, presSfxMarkers(project), when0, 0, master, project.audio.sfxVolume)
+      } else {
         scheduleSfx(actx, project, when0, 0, master, 1)
       }
       for (const track of dest.stream.getAudioTracks()) stream.addTrack(track)

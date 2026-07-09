@@ -3,7 +3,8 @@
 // Blumi enchaîne des poses en parlant (voix + karaoké) devant des fonds qui
 // défilent comme un diaporama. Les segments sont packés bout à bout (ordre du
 // tableau) : « déplacer dans le temps » = réordonner + régler la durée.
-import type { AvatarMood, AvatarTier, PoseName, PresEntrance, PresFrame, PresSegment, Project, PropName } from './types'
+import type { AvatarMood, AvatarTier, PoseName, PresEntrance, PresFrame, PresSegment, PresSfxCue, Project, PropName } from './types'
+import type { SfxKind, SfxMarker } from './audio'
 import { interpolate } from './script'
 import { splitWords } from './timeline'
 import { estimateSpeechSec } from './tts'
@@ -38,6 +39,19 @@ export const TIER_LIST: { value: AvatarTier; label: string; emoji: string }[] = 
   { value: 'blumiman', label: 'Blumiman', emoji: '🤓' },
   { value: 'bluminator', label: 'Bluminator', emoji: '👨‍💻' },
 ]
+
+// Bruitages disponibles (mêmes SFX synthétisés que la cinématique) + libellés.
+export const SFX_LIST: { kind: SfxKind; label: string; emoji: string; hint: string }[] = [
+  { kind: 'pop', label: 'Pop', emoji: '💥', hint: 'apparition / punch' },
+  { kind: 'whoosh', label: 'Woosh', emoji: '🌬️', hint: 'transition / swipe' },
+  { kind: 'riser', label: 'Montée', emoji: '📈', hint: 'tension / anticipation' },
+  { kind: 'sting', label: 'Impact', emoji: '💢', hint: 'choc / révélation' },
+  { kind: 'shimmer', label: 'Éclat', emoji: '✨', hint: 'magique / positif' },
+]
+
+export function sfxLabel(kind: SfxKind): string {
+  return SFX_LIST.find((s) => s.kind === kind)?.label ?? kind
+}
 
 // Le « casier » de Blumi : objets amusants à attacher au personnage (par diapo).
 export const PROP_LIST: { value: PropName; label: string; emoji: string }[] = [
@@ -316,6 +330,41 @@ export function evalPresentation(project: Project, t: number): PresFrame {
 // Réplique dite par un segment (texte brut, pour la voix off).
 export function segmentLine(seg: PresSegment, project: Project): string {
   return interpolate(seg.text || '', project.script.metier, project.script.score)
+}
+
+// ── Bruitages (SFX) placés sur les diapos ─────────────────────────────────────
+function sfxList(project: Project): PresSfxCue[] {
+  return project.presentation.sfx ?? []
+}
+
+export function addSfxCue(project: Project, segId: string, kind: SfxKind = 'pop', at = 0): Project {
+  const cue: PresSfxCue = { id: 'sfx_' + Math.random().toString(36).slice(2, 9), segId, at: Math.max(0, at), kind }
+  return { ...project, presentation: { ...project.presentation, sfx: [...sfxList(project), cue] } }
+}
+
+export function removeSfxCue(project: Project, id: string): Project {
+  return { ...project, presentation: { ...project.presentation, sfx: sfxList(project).filter((c) => c.id !== id) } }
+}
+
+export function updateSfxCue(project: Project, id: string, patch: Partial<PresSfxCue>): Project {
+  const sfx = sfxList(project).map((c) => (c.id === id ? { ...c, ...patch, at: patch.at != null ? Math.max(0, +patch.at.toFixed(2)) : c.at } : c))
+  return { ...project, presentation: { ...project.presentation, sfx } }
+}
+
+export function sfxCuesForSegment(project: Project, segId: string): PresSfxCue[] {
+  return sfxList(project).filter((c) => c.segId === segId)
+}
+
+// Résout les bruitages en marqueurs à temps absolu sur la timeline (offset dans
+// la diapo + début de la diapo). Un bruitage sur une diapo supprimée est ignoré.
+export function presSfxMarkers(project: Project): SfxMarker[] {
+  const out: SfxMarker[] = []
+  for (const cue of sfxList(project)) {
+    const seg = project.presentation.segments.find((s) => s.id === cue.segId)
+    if (!seg) continue
+    out.push({ time: seg.start + Math.min(cue.at, seg.dur), kind: cue.kind })
+  }
+  return out
 }
 
 // Cale la durée de chaque diapo sur le temps de parole de son texte (jamais en

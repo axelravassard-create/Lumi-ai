@@ -141,6 +141,22 @@ export function sfxMarkers(project: Project): SfxMarker[] {
   return out
 }
 
+// Planifie une liste de marqueurs SFX (temps absolus sur la timeline) pour une
+// lecture démarrant à `offset`, à partir du temps de contexte `when0`.
+export function scheduleMarkers(
+  ctx: AudioContext,
+  markers: SfxMarker[],
+  when0: number,
+  offset: number,
+  out: AudioNode,
+  vol = 1,
+) {
+  for (const m of markers) {
+    if (m.time < offset - 0.05) continue
+    playSfx(ctx, m.kind, when0 + (m.time - offset), out, vol)
+  }
+}
+
 // Planifie tous les SFX pour une lecture commençant à l'instant `offset` de la
 // timeline, à partir du temps de contexte `when0`.
 export function scheduleSfx(

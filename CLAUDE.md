@@ -406,8 +406,14 @@ pédagogique.
       pose (moins robotique). `speak()` accepte désormais un paramètre `pitch`. ⚠️ Aperçu figé : `settle()` recompose le maître
     ~1 s pour voir la **transition de pose même à l'arrêt** (le canvas WebGL du
     perso rend en continu mais le maître ne se redessine qu'une fois au scrub).
-    Voix off calée **par diapo** ; les SFX (calés sur les beats) sont neutralisés
-    en présentation. `normalizeDuration`/`migrate` gèrent le champ `presentation`.
+    Voix off calée **par diapo**. **Bruitages par diapo** (`PresSfxCue`
+    `{segId,at,kind}` dans `PresentationModel.sfx`, `SFX_LIST` = les 5 SFX
+    synthétisés existants pop/whoosh/riser/sting/shimmer) : l'utilisateur ajoute un
+    bruitage sur une diapo et le **positionne dans le temps** (`at` = offset depuis
+    le début de la diapo → suit la diapo si déplacée). `presSfxMarkers()` résout en
+    temps absolus ; planifiés à l'aperçu (boucle de lecture) ET à l'export via
+    `scheduleMarkers()` (gaté sur `audio.sfx`, volume `audio.sfxVolume`).
+    `normalizeDuration`/`migrate` gèrent le champ `presentation`.
 - **Système de poses** (`RobotAvatar.tsx` : `PoseName`, `POSES`, prop `pose`) :
   18 poses interpolées image par image (yaw/pitch/roll, sourcils, ouverture des
   yeux, clin d'œil, humeur, position, échelle, bouche) → transitions naturelles.

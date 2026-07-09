@@ -2,6 +2,7 @@
 // Tout est sérialisable (localStorage / export projet) : aucune fonction, aucun
 // objet non-JSON. Les URLs de médias sont des object-URLs recréées à l'import.
 import type { AvatarMood, PoseName, PropName } from '../../components/avatar/RobotAvatar'
+import type { SfxKind } from './audio'
 
 export type Fmt = '9:16' | '1:1' | '16:9'
 
@@ -147,11 +148,21 @@ export interface PresSegment {
   prop?: PropName // accessoire du casier attaché au personnage
 }
 
+// Un bruitage placé sur une diapo, à un instant réglable (offset depuis le début
+// de la diapo → suit la diapo si on la déplace/redimensionne).
+export interface PresSfxCue {
+  id: string
+  segId: string // diapo à laquelle le bruitage est rattaché
+  at: number // décalage (s) depuis le début de la diapo
+  kind: SfxKind
+}
+
 export interface PresentationModel {
   title: string // petit bandeau (ex. « 1 jour, 1 info · {METIER} »)
   showTitle: boolean
   segments: PresSegment[]
   backgrounds: PresBackground[]
+  sfx: PresSfxCue[] // bruitages placés sur les diapos
 }
 
 export interface Project {

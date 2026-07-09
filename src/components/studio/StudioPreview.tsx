@@ -3,9 +3,9 @@ import type { AvatarLiveState, AvatarMood, AvatarState, PoseName, PropName } fro
 import type { Crop, Project } from '../../lib/studio/types'
 import { PROP_ZOOM, fmtSize } from '../../lib/studio/types'
 import { evalFrame } from '../../lib/studio/timeline'
-import { evalPresentation, presProsody, segmentLine } from '../../lib/studio/presentation'
+import { evalPresentation, presProsody, presSfxMarkers, segmentLine } from '../../lib/studio/presentation'
 import { avatarRect, drawBackground, drawEmptyBackground, presAvatarRect, renderOverlay, renderPresentation } from '../../lib/studio/render'
-import { scheduleSfx, sharedCtx } from '../../lib/studio/audio'
+import { scheduleMarkers, scheduleSfx, sharedCtx } from '../../lib/studio/audio'
 import { voiceLineFor } from '../../lib/studio/script'
 import { speak, stopTTS, warmTTS } from '../../lib/studio/tts'
 
@@ -285,6 +285,10 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
     const actx = sharedCtx()
     const ttsTimers: number[] = []
     if (actx && p.mode !== 'presentation') scheduleSfx(actx, p, actx.currentTime + 0.05, startOffset, actx.destination, 1)
+    // Présentation : bruitages placés sur les diapos (positionnés dans le temps).
+    if (actx && p.mode === 'presentation' && p.audio.sfx) {
+      scheduleMarkers(actx, presSfxMarkers(p), actx.currentTime + 0.05, startOffset, actx.destination, p.audio.sfxVolume)
+    }
     if (p.audio.voice && p.mode === 'presentation') {
       // Voix off calée sur chaque segment (diapo), avec émotion (hauteur/débit
       // selon la pose et la ponctuation) pour un rendu plus vivant.
