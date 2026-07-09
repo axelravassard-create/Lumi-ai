@@ -137,13 +137,16 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
     const prev = bgImage(f.bgPrevId)
     if (prev) drawBackground(ctx, prev, bgCrop(f.bgPrevId), w, h)
     else drawEmptyBackground(ctx, w, h)
-    // Couche du dessus = fond courant qui apparaît (bgFade). Si pas d'image et pas
-    // de fond précédent → dégradé ; sinon on laisse la couche du dessous visible.
+    // Couche du dessus = fond courant qui apparaît (bgFade) + Ken Burns (zoom/pan
+    // lent). Si pas d'image et pas de fond précédent → dégradé ; sinon on laisse la
+    // couche du dessous visible.
     const cur = bgImage(f.bgId)
     ctx.save()
     ctx.globalAlpha = f.bgFade
-    if (cur) drawBackground(ctx, cur, bgCrop(f.bgId), w, h)
-    else if (!prev) drawEmptyBackground(ctx, w, h)
+    if (cur) {
+      const base = bgCrop(f.bgId)
+      drawBackground(ctx, cur, { zoom: base.zoom * f.bgZoom, x: base.x + f.bgPanX, y: base.y }, w, h)
+    } else if (!prev) drawEmptyBackground(ctx, w, h)
     ctx.restore()
 
     // Personnage posé.

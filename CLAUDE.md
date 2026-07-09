@@ -386,8 +386,10 @@ pédagogique.
       proche/grand, échelle 0,45..1,7) multiplie l'échelle dans `presAvatarRect`.
     - **Casier d'objets** (`PresSegment.props` — **plusieurs à la fois**, `segProps()`
       + rétrocompat mono `prop` ; `PROP_LIST`, `toggleProp`, composant `Prop` dans
-      `RobotAvatar`) : 7 accessoires 3D (pointeur, loupe, ampoule, micro, chapeau,
-      toque, couronne) attachables par diapo, **cumulables**. Présence d'objet(s) ⇒ `PROP_ZOOM`
+      `RobotAvatar`) : 10 accessoires 3D (pointeur, loupe, ampoule, micro, chapeau,
+      toque, couronne, cœur, trophée, fusée) attachables par diapo, **cumulables**.
+      Fond animé **Ken Burns** (zoom/pan lent, `bgZoom`/`bgPanX` déterministes).
+      Présence d'objet(s) ⇒ `PROP_ZOOM`
       (0,62) réduit le perso dans son canvas (marge) et `presAvatarRect` compense
       (`1/PROP_ZOOM`) → tête à taille constante, zoom **constant sur toute la
       présentation** (aucun à-coup). Fond **importable par diapo** (bouton ＋ →
@@ -408,9 +410,8 @@ pédagogique.
     ~1 s pour voir la **transition de pose même à l'arrêt** (le canvas WebGL du
     perso rend en continu mais le maître ne se redessine qu'une fois au scrub).
     Voix off calée **par diapo**. **Bruitages par diapo** (`PresSfxCue`
-    `{segId,at,kind}` dans `PresentationModel.sfx`, `SFX_LIST` = 6 SFX synthétisés
-    Web Audio pop/whoosh/riser/sting/shimmer/**applause** (foule qui applaudit :
-    lit de rumeur + claps individuels)) : l'utilisateur ajoute un
+    `{segId,at,kind}` dans `PresentationModel.sfx`, `SFX_LIST` = 8 SFX synthétisés
+    Web Audio pop/whoosh/riser/sting/shimmer/applause/ding/heartbeat) : l'utilisateur ajoute un
     bruitage sur une diapo et le **positionne dans le temps** (`at` = offset depuis
     le début de la diapo → suit la diapo si déplacée). `presSfxMarkers()` résout en
     temps absolus ; planifiés à l'aperçu (boucle de lecture) ET à l'export via

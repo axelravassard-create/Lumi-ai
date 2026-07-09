@@ -7,7 +7,7 @@
 // audio réel, lui, mixable) est prévu dans tts.ts.
 import type { BeatDef, BeatKind, Project } from './types'
 
-export type SfxKind = 'pop' | 'riser' | 'sting' | 'shimmer' | 'whoosh' | 'applause'
+export type SfxKind = 'pop' | 'riser' | 'sting' | 'shimmer' | 'whoosh' | 'applause' | 'ding' | 'heartbeat'
 
 let shared: AudioContext | null = null
 export function sharedCtx(): AudioContext | null {
@@ -164,6 +164,45 @@ export function playSfx(ctx: AudioContext, kind: SfxKind, at: number, out: Audio
         src.start(ct)
         src.stop(ct + 0.05)
       }
+      break
+    }
+    case 'ding': {
+      // Clochette claire (notification) : deux sinus aigus, décroissance douce.
+      const notes = [1568, 2349]
+      notes.forEach((f, i) => {
+        const o = ctx.createOscillator()
+        o.type = 'sine'
+        o.frequency.value = f
+        const og = ctx.createGain()
+        const s = at + i * 0.008
+        og.gain.setValueAtTime(0.0001, s)
+        og.gain.exponentialRampToValueAtTime((i === 0 ? 0.32 : 0.16) * vol, s + 0.005)
+        og.gain.exponentialRampToValueAtTime(0.0001, s + 0.7)
+        o.connect(og).connect(g)
+        o.start(s)
+        o.stop(s + 0.75)
+      })
+      break
+    }
+    case 'heartbeat': {
+      // Deux battements « poum-poum » graves (tension / émotion).
+      const thump = (ts: number, amp: number) => {
+        const o = ctx.createOscillator()
+        o.type = 'sine'
+        o.frequency.setValueAtTime(90, ts)
+        o.frequency.exponentialRampToValueAtTime(45, ts + 0.12)
+        const og = ctx.createGain()
+        og.gain.setValueAtTime(0.0001, ts)
+        og.gain.exponentialRampToValueAtTime(amp * vol, ts + 0.02)
+        og.gain.exponentialRampToValueAtTime(0.0001, ts + 0.18)
+        o.connect(og).connect(g)
+        o.start(ts)
+        o.stop(ts + 0.2)
+      }
+      thump(at, 0.7)
+      thump(at + 0.18, 0.45)
+      thump(at + 0.72, 0.7)
+      thump(at + 0.9, 0.45)
       break
     }
   }

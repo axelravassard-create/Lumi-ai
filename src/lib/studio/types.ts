@@ -263,6 +263,8 @@ export interface PresFrame {
   bgId: string | null // fond du segment courant
   bgPrevId: string | null // fond précédent (pour le fondu de diapo)
   bgFade: number // 0..1 : fondu du fond courant par-dessus le précédent
+  bgZoom: number // effet Ken Burns : zoom lent du fond courant (1 → ~1,08)
+  bgPanX: number // Ken Burns : léger panoramique horizontal (fraction)
   words: CaptionWord[] // texte dit, révélé mot à mot (karaoké)
   title: string
   showTitle: boolean // titre affiché (1re diapo uniquement)

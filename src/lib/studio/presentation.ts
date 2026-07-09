@@ -48,6 +48,8 @@ export const SFX_LIST: { kind: SfxKind; label: string; emoji: string; hint: stri
   { kind: 'sting', label: 'Impact', emoji: '💢', hint: 'choc / révélation' },
   { kind: 'shimmer', label: 'Éclat', emoji: '✨', hint: 'magique / positif' },
   { kind: 'applause', label: 'Applaudissements', emoji: '👏', hint: 'public / bravo' },
+  { kind: 'ding', label: 'Ding', emoji: '🔔', hint: 'notification / info' },
+  { kind: 'heartbeat', label: 'Battement', emoji: '🫀', hint: 'tension / émotion' },
 ]
 
 export function sfxLabel(kind: SfxKind): string {
@@ -64,6 +66,9 @@ export const PROP_LIST: { value: PropName; label: string; emoji: string }[] = [
   { value: 'party-hat', label: 'Chapeau', emoji: '🎉' },
   { value: 'grad-cap', label: 'Diplôme', emoji: '🎓' },
   { value: 'crown', label: 'Couronne', emoji: '👑' },
+  { value: 'heart', label: 'Cœur', emoji: '❤️' },
+  { value: 'trophy', label: 'Trophée', emoji: '🏆' },
+  { value: 'rocket', label: 'Fusée', emoji: '🚀' },
 ]
 
 // Émotion de la voix par pose (deltas de hauteur/débit) → la voix « colle » à la
@@ -252,7 +257,7 @@ export function evalPresentation(project: Project, t: number): PresFrame {
       t, segIndex: -1, pose: 'presenter', mood: 'neutral', speaking: false,
       glasses: false, laptop: false, props: [], avatarAlpha: 0, posX: 0, posY: 0, posScale: 1,
       avatarScale: 1, avatarDX: 0, avatarDY: 0,
-      bgId: null, bgPrevId: null, bgFade: 1, words: [], title, showTitle: false, titleOut: 0,
+      bgId: null, bgPrevId: null, bgFade: 1, bgZoom: 1, bgPanX: 0, words: [], title, showTitle: false, titleOut: 0,
     }
   }
 
@@ -305,6 +310,11 @@ export function evalPresentation(project: Project, t: number): PresFrame {
   const prev = idx > 0 ? segs[idx - 1] : null
   const bgPrevId = prev && prev.bgId !== bgId ? prev.bgId : null
   const bgFade = bgPrevId ? clamp((t - segStart) / BG_FADE) : 1
+  // Ken Burns : le fond se rapproche lentement pendant la diapo (dynamisme), avec
+  // un léger panoramique alterné selon la diapo → jamais figé.
+  const segLocal = clamp((t - segStart) / Math.max(0.5, seg.dur))
+  const bgZoom = 1 + 0.09 * segLocal
+  const bgPanX = (idx % 2 === 0 ? 1 : -1) * 0.14 * segLocal
 
   // Texte dit, révélé mot à mot sur ~90 % du segment.
   const text = interpolate(seg.text || '', metier, project.script.score)
@@ -338,6 +348,8 @@ export function evalPresentation(project: Project, t: number): PresFrame {
     bgId,
     bgPrevId,
     bgFade,
+    bgZoom,
+    bgPanX,
     words,
     title,
     showTitle,

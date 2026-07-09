@@ -8,8 +8,8 @@ import { playPat } from '../../lib/sfx'
 export type AvatarState = 'idle' | 'thinking'
 export type AvatarMood = 'neutral' | 'calm' | 'concerned'
 // Accessoires « casier » : petits objets amusants attachés au personnage.
-export type PropName = 'none' | 'pointer' | 'magnifier' | 'lightbulb' | 'party-hat' | 'grad-cap' | 'crown' | 'mic'
-const PROP_NAMES: Exclude<PropName, 'none'>[] = ['pointer', 'magnifier', 'lightbulb', 'mic', 'party-hat', 'grad-cap', 'crown']
+export type PropName = 'none' | 'pointer' | 'magnifier' | 'lightbulb' | 'party-hat' | 'grad-cap' | 'crown' | 'mic' | 'heart' | 'trophy' | 'rocket'
+const PROP_NAMES: Exclude<PropName, 'none'>[] = ['pointer', 'magnifier', 'lightbulb', 'mic', 'party-hat', 'grad-cap', 'crown', 'heart', 'trophy', 'rocket']
 
 interface Props {
   state: AvatarState
@@ -916,6 +916,84 @@ function Prop({ name }: { name: PropName }) {
           <mesh position={[0, 0.13, 0]} rotation={[Math.PI / 2, 0, 0]}>
             <torusGeometry args={[0.11, 0.022, 8, 20]} />
             <meshStandardMaterial color="#ffcf3f" metalness={0.6} roughness={0.3} />
+          </mesh>
+        </group>
+      )
+    case 'heart':
+      return (
+        <group position={[0.66, 1.02, 0.35]} scale={0.95}>
+          {[-1, 1].map((s) => (
+            <mesh key={s} position={[s * 0.13, 0.1, 0]}>
+              <sphereGeometry args={[0.16, 20, 20]} />
+              <meshStandardMaterial color="#ff3b6b" emissive="#ff3b6b" emissiveIntensity={0.35} roughness={0.3} />
+            </mesh>
+          ))}
+          <mesh position={[0, -0.13, 0]} rotation={[Math.PI, 0, 0]}>
+            <coneGeometry args={[0.27, 0.36, 24]} />
+            <meshStandardMaterial color="#ff3b6b" emissive="#ff3b6b" emissiveIntensity={0.35} roughness={0.3} />
+          </mesh>
+        </group>
+      )
+    case 'trophy':
+      return (
+        <group position={[0.98, -0.05, 0.7]} scale={0.85}>
+          {/* Coupe */}
+          <mesh position={[0, 0.26, 0]}>
+            <cylinderGeometry args={[0.22, 0.12, 0.32, 24]} />
+            <meshStandardMaterial color={GOLD} metalness={0.85} roughness={0.2} />
+          </mesh>
+          {/* Anses */}
+          {[-1, 1].map((s) => (
+            <mesh key={s} position={[s * 0.27, 0.3, 0]} rotation={[0, 0, s * Math.PI / 2]}>
+              <torusGeometry args={[0.1, 0.025, 10, 20, Math.PI]} />
+              <meshStandardMaterial color={GOLD} metalness={0.85} roughness={0.2} />
+            </mesh>
+          ))}
+          {/* Pied + socle */}
+          <mesh position={[0, 0.03, 0]}>
+            <cylinderGeometry args={[0.045, 0.045, 0.16, 12]} />
+            <meshStandardMaterial color={GOLD} metalness={0.85} roughness={0.2} />
+          </mesh>
+          <mesh position={[0, -0.09, 0]}>
+            <cylinderGeometry args={[0.14, 0.17, 0.09, 20]} />
+            <meshStandardMaterial color="#e0a92e" metalness={0.7} roughness={0.3} />
+          </mesh>
+          {/* Étoile lumineuse */}
+          <mesh position={[0, 0.28, 0.22]}>
+            <circleGeometry args={[0.07, 5]} />
+            <meshStandardMaterial color="#fff6cf" emissive="#ffe08a" emissiveIntensity={0.5} toneMapped />
+          </mesh>
+        </group>
+      )
+    case 'rocket':
+      return (
+        <group position={[0.95, -0.2, 0.7]} rotation={[0, 0, -0.5]} scale={0.85}>
+          {/* Corps */}
+          <mesh>
+            <cylinderGeometry args={[0.14, 0.14, 0.5, 20]} />
+            <meshStandardMaterial color="#eef2ff" metalness={0.3} roughness={0.4} />
+          </mesh>
+          {/* Nez */}
+          <mesh position={[0, 0.36, 0]}>
+            <coneGeometry args={[0.14, 0.28, 20]} />
+            <meshStandardMaterial color="#ff5d5d" metalness={0.3} roughness={0.4} />
+          </mesh>
+          {/* Hublot */}
+          <mesh position={[0, 0.07, 0.145]}>
+            <circleGeometry args={[0.06, 18]} />
+            <meshStandardMaterial color="#8fd0ff" emissive="#8fd0ff" emissiveIntensity={0.35} toneMapped />
+          </mesh>
+          {/* Ailerons */}
+          {[-1, 1].map((s) => (
+            <mesh key={s} position={[s * 0.15, -0.24, 0]} rotation={[0, 0, s * 0.5]}>
+              <boxGeometry args={[0.1, 0.17, 0.03]} />
+              <meshStandardMaterial color="#ff5d5d" metalness={0.3} roughness={0.4} />
+            </mesh>
+          ))}
+          {/* Flamme */}
+          <mesh position={[0, -0.42, 0]} rotation={[Math.PI, 0, 0]}>
+            <coneGeometry args={[0.1, 0.26, 16]} />
+            <meshStandardMaterial color="#ffb020" emissive="#ff7a00" emissiveIntensity={0.85} toneMapped />
           </mesh>
         </group>
       )
