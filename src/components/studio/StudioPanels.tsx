@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BeatKind, Fmt, PresSegment, Project } from '../../lib/studio/types'
 import { BEAT_ORDER } from '../../lib/studio/types'
 import {
-  ENTRANCE_LIST, POSE_LIST, PROP_LIST, SFX_LIST, TIER_LIST, addBackgroundToSegment, addSegment, addSfxCue,
-  duplicateSegment, fitPresentationToVoice, moveSegment, poseLabel, presDuration, presProsody, removeSegment,
-  removeSfxCue, segProps, segmentLine, sfxCuesForSegment, tierOf, toggleProp, updateSegment, updateSfxCue,
+  ENTRANCE_LIST, POSE_LIST, PRES_TEMPLATES, PROP_LIST, SFX_LIST, TIER_LIST, addBackgroundToSegment, addSegment,
+  addSfxCue, applyTemplate, duplicateSegment, fitPresentationToVoice, moveSegment, poseLabel, presDuration,
+  presProsody, removeSegment, removeSfxCue, segProps, segmentLine, sfxCuesForSegment, tierOf, toggleProp,
+  updateSegment, updateSfxCue,
 } from '../../lib/studio/presentation'
 import { playSfx, sharedCtx } from '../../lib/studio/audio'
 import { BEAT_META } from './Timeline'
@@ -1041,6 +1042,25 @@ export function PresentationPanel({ project, onChange }: P) {
           Passe en mode <b>Présentation</b> ci-dessus pour voir ce montage dans l’aperçu.
         </p>
       )}
+
+      {/* Modèles prêts à l'emploi (structures virales) */}
+      <div className="space-y-1.5">
+        <span className="text-xs font-semibold text-ink-600">🎬 Modèles rapides</span>
+        <div className="grid grid-cols-2 gap-1.5">
+          {PRES_TEMPLATES.map((tpl) => (
+            <button
+              key={tpl.id}
+              onClick={() => onChange(applyTemplate(project, tpl.id))}
+              title={tpl.desc}
+              className="rounded-xl border border-ink-100 p-2 text-left transition hover:border-brand-300 hover:bg-brand-50"
+            >
+              <div className="flex items-center gap-1 text-sm font-semibold text-ink-800">{tpl.emoji} {tpl.name}</div>
+              <div className="mt-0.5 text-[10px] leading-tight text-ink-400">{tpl.desc}</div>
+            </button>
+          ))}
+        </div>
+        <p className="text-[11px] text-ink-400">Applique une structure (remplace les diapos) — {'{METIER}'}/{'{SCORE}'} s’adaptent, poses et bruitages inclus.</p>
+      </div>
 
       {/* Titre */}
       <div className="space-y-2 rounded-2xl border border-ink-100 p-3">

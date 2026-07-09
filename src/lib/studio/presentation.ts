@@ -397,6 +397,80 @@ export function presSfxMarkers(project: Project): SfxMarker[] {
   return out
 }
 
+// ── Modèles de présentation (structures virales prêtes à l'emploi) ────────────
+interface TemplateSeg { pose: PoseName; text: string; tier?: AvatarTier; props?: PropName[]; sfx?: SfxKind }
+export interface PresTemplate { id: string; name: string; emoji: string; desc: string; title: string; segs: TemplateSeg[] }
+
+export const PRES_TEMPLATES: PresTemplate[] = [
+  {
+    id: 'choc', name: 'Info choc', emoji: '⚡', desc: 'Accroche → révélation → conseil → abonne-toi',
+    title: '1 jour, 1 info · {METIER}',
+    segs: [
+      { pose: 'surprised', text: 'Attends… tu savais ça sur le métier de {METIER} ?', sfx: 'ding' },
+      { pose: 'concerned', text: 'L’IA peut déjà faire {SCORE}% de certaines tâches.', sfx: 'sting' },
+      { pose: 'idea', text: 'Mais voilà comment en faire ton super-pouvoir.', props: ['lightbulb'] },
+      { pose: 'point-right', text: 'Utilise-la pour automatiser l’ennuyeux et te concentrer sur l’essentiel.' },
+      { pose: 'happy', text: 'Abonne-toi pour une info par jour ! 🚀', props: ['rocket'], sfx: 'applause' },
+    ],
+  },
+  {
+    id: 'astuce', name: 'Astuce express', emoji: '💡', desc: 'Une astuce concrète, en 4 temps',
+    title: 'L’astuce du jour · {METIER}',
+    segs: [
+      { pose: 'greet', text: 'Une astuce express pour les {METIER} 👇' },
+      { pose: 'idea', text: 'Laisse l’IA rédiger tes premiers jets, tu ne fais que corriger.', props: ['lightbulb'], sfx: 'pop' },
+      { pose: 'presenter', text: 'Résultat : deux fois plus rapide, sans perdre en qualité.' },
+      { pose: 'wink', text: 'Enregistre ce reel et teste-le demain 😉', sfx: 'ding' },
+    ],
+  },
+  {
+    id: 'avant-apres', name: 'Avant / Après', emoji: '🔁', desc: 'Le contraste avant/après l’IA',
+    title: 'Avant / Après l’IA · {METIER}',
+    segs: [
+      { pose: 'concerned', text: 'Avant : des heures sur des tâches répétitives.', sfx: 'heartbeat' },
+      { pose: 'surprised', text: 'Après : l’IA s’en occupe en quelques minutes.', sfx: 'whoosh' },
+      { pose: 'proud', text: 'Tu gardes le meilleur : la valeur humaine.', tier: 'blumiman' },
+      { pose: 'happy', text: 'Suis-moi pour transformer ton métier 💪', sfx: 'applause' },
+    ],
+  },
+  {
+    id: 'top3', name: 'Top 3', emoji: '🏆', desc: '3 points clés, format liste',
+    title: 'Top 3 · {METIER} & IA',
+    segs: [
+      { pose: 'presenter', text: 'Top 3 des façons d’utiliser l’IA quand on est {METIER}.', props: ['trophy'] },
+      { pose: 'point-left', text: '1 · Automatiser les tâches répétitives.', sfx: 'pop' },
+      { pose: 'point-right', text: '2 · Gagner du temps sur la recherche d’infos.', sfx: 'pop' },
+      { pose: 'idea', text: '3 · Créer plus vite, tester plus d’idées.', props: ['lightbulb'], sfx: 'pop' },
+      { pose: 'happy', text: 'Lequel tu utilises déjà ? Dis-le en commentaire !', sfx: 'ding' },
+    ],
+  },
+]
+
+// Applique un modèle : remplace les diapos + bruitages (garde titre & fonds).
+export function applyTemplate(project: Project, templateId: string): Project {
+  const tpl = PRES_TEMPLATES.find((t) => t.id === templateId)
+  if (!tpl) return project
+  let t = 0
+  const dur = 3
+  const segments: PresSegment[] = tpl.segs.map((s, i) => {
+    const seg: PresSegment = {
+      id: 's_' + Math.random().toString(36).slice(2, 9), pose: s.pose, bgId: null, text: s.text,
+      start: +t.toFixed(2), dur, mood: 'auto', tier: s.tier ?? 'blumi', x: (i % 2 === 0 ? 0 : (i % 4 === 1 ? -0.25 : 0.25)),
+      y: 0, z: 0, entrance: 'glide', props: s.props ?? [],
+    }
+    t += dur
+    return seg
+  })
+  const sfx: PresSfxCue[] = tpl.segs
+    .map((s, i) => (s.sfx ? { id: 'sfx_' + Math.random().toString(36).slice(2, 9), segId: segments[i].id, at: 0.2, kind: s.sfx } : null))
+    .filter(Boolean) as PresSfxCue[]
+  return reflowPresentation({
+    ...project,
+    mode: 'presentation',
+    presentation: { ...project.presentation, title: tpl.title, showTitle: true, segments, sfx },
+  })
+}
+
 // Cale la durée de chaque diapo sur le temps de parole de son texte (jamais en
 // dessous d'un minimum lisible), puis repack.
 export function fitPresentationToVoice(project: Project): Project {

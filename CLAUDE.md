@@ -360,7 +360,10 @@ pédagogique.
     fondu de diapo `bgFade`, présence `avatarAlpha`) ; rendu **`renderPresentation`**
     (`render.ts`) : bandeau titre + sous-titre karaoké + watermark ; `StudioPreview`
     compose fond(s) image (fondu) + **personnage posé** (prop `pose` sur
-    `RobotAvatar`/`Avatar`) + overlays. Panneau **`PresentationPanel`** : bascule
+    `RobotAvatar`/`Avatar`) + overlays. **Modèles rapides** (`PRES_TEMPLATES` +
+    `applyTemplate`) : 4 structures virales prêtes (Info choc, Astuce express,
+    Avant/Après, Top 3) qui remplacent les diapos avec poses/textes/objets/bruitages
+    adaptés. Panneau **`PresentationPanel`** : bascule
     de format, titre, gestion des fonds (images, non persistées), éditeur de diapos
     (pose via `POSE_LIST` — **18 poses**, texte, fond, voix par diapo, durée,
     **personnage** `tier` blumi/blumiman/bluminator via `TIER_LIST`, **position**
