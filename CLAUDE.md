@@ -460,10 +460,30 @@ pédagogique.
       durée par effet via `fxDefaultDur`. `migrate`/`defaultPresentation` posent
       `fx: []`.
 - **Système de poses** (`RobotAvatar.tsx` : `PoseName`, `POSES`, prop `pose`) :
-  18 poses interpolées image par image (yaw/pitch/roll, sourcils, ouverture des
+  23 poses interpolées image par image (yaw/pitch/roll, sourcils, ouverture des
   yeux, clin d'œil, humeur, position, échelle, bouche) → transitions naturelles.
   Quand `pose` est fourni, le regard/la tête suivent la pose (override du suivi
   curseur) et l'humeur = celle de la pose. Réutilisable hors studio.
+- **Expressions du visage (traits marqués)** (`RobotAvatar.tsx`) : chaque pose ET
+  chaque humeur portent des `ExprTraits` `{smile, browIn, blush, tear, sweat, anger}`
+  interpolés en douceur (ref `ec`) pour renforcer fortement l'émotion, au-delà des
+  yeux/tête :
+  - **Bouche morphable** : reconstruite chaque frame (`buildMouthGeometry(smile,
+    open)`, `ShapeGeometry` d'une lentille) → **sourire** (coins relevés, centre
+    bas) ↔ **moue** (coins bas) ↔ **bouche ouverte** (parole/surprise). Rebuild
+    quantifié (≈32 pas) pour la perf. Remplace l'ancienne capsule statique.
+  - **Sourcils inclinables** : `browIn>0` = extrémité INTERNE relevée (triste/
+    inquiet, forme `/\`), `<0` = abaissée (colère, forme `\/`) via `rotation.z` par
+    sourcil ; la hauteur reste pilotée par `brow`.
+  - **Traits ajoutés** (meshes montés en permanence, `.visible`/opacité pilotés en
+    `useFrame`) : **joues rouges** (`blush`, joie/amour/timidité), **larmes**
+    (`tear`, glissent en boucle, tristesse), **goutte de sueur** (`sweat`, perle sur
+    la tempe, peur), **veine de colère 💢** (`anger`, 3 traits rouges qui pulsent).
+  - **Nouvelles poses émotion** dans `POSE_LIST` : 😂 Rigole (`laugh`), 😍 Adore
+    (`love`), 😨 Peur (`afraid`), 😢 Triste (`sad`), 😠 En colère (`angry`) — avec
+    prosodie TTS dédiée (`POSE_PROSODY`). Hors studio, `moodExpr(mood)` dérive une
+    expression de repos (calm = sourire+joues, concerned = moue+sourcils inquiets).
+  - La réaction « tapote » ajoute sourire + joues rouges (`patDelight`).
 
 ## Conformité / légal
 - Pages : `src/components/LegalScreen.tsx` (routes `#/legal/mentions|confidentialite|cgu`),

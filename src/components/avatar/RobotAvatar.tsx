@@ -106,7 +106,6 @@ const RAY_BLUE = ['#dff0ff', '#a9d2ff', '#6fb0ff', '#2e83ff', '#8ec2ff', '#1e6ff
 // Durée de la réaction « tapote » (étonnement → joie).
 const PAT_DUR = 0.9
 const BROW_Y = 0.29 // hauteur de repos des sourcils
-const MOUTH_SCALE: [number, number, number] = [1, 0.5, 0.5] // échelle de repos de la bouche
 
 // ── Poses de Blumi (mode présentation) ───────────────────────────────────────
 // Chaque pose est une cible : orientation de la tête (yaw/pitch/roll), sourcils,
@@ -116,8 +115,22 @@ export type PoseName =
   | 'neutral' | 'presenter' | 'greet' | 'point-left' | 'point-right'
   | 'look-up' | 'idea' | 'happy' | 'surprised' | 'concerned' | 'skeptical'
   | 'wink' | 'proud' | 'aside-left' | 'aside-right' | 'closeup' | 'thinking' | 'shy'
+  | 'sad' | 'afraid' | 'angry' | 'love' | 'laugh'
 
-export interface PoseTarget {
+// Traits d'expression du visage (renforcent l'émotion au-delà des yeux/tête) :
+//  - smile : courbure de la bouche (-1 = grimace triste, 0 = neutre, 1 = grand sourire)
+//  - browIn : inclinaison de l'extrémité INTERNE des sourcils (+ = relevée « triste/
+//    inquiet », − = abaissée « colère »)
+//  - blush : rougeur des joues (joie/timidité)
+//  - tear : larme(s) sous les yeux (tristesse)
+//  - sweat : goutte de sueur sur la tempe (peur/gêne)
+//  - anger : petite marque de colère (veine 💢) sur la tempe
+export interface ExprTraits {
+  smile: number; browIn: number; blush: number; tear: number; sweat: number; anger: number
+}
+const EX0: ExprTraits = { smile: 0, browIn: 0, blush: 0, tear: 0, sweat: 0, anger: 0 }
+
+export interface PoseTarget extends ExprTraits {
   yaw: number; pitch: number; roll: number
   brow: number; eyeOpen: number; winkL: number; winkR: number
   mood: AvatarMood; x: number; y: number; scale: number; mouth: number
@@ -125,29 +138,64 @@ export interface PoseTarget {
 const P = (
   yaw: number, pitch: number, roll: number, brow: number, eyeOpen: number,
   mood: AvatarMood, x: number, y: number, scale: number,
-  mouth = 0, winkL = 0, winkR = 0,
-): PoseTarget => ({ yaw, pitch, roll, brow, eyeOpen, winkL, winkR, mood, x, y, scale, mouth })
+  mouth = 0, winkL = 0, winkR = 0, ex: Partial<ExprTraits> = {},
+): PoseTarget => ({ yaw, pitch, roll, brow, eyeOpen, winkL, winkR, mood, x, y, scale, mouth, ...EX0, ...ex })
 
 export const POSES: Record<PoseName, PoseTarget> = {
-  //           yaw   pitch  roll   brow eyeOpen mood        x     y    scale mouth
-  neutral:    P(0,    0,     0,     0,   1,     'neutral',  0,    0,   1),
-  presenter:  P(0,   -0.06,  0,     0.2, 1.05,  'neutral',  0,    0,   1,    0.05),
-  greet:      P(0.15, -0.1,  0.06,  0.5, 1.15,  'calm',     0,    0.02, 1,   0.15),
-  'point-left':  P(-0.7, 0,  -0.05, 0.15,1,     'neutral',  0.28, 0,   0.95),
-  'point-right': P(0.7,  0,   0.05, 0.15,1,     'neutral', -0.28, 0,   0.95),
-  'look-up':  P(0.1,  -0.6,  0.03,  0.4, 1.1,   'neutral',  0,    0,   1),
-  idea:       P(0,   -0.15,  0,     0.7, 1.35,  'neutral',  0,    0.03, 1.05, 0.2),
-  happy:      P(0,   -0.05,  0.03,  0.1, 0.7,   'calm',     0,    0,   1,    0.1),
-  surprised:  P(0,    0.05,  0,     0.8, 1.4,   'neutral',  0,   -0.02, 0.98, 0.6),
-  concerned:  P(-0.05, 0.25, -0.06, -0.5,0.9,   'concerned',0,    0,   1),
-  skeptical:  P(0.12,  0.05, -0.08, 0.2, 0.85,  'neutral',  0,    0,   1,    0,   0.5, 0),
-  wink:       P(0.08, -0.05, 0.05,  0.2, 1,     'calm',     0,    0,   1,    0.1, 0,   1),
-  proud:      P(0,   -0.2,   0,     0.2, 0.85,  'calm',     0,    0.03, 1.05, 0.05),
-  'aside-left':  P(-0.5, 0,  -0.04, 0.15,1,     'neutral',  0.42, 0,   0.85),
-  'aside-right': P(0.5,  0,   0.04, 0.15,1,     'neutral', -0.42, 0,   0.85),
-  closeup:    P(0,   -0.03,  0,     0.1, 1.05,  'neutral',  0,    0.05, 1.35, 0.05),
-  thinking:   P(-0.25,-0.4,  -0.1,  0.35,0.95,  'neutral',  0.05, 0,   1),
-  shy:        P(0.2,   0.2,   0.1,  0.1, 0.75,  'calm',    -0.05, 0,   0.95),
+  //           yaw   pitch  roll   brow eyeOpen mood        x     y    scale mouth wL wR  expression
+  neutral:    P(0,    0,     0,     0,   1,     'neutral',  0,    0,   1,    0,   0, 0, { smile: 0.12 }),
+  presenter:  P(0,   -0.06,  0,     0.2, 1.05,  'neutral',  0,    0,   1,    0.05,0, 0, { smile: 0.2 }),
+  greet:      P(0.15, -0.1,  0.06,  0.5, 1.15,  'calm',     0,    0.02, 1,   0.15,0, 0, { smile: 0.6, blush: 0.2 }),
+  'point-left':  P(-0.7, 0,  -0.05, 0.15,1,     'neutral',  0.28, 0,   0.95, 0,   0, 0, { smile: 0.18 }),
+  'point-right': P(0.7,  0,   0.05, 0.15,1,     'neutral', -0.28, 0,   0.95, 0,   0, 0, { smile: 0.18 }),
+  'look-up':  P(0.1,  -0.6,  0.03,  0.4, 1.1,   'neutral',  0,    0,   1,    0,   0, 0, { smile: 0.2 }),
+  idea:       P(0,   -0.15,  0,     0.7, 1.35,  'neutral',  0,    0.03, 1.05, 0.2, 0, 0, { smile: 0.45 }),
+  happy:      P(0,   -0.05,  0.03,  0.1, 0.62,  'calm',     0,    0,   1,    0.12,0, 0, { smile: 1, blush: 0.55 }),
+  surprised:  P(0,    0.05,  0,     0.85,1.45,  'neutral',  0,   -0.02, 0.98, 0.62,0, 0, { smile: 0.05, browIn: 0.2 }),
+  concerned:  P(-0.05, 0.22, -0.06, -0.2,0.9,   'concerned',0,    0,   1,    0,   0, 0, { smile: -0.45, browIn: 0.55 }),
+  skeptical:  P(0.12,  0.05, -0.08, 0.2, 0.85,  'neutral',  0,    0,   1,    0,   0.5, 0, { smile: -0.12, browIn: -0.2 }),
+  wink:       P(0.08, -0.05, 0.05,  0.2, 1,     'calm',     0,    0,   1,    0.1, 0,   1, { smile: 0.5, blush: 0.15 }),
+  proud:      P(0,   -0.2,   0,     0.2, 0.85,  'calm',     0,    0.03, 1.05, 0.05,0, 0, { smile: 0.55 }),
+  'aside-left':  P(-0.5, 0,  -0.04, 0.15,1,     'neutral',  0.42, 0,   0.85, 0,   0, 0, { smile: 0.15 }),
+  'aside-right': P(0.5,  0,   0.04, 0.15,1,     'neutral', -0.42, 0,   0.85, 0,   0, 0, { smile: 0.15 }),
+  closeup:    P(0,   -0.03,  0,     0.1, 1.05,  'neutral',  0,    0.05, 1.35, 0.05,0, 0, { smile: 0.15 }),
+  thinking:   P(-0.25,-0.4,  -0.1,  0.35,0.95,  'neutral',  0.05, 0,   1,    0,   0, 0, { smile: 0.05, browIn: 0.12 }),
+  shy:        P(0.2,   0.2,   0.1,  0.1, 0.75,  'calm',    -0.05, 0,   0.95, 0,   0, 0, { smile: 0.35, blush: 0.75 }),
+  // ── Émotions fortes (traits de visage marqués) ──────────────────────────────
+  sad:        P(-0.05, 0.28,  0.03, -0.1,0.76,  'concerned',0,   -0.01, 0.98, 0.05,0, 0, { smile: -0.85, browIn: 0.85, tear: 1 }),
+  afraid:     P(0.0,   0.02,  0.06, 0.7, 1.5,   'concerned',0,   -0.02, 0.97, 0.45,0, 0, { smile: -0.4, browIn: 0.6, sweat: 1 }),
+  angry:      P(0,     0.12,  0,    -0.7,0.82,  'concerned',0,    0,   1,    0.12,0, 0, { smile: -0.72, browIn: -0.9, anger: 1 }),
+  love:       P(0.05, -0.06,  0.05, 0.2, 0.6,   'calm',     0,    0.02, 1,    0.12,0, 0, { smile: 1, blush: 1 }),
+  laugh:      P(0,    -0.08,  0.05, 0.15,0.34,  'calm',     0,    0.02, 1,    0.7, 0, 0, { smile: 1, blush: 0.5 }),
+}
+
+// Construit la géométrie de la bouche à partir de la courbure (smile) et de
+// l'ouverture (open). Lentille fermée quand open≈0 (ligne de lèvres qui sourit ou
+// fait la moue), qui s'ouvre en cavité quand open>0 (parole / surprise).
+function mouthShape(smile: number, open: number): THREE.Shape {
+  const hw = 0.2
+  const corner = smile * 0.1 // coins relevés (sourire) / abaissés (moue)
+  const center = -smile * 0.06 // centre qui descend (sourire) / monte (moue)
+  const th = 0.028 // épaisseur des lèvres au repos
+  const gap = Math.max(0, open) * 0.17
+  const topMid = center + th / 2 + gap / 2
+  const botMid = center - th / 2 - gap / 2
+  const s = new THREE.Shape()
+  s.moveTo(-hw, corner)
+  s.quadraticCurveTo(0, topMid, hw, corner)
+  s.quadraticCurveTo(0, botMid, -hw, corner)
+  s.closePath()
+  return s
+}
+function buildMouthGeometry(smile: number, open: number): THREE.ShapeGeometry {
+  return new THREE.ShapeGeometry(mouthShape(smile, open), 18)
+}
+
+// Expression de repos dérivée de l'humeur (hors studio : chat, verdicts, accueil).
+function moodExpr(mood: AvatarMood): ExprTraits {
+  if (mood === 'calm') return { ...EX0, smile: 0.55, blush: 0.22 }
+  if (mood === 'concerned') return { ...EX0, smile: -0.4, browIn: 0.5 }
+  return { ...EX0, smile: 0.12 }
 }
 
 // Un œil réaliste : globe blanc + iris lumineux + pupille + reflet de vie
@@ -231,6 +279,15 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
   const rimLight = useRef<THREE.PointLight>(null)
   const browRefs = useRef<(THREE.Mesh | null)[]>([])
   const mouthRef = useRef<THREE.Mesh | null>(null)
+  // Traits d'expression (renforcent l'émotion) : joues rouges, larmes, sueur, colère.
+  const blushRefs = useRef<(THREE.Mesh | null)[]>([])
+  const tearRefs = useRef<(THREE.Mesh | null)[]>([])
+  const sweatRef = useRef<THREE.Group | null>(null)
+  const angerRef = useRef<THREE.Group | null>(null)
+  // Expression courante interpolée (transition douce entre émotions) + suivi de la
+  // dernière géométrie de bouche construite (évite de reconstruire à chaque frame).
+  const ec = useRef<ExprTraits>({ ...EX0 })
+  const mouthGeo = useRef({ smile: -9, open: -9 })
   // Accessoires « déclaratifs » (lunettes, ordi, objets du casier) : montés en
   // permanence et affichés/masqués via .visible dans useFrame — car ce montage 3D
   // (canvas en rendu continu) ne réconcilie pas le montage/démontage conditionnel
@@ -393,6 +450,7 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     let browLift = 0
     let mouthOpen = 0
     let recoilZ = 0
+    let patDelight = 0 // joie du « tapote » → grand sourire + joues rouges
     if (pat.current > 0) {
       pat.current = Math.max(0, pat.current - d)
       const p = 1 - pat.current / PAT_DUR // 0 → 1
@@ -406,6 +464,7 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
       mouthOpen = surprise
       recoilZ = -surprise * 0.14
       patJoy = pat.current / PAT_DUR + surprise * 1.4
+      patDelight = delight
     }
 
     // La tête s'oriente légèrement vers le curseur (et penche en réflexion).
@@ -431,14 +490,88 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
       : 0
     const mouthAmt = Math.max(mouthOpen, talk, posed ? pcr.mouth : 0)
 
-    // Sourcils levés + bouche ouverte (étonnement, parole ou pose).
-    for (const b of browRefs.current) if (b) b.position.y = BROW_Y + browLift + (posed ? pcr.brow * 0.14 : 0)
+    // ── Expression du visage (traits qui renforcent l'émotion) ────────────────
+    // Cible : la pose (studio) ou l'humeur (hors studio), + la joie du « tapote ».
+    const baseExpr: ExprTraits = posed ? POSES[acc.pose as PoseName] : moodExpr(acc.mood)
+    const exTarget: ExprTraits = {
+      smile: Math.min(1, baseExpr.smile + patDelight * 0.9),
+      browIn: baseExpr.browIn,
+      blush: Math.min(1, baseExpr.blush + patDelight * 0.6),
+      tear: baseExpr.tear,
+      sweat: baseExpr.sweat,
+      anger: baseExpr.anger,
+    }
+    const ex = ec.current
+    const exl = Math.min(1, d * 4)
+    ex.smile += (exTarget.smile - ex.smile) * exl
+    ex.browIn += (exTarget.browIn - ex.browIn) * exl
+    ex.blush += (exTarget.blush - ex.blush) * exl
+    ex.tear += (exTarget.tear - ex.tear) * exl
+    ex.sweat += (exTarget.sweat - ex.sweat) * exl
+    ex.anger += (exTarget.anger - ex.anger) * exl
+
+    // Sourcils : hauteur (étonnement/pose) + inclinaison de l'extrémité interne
+    // (browIn>0 = relevée « triste/inquiet », <0 = abaissée « colère »).
+    for (let i = 0; i < browRefs.current.length; i++) {
+      const b = browRefs.current[i]
+      if (!b) continue
+      const s = i === 0 ? -1 : 1
+      b.position.y = BROW_Y + browLift + (posed ? pcr.brow * 0.14 : 0)
+      b.rotation.z = s * -0.12 + -s * ex.browIn * 0.55
+    }
+
+    // Bouche : courbure (sourire/moue) + ouverture (parole/surprise). On reconstruit
+    // la géométrie seulement quand les valeurs changent (quantifiées → peu de rebuilds).
     if (mouthRef.current) {
-      mouthRef.current.scale.set(
-        MOUTH_SCALE[0] * (1 + mouthAmt * 0.3),
-        MOUTH_SCALE[1] * (1 + mouthAmt * 1.5),
-        MOUTH_SCALE[2],
-      )
+      const sm = Math.round(ex.smile * 32) / 32
+      const op = Math.round(mouthAmt * 32) / 32
+      if (mouthGeo.current.smile !== sm || mouthGeo.current.open !== op) {
+        mouthRef.current.geometry.dispose()
+        mouthRef.current.geometry = buildMouthGeometry(sm, op)
+        mouthGeo.current.smile = sm
+        mouthGeo.current.open = op
+      }
+    }
+
+    // Joues rouges (joie/timidité).
+    for (const m of blushRefs.current) {
+      if (!m) continue
+      const mat = m.material as THREE.MeshStandardMaterial
+      mat.opacity = ex.blush * 0.55
+      m.visible = ex.blush > 0.02
+    }
+    // Larmes (tristesse) : perlent puis glissent le long de la joue, en boucle.
+    const drip = (t * 0.6) % 1
+    for (const m of tearRefs.current) {
+      if (!m) continue
+      m.visible = ex.tear > 0.03
+      if (m.visible) {
+        m.position.y = -0.02 - drip * 0.55
+        const mat = m.material as THREE.MeshStandardMaterial
+        mat.opacity = ex.tear * (1 - drip) * 0.9
+        m.scale.setScalar(0.6 + 0.4 * (1 - drip))
+      }
+    }
+    // Goutte de sueur (peur/gêne) : glisse sur la tempe.
+    if (sweatRef.current) {
+      sweatRef.current.visible = ex.sweat > 0.03
+      if (sweatRef.current.visible) {
+        sweatRef.current.position.y = 0.5 - drip * 0.55
+        sweatRef.current.children.forEach((c) => {
+          const mm = (c as THREE.Mesh).material as THREE.MeshStandardMaterial
+          if (mm) mm.opacity = ex.sweat * (1 - drip * 0.7)
+        })
+      }
+    }
+    // Marque de colère (veine 💢) : pulse sur la tempe.
+    if (angerRef.current) {
+      angerRef.current.visible = ex.anger > 0.05
+      const puls = 0.6 + 0.4 * Math.sin(t * 9)
+      angerRef.current.scale.setScalar((0.85 + 0.15 * puls) * Math.min(1, ex.anger))
+      angerRef.current.children.forEach((c) => {
+        const mm = (c as THREE.Mesh).material as THREE.MeshStandardMaterial
+        if (mm) mm.opacity = ex.anger * puls
+      })
     }
 
     // Les globes oculaires pivotent pour fixer le curseur (acteur principal).
@@ -621,11 +754,64 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
           <sphereGeometry args={[0.13, 24, 24]} />
           <meshStandardMaterial color={SKIN} roughness={0.5} metalness={0.05} />
         </mesh>
-        {/* Lèvres / bouche (s'ouvre lors de l'étonnement) */}
-        <mesh ref={mouthRef} position={[0, -0.43, 0.86]} scale={MOUTH_SCALE} rotation={[Math.PI / 2, 0, 0]}>
-          <capsuleGeometry args={[0.05, 0.34, 6, 16]} />
-          <meshStandardMaterial color="#cda4b1" roughness={0.45} metalness={0.05} />
+        {/* Lèvres / bouche : forme reconstruite chaque frame (sourire ↔ moue ↔
+            ouverture) — voir buildMouthGeometry / useFrame. */}
+        <mesh ref={mouthRef} position={[0, -0.42, 0.89]}>
+          <primitive object={buildMouthGeometry(0.12, 0)} attach="geometry" />
+          <meshStandardMaterial color="#9b3b4d" roughness={0.5} metalness={0.05} side={THREE.DoubleSide} />
         </mesh>
+
+        {/* Joues rouges (joie/timidité) — affichées via .visible/opacity (useFrame). */}
+        {[-1, 1].map((s, i) => (
+          <mesh
+            key={`bl${s}`}
+            ref={(el) => (blushRefs.current[i] = el)}
+            position={[s * 0.5, -0.16, 0.8]}
+            rotation={[0, s * 0.3, 0]}
+            scale={[1.25, 0.85, 1]}
+            visible={false}
+          >
+            <circleGeometry args={[0.15, 24]} />
+            <meshStandardMaterial color="#ff5d7a" transparent opacity={0} roughness={0.6} toneMapped />
+          </mesh>
+        ))}
+
+        {/* Larmes (tristesse) : une sous chaque œil — glissent le long de la joue. */}
+        {[-1, 1].map((s, i) => (
+          <mesh
+            key={`tr${s}`}
+            ref={(el) => (tearRefs.current[i] = el)}
+            position={[s * 0.36, -0.02, 0.9]}
+            scale={0.7}
+            visible={false}
+          >
+            <sphereGeometry args={[0.05, 16, 16]} />
+            <meshStandardMaterial color="#bfe3ff" emissive="#9ecbff" emissiveIntensity={0.35} transparent opacity={0} roughness={0.1} metalness={0.2} />
+          </mesh>
+        ))}
+
+        {/* Goutte de sueur (peur/gêne) : perle sur la tempe droite, bien visible. */}
+        <group ref={sweatRef} position={[0.52, 0.5, 0.72]} visible={false}>
+          {/* Bulle ronde + petite pointe en haut (forme de goutte). */}
+          <mesh scale={[1, 1.15, 1]}>
+            <sphereGeometry args={[0.075, 18, 18]} />
+            <meshStandardMaterial color="#a9d8ff" emissive="#7fc0ff" emissiveIntensity={0.5} transparent opacity={0} roughness={0.05} metalness={0.3} />
+          </mesh>
+          <mesh position={[0, 0.09, 0]}>
+            <coneGeometry args={[0.04, 0.08, 14]} />
+            <meshStandardMaterial color="#a9d8ff" emissive="#7fc0ff" emissiveIntensity={0.5} transparent opacity={0} roughness={0.05} metalness={0.3} />
+          </mesh>
+        </group>
+
+        {/* Marque de colère (veine 💢) : trois traits rouges qui pulsent, tempe gauche. */}
+        <group ref={angerRef} position={[-0.55, 0.55, 0.62]} visible={false}>
+          {[0, 1, 2].map((i) => (
+            <mesh key={i} rotation={[0, 0, (i / 3) * Math.PI * 2]} position={[0, 0, 0]}>
+              <boxGeometry args={[0.02, 0.13, 0.02]} />
+              <meshStandardMaterial color="#ff2d55" emissive="#ff2d55" emissiveIntensity={0.6} transparent opacity={0} toneMapped />
+            </mesh>
+          ))}
+        </group>
 
         {/* Yeux — acteurs principaux de l'interaction */}
         <Eye side={-1} eyeball={lEye} irisMat={lIris} upperLid={lUp} lowerLid={lLow} />

@@ -111,6 +111,11 @@ const POSE_PROSODY: Partial<Record<PoseName, { pitch: number; rate: number }>> =
   thinking: { pitch: -0.06, rate: -0.06 },
   shy: { pitch: 0.06, rate: -0.06 },
   'look-up': { pitch: 0.1, rate: 0.02 },
+  laugh: { pitch: 0.24, rate: 0.08 },
+  love: { pitch: 0.2, rate: 0.02 },
+  afraid: { pitch: 0.34, rate: 0.12 },
+  sad: { pitch: -0.22, rate: -0.12 },
+  angry: { pitch: -0.1, rate: 0.1 },
 }
 
 // Prosodie finale d'une réplique : hauteur + débit, d'après la pose ET la
@@ -187,7 +192,12 @@ export const POSE_LIST: { pose: PoseName; label: string; emoji: string }[] = [
   { pose: 'look-up', label: 'Regarde en haut', emoji: '🔼' },
   { pose: 'idea', label: 'Idée !', emoji: '💡' },
   { pose: 'happy', label: 'Content', emoji: '😄' },
+  { pose: 'laugh', label: 'Rigole', emoji: '😂' },
+  { pose: 'love', label: 'Adore', emoji: '😍' },
   { pose: 'surprised', label: 'Surpris', emoji: '😮' },
+  { pose: 'afraid', label: 'Peur', emoji: '😨' },
+  { pose: 'sad', label: 'Triste', emoji: '😢' },
+  { pose: 'angry', label: 'En colère', emoji: '😠' },
   { pose: 'concerned', label: 'Inquiet', emoji: '😟' },
   { pose: 'skeptical', label: 'Sceptique', emoji: '🤨' },
   { pose: 'wink', label: 'Clin d’œil', emoji: '😉' },
