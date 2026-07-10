@@ -24,7 +24,7 @@ import { addBilan } from './lib/history'
 import { useLuminator, brandName, APP_NAME } from './lib/entitlement'
 import { t } from './lib/i18n'
 import { handleCheckoutReturn } from './lib/billing'
-import { completeLoginFromUrl, checkAccount } from './lib/account'
+import { completeLoginFromUrl, checkAccount, useAccount } from './lib/account'
 import { AccountModal } from './components/AccountModal'
 import { installAudioUnlock } from './lib/sfx'
 
@@ -68,6 +68,7 @@ export default function App() {
   const [chatInitial, setChatInitial] = useState<string | undefined>(undefined)
   const [accountOpen, setAccountOpen] = useState(false)
   const ownsLuminator = useLuminator()
+  const account = useAccount()
 
   // Ouvre le chat Luminator, éventuellement avec un message pré-rempli.
   const openChat = (message?: string) => {
@@ -348,15 +349,16 @@ export default function App() {
 
       {accountOpen && <AccountModal onClose={() => setAccountOpen(false)} />}
 
-      {/* Bouton flottant : discuter avec Luminator (une fois l'offre acquise). */}
-      {ownsLuminator && !chatOpen && view !== 'analyzing' && view !== 'studio' && view !== 'legal' && (
+      {/* Bouton flottant : discuter avec Blumi — proposé à TOUS (les non-abonnés
+          ont droit à 2 échanges gratuits avec un compte ; les abonnés, illimité). */}
+      {!chatOpen && view !== 'analyzing' && view !== 'studio' && view !== 'legal' && (
         <button
           onClick={() => openChat()}
           aria-label={`Discuter avec ${brandName()}`}
           className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-brand-600 py-3 pl-3 pr-4 text-sm font-semibold text-white shadow-glow transition hover:bg-brand-700"
         >
           <span className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-white/15">
-            <Avatar glasses className="h-full w-full" forceFallback />
+            <Avatar glasses={ownsLuminator} className="h-full w-full" forceFallback />
           </span>
           {brandName()}
         </button>
@@ -369,6 +371,10 @@ export default function App() {
           onOpenSettings={() => setModalOpen(true)}
           extraContext={chatContext(analysis)}
           initialMessage={chatInitial}
+          owns={ownsLuminator}
+          identified={!!account.email}
+          onOpenAccount={() => setAccountOpen(true)}
+          onOpenPricing={() => setView('pricing')}
         />
       )}
 

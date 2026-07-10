@@ -149,7 +149,21 @@ pédagogique.
   `VeilleScreen.tsx` (vue `veille`, réutilise `SectorTrendCard` → action),
   `GeneratorsScreen.tsx` (vue `generators`, livrables 1 clic → ouvrent le chat),
   + raccourci « Opportunités locales » (exploite `profile.location`).
-- Accès au chat : bouton flottant (FAB) quand `owns`, + bouton sur l'écran Tarifs.
+- **Accès au chat — proposé à TOUS** (plus réservé aux abonnés) :
+  - **Emplacement** : bouton flottant (FAB) pour tout le monde (App.tsx, plus gaté
+    sur `owns`) + **CTA « 💬 Discuter avec Blumi » directement sous l'avatar** dans
+    le hero gratuit (`LandingPage`, clés i18n `trio.chat`/`trio.chatNote`) + les CTA
+    existants de `MemberHome` (abonnés) + bouton sur l'écran Tarifs.
+  - **Dégustation gratuite** (`src/lib/freechat.ts`) : un utilisateur **gratuit mais
+    IDENTIFIÉ** (compte connecté, `account.email`) a droit à **`FREE_CHAT_MAX` = 2
+    échanges À VIE** avec le copilote, **sans payer** (compteur localStorage
+    `lumi.luminator.freeUsed`, `consumeFreeChat()` à chaque message envoyé). Le quota
+    serveur (KV) reste le garde-fou global.
+  - **Barrière** (`LuminatorChat`, prop `gate`) : `owns` → illimité ; sinon gratuit
+    **non connecté** → bannière « connecte-toi (gratuit), 2 échanges offerts » +
+    `onOpenAccount` ; gratuit **connecté** → 2 échanges puis bannière « passe à
+    Blumiman » + `onOpenPricing` ; sinon note « échanges restants n/2 ». L'avatar de
+    l'en-tête suit le palier (`glasses={owns}` → sans lunettes pour Blumi gratuit).
 
 ## Différenciation réelle des paliers (limites appliquées, `src/lib/llm.ts`)
 - **Vraie valeur de Bluminator** = pas du vent, c'est mesurable et appliqué :

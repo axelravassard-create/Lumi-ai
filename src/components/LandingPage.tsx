@@ -171,7 +171,19 @@ export function LandingPage({ onAnalyze, onCompare, aiEnabled, onOpenSettings, o
           </div>
         </div>
 
-        <div className="animate-fade-up">
+        {/* Discuter avec Blumi — proposé directement sous le personnage, pour
+            tous : les non-abonnés ont droit à 2 échanges gratuits avec un compte. */}
+        <div className="animate-fade-in mt-3 flex flex-col items-center gap-1">
+          <button
+            onClick={() => onOpenChat()}
+            className="inline-flex items-center gap-2 rounded-xl border border-brand-300 bg-white px-5 py-2.5 text-sm font-semibold text-brand-700 shadow-sm transition hover:border-brand-400 hover:bg-brand-50"
+          >
+            {t('trio.chat')}
+          </button>
+          <span className="text-xs text-ink-400">{t('trio.chatNote')}</span>
+        </div>
+
+        <div className="animate-fade-up mt-6">
           <span className="pill mx-auto mb-6 border border-brand-100 bg-white text-brand-700 shadow-sm">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>

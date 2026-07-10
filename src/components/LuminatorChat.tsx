@@ -6,6 +6,7 @@ import { applyProfilePatch } from '../lib/profile'
 import { addPlanItem } from '../lib/plan'
 import { useBrand } from '../lib/entitlement'
 import { addTool } from '../lib/toolbox'
+import { consumeFreeChat, freeChatUsed, FREE_CHAT_MAX } from '../lib/freechat'
 import { t, useLang } from '../lib/i18n'
 
 interface Props {
@@ -16,6 +17,14 @@ interface Props {
   extraContext?: string
   /** Message pré-rempli dans la saisie à l'ouverture (démarrage rapide). */
   initialMessage?: string
+  /** L'utilisateur possède un palier payant (accès illimité au copilote). */
+  owns?: boolean
+  /** L'utilisateur a un compte connecté (→ droit à 2 échanges gratuits). */
+  identified?: boolean
+  /** Ouvre la connexion (compte) — pour débloquer les 2 échanges gratuits. */
+  onOpenAccount?: () => void
+  /** Ouvre les tarifs — quand les échanges gratuits sont épuisés. */
+  onOpenPricing?: () => void
 }
 
 const STARTER_KEYS = ['chat.starter0', 'chat.starter1', 'chat.starter2']
@@ -69,11 +78,22 @@ function saveChat(messages: ChatMsg[]) {
   }
 }
 
-export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext, initialMessage }: Props) {
+export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext, initialMessage, owns = true, identified = false, onOpenAccount, onOpenPricing }: Props) {
   const { name } = useBrand()
   useLang() // re-render au changement de langue
   const greeting = t('chat.greeting').replace('{name}', name)
   const [messages, setMessages] = useState<ChatMsg[]>(() => loadChat())
+  // Dégustation gratuite : re-render quand le compteur d'échanges change.
+  const [freeUsed, setFreeUsed] = useState(() => freeChatUsed())
+  // Barrière d'accès pour les non-abonnés : 'login' (se connecter d'abord) ou
+  // 'exhausted' (2 échanges gratuits épuisés → s'abonner). null = accès ouvert.
+  const gate: 'login' | 'exhausted' | null = owns
+    ? null
+    : !identified
+      ? 'login'
+      : FREE_CHAT_MAX - freeUsed <= 0
+        ? 'exhausted'
+        : null
   const [input, setInput] = useState(initialMessage ?? '')
   const [streaming, setStreaming] = useState(false)
   const [noted, setNoted] = useState(false)
@@ -129,10 +149,21 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
   const send = async (text: string) => {
     const trimmed = text.trim()
     if (!trimmed || streaming) return
+    // Barrière non-abonné : se connecter (2 échanges offerts) ou s'abonner.
+    if (gate === 'login') {
+      onOpenAccount?.()
+      return
+    }
+    if (gate === 'exhausted') {
+      onOpenPricing?.()
+      return
+    }
     if (!aiEnabled) {
       onOpenSettings()
       return
     }
+    // Gratuit identifié : chaque message consomme un des échanges offerts.
+    if (!owns && identified) setFreeUsed(consumeFreeChat())
     const history: ChatMsg[] = [...messages, { role: 'user', content: trimmed }]
     // On ajoute une bulle assistant vide qui se remplira pendant le streaming.
     setMessages([...history, { role: 'assistant', content: '' }])
@@ -216,7 +247,7 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
                   reflète sa propre émotion → l'expression du visage change au fil
                   de la conversation. */}
               <Avatar
-                glasses
+                glasses={owns}
                 speaking={streaming}
                 pose={detectChatPose(lastContent(messages, 'user'), lastContent(messages, 'assistant'))}
                 className="h-full w-full"
@@ -281,6 +312,29 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
                 {t('chat.configure')}
               </button>
               .
+            </div>
+          )}
+
+          {/* Barrière non-abonné : se connecter (2 échanges offerts) ou s'abonner. */}
+          {gate === 'login' && (
+            <div className="rounded-xl bg-brand-50 px-3 py-2.5 text-xs text-brand-800">
+              {t('chat.freeLogin')}{' '}
+              <button onClick={onOpenAccount} className="font-semibold underline">
+                {t('chat.freeLoginBtn')}
+              </button>
+            </div>
+          )}
+          {gate === 'exhausted' && (
+            <div className="rounded-xl bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+              {t('chat.freeExhausted')}{' '}
+              <button onClick={onOpenPricing} className="font-semibold underline">
+                {t('chat.freeExhaustedBtn')}
+              </button>
+            </div>
+          )}
+          {!owns && identified && gate === null && (
+            <div className="text-center text-[11px] text-ink-400">
+              {t('chat.freeLeft').replace('{n}', String(Math.max(0, FREE_CHAT_MAX - freeUsed)))}
             </div>
           )}
         </div>
