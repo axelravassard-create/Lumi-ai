@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, type RefObject } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Environment, Lightformer } from '@react-three/drei'
 import { Bloom, EffectComposer } from '@react-three/postprocessing'
@@ -7,6 +7,9 @@ import { playPat } from '../../lib/sfx'
 
 export type AvatarState = 'idle' | 'thinking'
 export type AvatarMood = 'neutral' | 'calm' | 'concerned'
+// Accessoires « casier » : petits objets amusants attachés au personnage.
+export type PropName = 'none' | 'pointer' | 'magnifier' | 'lightbulb' | 'party-hat' | 'grad-cap' | 'crown' | 'mic' | 'heart' | 'trophy' | 'rocket' | 'star' | 'fire' | 'coin'
+const PROP_NAMES: Exclude<PropName, 'none'>[] = ['pointer', 'magnifier', 'lightbulb', 'mic', 'party-hat', 'grad-cap', 'crown', 'heart', 'trophy', 'rocket', 'star', 'fire', 'coin']
 
 interface Props {
   state: AvatarState
@@ -22,6 +25,35 @@ interface Props {
   speaking?: boolean
   /** Réaction lumineuse au clic (étincelles / rayons). false = vitrine figée. */
   interactive?: boolean
+  /** Rend le canvas capturable (preserveDrawingBuffer) pour l'export vidéo du studio. */
+  capture?: boolean
+  /** Regard fixé vers la caméra (studio) au lieu de suivre le curseur. */
+  staticGaze?: boolean
+  /** Pose de présentation (regard/expression/position). Transition en douceur. */
+  pose?: PoseName
+  /** Accessoire(s) attaché(s) au personnage (studio présentation). */
+  prop?: PropName
+  props?: PropName[]
+  /** Échelle globale du corps (studio présentation : zoom-arrière pour loger les
+   *  accessoires). Constant sur toute la présentation → aucun à-coup. */
+  bodyScale?: number
+  /** Canal impératif (studio) : pose/humeur/parole/accessoires pilotés par ce ref,
+   *  mis à jour chaque frame côté studio. Contourne la réconciliation R3F peu
+   *  fiable des props en rendu continu → le personnage suit fidèlement la timeline. */
+  accessoryRef?: RefObject<AvatarLiveState>
+}
+
+// Placement d'un accessoire : nom + décalage (dx/dy, fraction) + échelle.
+export interface AvatarProp { name: PropName; dx: number; dy: number; scale: number }
+
+// État vivant du personnage piloté image par image (studio).
+export interface AvatarLiveState {
+  glasses: boolean
+  laptop: boolean
+  props: AvatarProp[] // accessoires visibles simultanément (avec placement)
+  pose?: PoseName
+  mood: AvatarMood
+  speaking: boolean
 }
 
 // Pointeur global normalisé (-1..1). Le visage suit le curseur partout sur la
@@ -74,7 +106,97 @@ const RAY_BLUE = ['#dff0ff', '#a9d2ff', '#6fb0ff', '#2e83ff', '#8ec2ff', '#1e6ff
 // Durée de la réaction « tapote » (étonnement → joie).
 const PAT_DUR = 0.9
 const BROW_Y = 0.29 // hauteur de repos des sourcils
-const MOUTH_SCALE: [number, number, number] = [1, 0.5, 0.5] // échelle de repos de la bouche
+
+// ── Poses de Blumi (mode présentation) ───────────────────────────────────────
+// Chaque pose est une cible : orientation de la tête (yaw/pitch/roll), sourcils,
+// ouverture des yeux, humeur, position/échelle à l'écran, ouverture de bouche.
+// L'avatar interpole en douceur vers la pose → déplacements naturels.
+export type PoseName =
+  | 'neutral' | 'presenter' | 'greet' | 'point-left' | 'point-right'
+  | 'look-up' | 'idea' | 'happy' | 'surprised' | 'concerned' | 'skeptical'
+  | 'wink' | 'proud' | 'aside-left' | 'aside-right' | 'closeup' | 'thinking' | 'shy'
+  | 'sad' | 'afraid' | 'angry' | 'love' | 'laugh'
+
+// Traits d'expression du visage (renforcent l'émotion au-delà des yeux/tête) :
+//  - smile : courbure de la bouche (-1 = grimace triste, 0 = neutre, 1 = grand sourire)
+//  - browIn : inclinaison de l'extrémité INTERNE des sourcils (+ = relevée « triste/
+//    inquiet », − = abaissée « colère »)
+//  - blush : rougeur des joues (joie/timidité)
+//  - tear : larme(s) sous les yeux (tristesse)
+//  - sweat : goutte de sueur sur la tempe (peur/gêne)
+//  - anger : petite marque de colère (veine 💢) sur la tempe
+export interface ExprTraits {
+  smile: number; browIn: number; blush: number; tear: number; sweat: number; anger: number
+}
+const EX0: ExprTraits = { smile: 0, browIn: 0, blush: 0, tear: 0, sweat: 0, anger: 0 }
+
+export interface PoseTarget extends ExprTraits {
+  yaw: number; pitch: number; roll: number
+  brow: number; eyeOpen: number; winkL: number; winkR: number
+  mood: AvatarMood; x: number; y: number; scale: number; mouth: number
+}
+const P = (
+  yaw: number, pitch: number, roll: number, brow: number, eyeOpen: number,
+  mood: AvatarMood, x: number, y: number, scale: number,
+  mouth = 0, winkL = 0, winkR = 0, ex: Partial<ExprTraits> = {},
+): PoseTarget => ({ yaw, pitch, roll, brow, eyeOpen, winkL, winkR, mood, x, y, scale, mouth, ...EX0, ...ex })
+
+export const POSES: Record<PoseName, PoseTarget> = {
+  //           yaw   pitch  roll   brow eyeOpen mood        x     y    scale mouth wL wR  expression
+  neutral:    P(0,    0,     0,     0,   1,     'neutral',  0,    0,   1,    0,   0, 0, { smile: 0.12 }),
+  presenter:  P(0,   -0.06,  0,     0.2, 1.05,  'neutral',  0,    0,   1,    0.05,0, 0, { smile: 0.2 }),
+  greet:      P(0.15, -0.1,  0.06,  0.5, 1.15,  'calm',     0,    0.02, 1,   0.15,0, 0, { smile: 0.6, blush: 0.2 }),
+  'point-left':  P(-0.7, 0,  -0.05, 0.15,1,     'neutral',  0.28, 0,   0.95, 0,   0, 0, { smile: 0.18 }),
+  'point-right': P(0.7,  0,   0.05, 0.15,1,     'neutral', -0.28, 0,   0.95, 0,   0, 0, { smile: 0.18 }),
+  'look-up':  P(0.1,  -0.6,  0.03,  0.4, 1.1,   'neutral',  0,    0,   1,    0,   0, 0, { smile: 0.2 }),
+  idea:       P(0,   -0.15,  0,     0.7, 1.35,  'neutral',  0,    0.03, 1.05, 0.2, 0, 0, { smile: 0.45 }),
+  happy:      P(0,   -0.05,  0.03,  0.1, 0.62,  'calm',     0,    0,   1,    0.12,0, 0, { smile: 1, blush: 0.55 }),
+  surprised:  P(0,    0.05,  0,     0.85,1.45,  'neutral',  0,   -0.02, 0.98, 0.62,0, 0, { smile: 0.05, browIn: 0.2 }),
+  concerned:  P(-0.05, 0.22, -0.06, -0.2,0.9,   'concerned',0,    0,   1,    0,   0, 0, { smile: -0.45, browIn: 0.55 }),
+  skeptical:  P(0.12,  0.05, -0.08, 0.2, 0.85,  'neutral',  0,    0,   1,    0,   0.5, 0, { smile: -0.12, browIn: -0.2 }),
+  wink:       P(0.08, -0.05, 0.05,  0.2, 1,     'calm',     0,    0,   1,    0.1, 0,   1, { smile: 0.5, blush: 0.15 }),
+  proud:      P(0,   -0.2,   0,     0.2, 0.85,  'calm',     0,    0.03, 1.05, 0.05,0, 0, { smile: 0.55 }),
+  'aside-left':  P(-0.5, 0,  -0.04, 0.15,1,     'neutral',  0.42, 0,   0.85, 0,   0, 0, { smile: 0.15 }),
+  'aside-right': P(0.5,  0,   0.04, 0.15,1,     'neutral', -0.42, 0,   0.85, 0,   0, 0, { smile: 0.15 }),
+  closeup:    P(0,   -0.03,  0,     0.1, 1.05,  'neutral',  0,    0.05, 1.35, 0.05,0, 0, { smile: 0.15 }),
+  thinking:   P(-0.25,-0.4,  -0.1,  0.35,0.95,  'neutral',  0.05, 0,   1,    0,   0, 0, { smile: 0.05, browIn: 0.12 }),
+  shy:        P(0.2,   0.2,   0.1,  0.1, 0.75,  'calm',    -0.05, 0,   0.95, 0,   0, 0, { smile: 0.35, blush: 0.75 }),
+  // ── Émotions fortes (traits de visage marqués) ──────────────────────────────
+  sad:        P(-0.05, 0.28,  0.03, -0.1,0.76,  'concerned',0,   -0.01, 0.98, 0.05,0, 0, { smile: -0.85, browIn: 0.85, tear: 1 }),
+  afraid:     P(0.0,   0.02,  0.06, 0.7, 1.5,   'concerned',0,   -0.02, 0.97, 0.45,0, 0, { smile: -0.4, browIn: 0.6, sweat: 1 }),
+  angry:      P(0,     0.12,  0,    -0.7,0.82,  'concerned',0,    0,   1,    0.12,0, 0, { smile: -0.72, browIn: -0.9, anger: 1 }),
+  love:       P(0.05, -0.06,  0.05, 0.2, 0.6,   'calm',     0,    0.02, 1,    0.12,0, 0, { smile: 1, blush: 1 }),
+  laugh:      P(0,    -0.08,  0.05, 0.15,0.34,  'calm',     0,    0.02, 1,    0.7, 0, 0, { smile: 1, blush: 0.5 }),
+}
+
+// Construit la géométrie de la bouche à partir de la courbure (smile) et de
+// l'ouverture (open). Lentille fermée quand open≈0 (ligne de lèvres qui sourit ou
+// fait la moue), qui s'ouvre en cavité quand open>0 (parole / surprise).
+function mouthShape(smile: number, open: number): THREE.Shape {
+  const hw = 0.2
+  const corner = smile * 0.1 // coins relevés (sourire) / abaissés (moue)
+  const center = -smile * 0.06 // centre qui descend (sourire) / monte (moue)
+  const th = 0.028 // épaisseur des lèvres au repos
+  const gap = Math.max(0, open) * 0.17
+  const topMid = center + th / 2 + gap / 2
+  const botMid = center - th / 2 - gap / 2
+  const s = new THREE.Shape()
+  s.moveTo(-hw, corner)
+  s.quadraticCurveTo(0, topMid, hw, corner)
+  s.quadraticCurveTo(0, botMid, -hw, corner)
+  s.closePath()
+  return s
+}
+function buildMouthGeometry(smile: number, open: number): THREE.ShapeGeometry {
+  return new THREE.ShapeGeometry(mouthShape(smile, open), 18)
+}
+
+// Expression de repos dérivée de l'humeur (hors studio : chat, verdicts, accueil).
+function moodExpr(mood: AvatarMood): ExprTraits {
+  if (mood === 'calm') return { ...EX0, smile: 0.55, blush: 0.22 }
+  if (mood === 'concerned') return { ...EX0, smile: -0.4, browIn: 0.5 }
+  return { ...EX0, smile: 0.12 }
+}
 
 // Un œil réaliste : globe blanc + iris lumineux + pupille + reflet de vie
 // (« catchlight »). Le globe pivote pour fixer le curseur, les paupières clignent.
@@ -142,7 +264,7 @@ function Eye({
   )
 }
 
-function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaking = false, interactive = true }: Props) {
+function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaking = false, interactive = true, staticGaze = false, pose, prop, props, bodyScale = 1, accessoryRef }: Props) {
   const group = useRef<THREE.Group>(null)
   const head = useRef<THREE.Group>(null)
   const lEye = useRef<THREE.Group | null>(null)
@@ -157,12 +279,36 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
   const rimLight = useRef<THREE.PointLight>(null)
   const browRefs = useRef<(THREE.Mesh | null)[]>([])
   const mouthRef = useRef<THREE.Mesh | null>(null)
+  // Traits d'expression (renforcent l'émotion) : joues rouges, larmes, sueur, colère.
+  const blushRefs = useRef<(THREE.Mesh | null)[]>([])
+  const tearRefs = useRef<(THREE.Mesh | null)[]>([])
+  const sweatRef = useRef<THREE.Group | null>(null)
+  const angerRef = useRef<THREE.Group | null>(null)
+  // Expression courante interpolée (transition douce entre émotions) + suivi de la
+  // dernière géométrie de bouche construite (évite de reconstruire à chaque frame).
+  const ec = useRef<ExprTraits>({ ...EX0 })
+  const mouthGeo = useRef({ smile: -9, open: -9 })
+  // Accessoires « déclaratifs » (lunettes, ordi, objets du casier) : montés en
+  // permanence et affichés/masqués via .visible dans useFrame — car ce montage 3D
+  // (canvas en rendu continu) ne réconcilie pas le montage/démontage conditionnel
+  // au re-render ; seule la voie impérative (useFrame) suit les changements.
+  const glassesRef = useRef<THREE.Group>(null)
+  const laptopRef = useRef<THREE.Group>(null)
+  const propRefs = useRef<Record<string, THREE.Group | null>>({})
+  // Valeurs vives lues dans useFrame (le corps du composant s'exécute à chaque
+  // re-render → toujours à jour, même si la closure de useFrame ne l'est pas).
+  const propList: AvatarProp[] = (props ?? (prop && prop !== 'none' ? [prop] : []))
+    .map((n) => ({ name: n, dx: 0, dy: 0, scale: 1 }))
+  const live = useRef<AvatarLiveState>({ glasses, laptop, props: propList, pose, mood, speaking })
+  live.current = { glasses, laptop, props: propList, pose, mood, speaking }
 
   const think = useRef(0)
   const blink = useRef({ next: 2.5, t: 0 })
   const saccade = useRef({ next: 1.5, x: 0, y: 0 })
   // Réaction « tapote sur la tête » : minuteur + étincelles de joie.
   const pat = useRef(0)
+  // Pose courante interpolée (transitions douces entre poses).
+  const pc = useRef<PoseTarget>({ ...POSES.neutral })
   const sparkleRefs = useRef<(THREE.Mesh | null)[]>([])
   const sparkleData = useRef(
     SPARKLE_COLORS.map(() => ({ active: false, age: 0, life: 1, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0 })),
@@ -239,9 +385,30 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     const t = three.clock.elapsedTime
     const d = Math.min(delta, 0.05)
 
+    // État des accessoires : canal impératif (studio) prioritaire, sinon valeurs
+    // vives des props (mises à jour dans le corps du composant).
+    const acc = accessoryRef?.current ?? live.current
+
     const target = state === 'thinking' ? 1 : 0
     think.current += (target - think.current) * Math.min(1, d * 4)
     const k = think.current
+
+    // Interpolation douce vers la pose demandée → déplacements naturels.
+    const pt = POSES[acc.pose ?? 'neutral']
+    const pcr = pc.current
+    const pl = Math.min(1, d * 3.2)
+    pcr.yaw += (pt.yaw - pcr.yaw) * pl
+    pcr.pitch += (pt.pitch - pcr.pitch) * pl
+    pcr.roll += (pt.roll - pcr.roll) * pl
+    pcr.brow += (pt.brow - pcr.brow) * pl
+    pcr.eyeOpen += (pt.eyeOpen - pcr.eyeOpen) * pl
+    pcr.winkL += (pt.winkL - pcr.winkL) * pl
+    pcr.winkR += (pt.winkR - pcr.winkR) * pl
+    pcr.x += (pt.x - pcr.x) * pl
+    pcr.y += (pt.y - pcr.y) * pl
+    pcr.scale += (pt.scale - pcr.scale) * pl
+    pcr.mouth += (pt.mouth - pcr.mouth) * pl
+    const posed = !!acc.pose
 
     // Direction du regard : curseur, sinon balayage doux + micro-saccades.
     saccade.current.next -= d
@@ -253,12 +420,25 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     let gx = pointer.active ? THREE.MathUtils.clamp(pointer.x, -1, 1) : Math.sin(t * 0.4) * 0.4 + saccade.current.x
     let gy = pointer.active ? THREE.MathUtils.clamp(pointer.y, -1, 1) : saccade.current.y
 
+    // Studio : Blumi fixe la caméra (il « parle au spectateur ») avec une micro-vie,
+    // sans suivre le curseur — sinon son regard partirait n'importe où dans l'export.
+    if (staticGaze) {
+      gx = Math.sin(t * 0.5) * 0.1 + saccade.current.x * 0.3
+      gy = Math.sin(t * 0.8) * 0.05
+    }
+
     // Bluminator : absorbé par son écran. Il ne suit PAS le curseur — son regard
     // reste baissé sur l'ordinateur portable posé devant lui, avec un léger
     // balayage (il « lit ») pour rester vivant.
-    if (laptop) {
+    if (acc.laptop) {
       gx = Math.sin(t * 0.7) * 0.07
       gy = 0.95 + Math.sin(t * 1.1) * 0.05
+    }
+
+    // Pose : la direction du regard suit la pose (avec une micro-vie).
+    if (posed) {
+      gx = pcr.yaw + Math.sin(t * 0.5) * 0.03
+      gy = pcr.pitch + Math.sin(t * 0.7) * 0.02
     }
 
     // Réaction « tapote » : étonnement (yeux écarquillés, sourcils levés,
@@ -270,6 +450,7 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     let browLift = 0
     let mouthOpen = 0
     let recoilZ = 0
+    let patDelight = 0 // joie du « tapote » → grand sourire + joues rouges
     if (pat.current > 0) {
       pat.current = Math.max(0, pat.current - d)
       const p = 1 - pat.current / PAT_DUR // 0 → 1
@@ -283,15 +464,20 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
       mouthOpen = surprise
       recoilZ = -surprise * 0.14
       patJoy = pat.current / PAT_DUR + surprise * 1.4
+      patDelight = delight
     }
 
     // La tête s'oriente légèrement vers le curseur (et penche en réflexion).
     if (head.current) {
       const sway = reducedMotion ? 0 : Math.sin(t * 0.6) * 0.015
       // Penche un peu plus la tête vers le bas quand il fixe son écran.
-      const tilt = laptop ? 0.2 : 0
-      head.current.rotation.y += (gx * 0.18 + sway - head.current.rotation.y) * Math.min(1, d * 3)
-      head.current.rotation.x += (gy * 0.12 + tilt + k * 0.06 - head.current.rotation.x) * Math.min(1, d * 3)
+      const tilt = acc.laptop ? 0.2 : 0
+      // En pose, la tête tourne davantage (mouvement affirmé) + inclinaison (roll).
+      const hy = posed ? pcr.yaw * 0.55 + sway : gx * 0.18 + sway
+      const hx = posed ? pcr.pitch * 0.5 + k * 0.06 : gy * 0.12 + tilt + k * 0.06
+      head.current.rotation.y += (hy - head.current.rotation.y) * Math.min(1, d * 3)
+      head.current.rotation.x += (hx - head.current.rotation.x) * Math.min(1, d * 3)
+      head.current.rotation.z += ((posed ? pcr.roll : 0) - head.current.rotation.z) * Math.min(1, d * 3)
       head.current.position.y = patBob
       head.current.position.z = recoilZ
       head.current.scale.set(1 + (1 - patSquash), patSquash, 1 + (1 - patSquash))
@@ -299,19 +485,93 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
 
     // Parole : la bouche s'ouvre et se ferme de façon irrégulière, comme une
     // articulation (deux sinusoïdes désynchronisées pour éviter l'effet métronome).
-    const talk = speaking
+    const talk = acc.speaking
       ? Math.max(0, (0.5 + 0.5 * Math.sin(t * 17)) * (0.55 + 0.45 * Math.sin(t * 6.7 + 1.3)))
       : 0
-    const mouthAmt = Math.max(mouthOpen, talk)
+    const mouthAmt = Math.max(mouthOpen, talk, posed ? pcr.mouth : 0)
 
-    // Sourcils levés + bouche ouverte (étonnement ou parole).
-    for (const b of browRefs.current) if (b) b.position.y = BROW_Y + browLift
+    // ── Expression du visage (traits qui renforcent l'émotion) ────────────────
+    // Cible : la pose (studio) ou l'humeur (hors studio), + la joie du « tapote ».
+    const baseExpr: ExprTraits = posed ? POSES[acc.pose as PoseName] : moodExpr(acc.mood)
+    const exTarget: ExprTraits = {
+      smile: Math.min(1, baseExpr.smile + patDelight * 0.9),
+      browIn: baseExpr.browIn,
+      blush: Math.min(1, baseExpr.blush + patDelight * 0.6),
+      tear: baseExpr.tear,
+      sweat: baseExpr.sweat,
+      anger: baseExpr.anger,
+    }
+    const ex = ec.current
+    const exl = Math.min(1, d * 4)
+    ex.smile += (exTarget.smile - ex.smile) * exl
+    ex.browIn += (exTarget.browIn - ex.browIn) * exl
+    ex.blush += (exTarget.blush - ex.blush) * exl
+    ex.tear += (exTarget.tear - ex.tear) * exl
+    ex.sweat += (exTarget.sweat - ex.sweat) * exl
+    ex.anger += (exTarget.anger - ex.anger) * exl
+
+    // Sourcils : hauteur (étonnement/pose) + inclinaison de l'extrémité interne
+    // (browIn>0 = relevée « triste/inquiet », <0 = abaissée « colère »).
+    for (let i = 0; i < browRefs.current.length; i++) {
+      const b = browRefs.current[i]
+      if (!b) continue
+      const s = i === 0 ? -1 : 1
+      b.position.y = BROW_Y + browLift + (posed ? pcr.brow * 0.14 : 0)
+      b.rotation.z = s * -0.12 + -s * ex.browIn * 0.55
+    }
+
+    // Bouche : courbure (sourire/moue) + ouverture (parole/surprise). On reconstruit
+    // la géométrie seulement quand les valeurs changent (quantifiées → peu de rebuilds).
     if (mouthRef.current) {
-      mouthRef.current.scale.set(
-        MOUTH_SCALE[0] * (1 + mouthAmt * 0.3),
-        MOUTH_SCALE[1] * (1 + mouthAmt * 1.5),
-        MOUTH_SCALE[2],
-      )
+      const sm = Math.round(ex.smile * 32) / 32
+      const op = Math.round(mouthAmt * 32) / 32
+      if (mouthGeo.current.smile !== sm || mouthGeo.current.open !== op) {
+        mouthRef.current.geometry.dispose()
+        mouthRef.current.geometry = buildMouthGeometry(sm, op)
+        mouthGeo.current.smile = sm
+        mouthGeo.current.open = op
+      }
+    }
+
+    // Joues rouges (joie/timidité).
+    for (const m of blushRefs.current) {
+      if (!m) continue
+      const mat = m.material as THREE.MeshStandardMaterial
+      mat.opacity = ex.blush * 0.55
+      m.visible = ex.blush > 0.02
+    }
+    // Larmes (tristesse) : perlent puis glissent le long de la joue, en boucle.
+    const drip = (t * 0.6) % 1
+    for (const m of tearRefs.current) {
+      if (!m) continue
+      m.visible = ex.tear > 0.03
+      if (m.visible) {
+        m.position.y = -0.02 - drip * 0.55
+        const mat = m.material as THREE.MeshStandardMaterial
+        mat.opacity = ex.tear * (1 - drip) * 0.9
+        m.scale.setScalar(0.6 + 0.4 * (1 - drip))
+      }
+    }
+    // Goutte de sueur (peur/gêne) : glisse sur la tempe.
+    if (sweatRef.current) {
+      sweatRef.current.visible = ex.sweat > 0.03
+      if (sweatRef.current.visible) {
+        sweatRef.current.position.y = 0.5 - drip * 0.55
+        sweatRef.current.children.forEach((c) => {
+          const mm = (c as THREE.Mesh).material as THREE.MeshStandardMaterial
+          if (mm) mm.opacity = ex.sweat * (1 - drip * 0.7)
+        })
+      }
+    }
+    // Marque de colère (veine 💢) : pulse sur la tempe.
+    if (angerRef.current) {
+      angerRef.current.visible = ex.anger > 0.05
+      const puls = 0.6 + 0.4 * Math.sin(t * 9)
+      angerRef.current.scale.setScalar((0.85 + 0.15 * puls) * Math.min(1, ex.anger))
+      angerRef.current.children.forEach((c) => {
+        const mm = (c as THREE.Mesh).material as THREE.MeshStandardMaterial
+        if (mm) mm.opacity = ex.anger * puls
+      })
     }
 
     // Les globes oculaires pivotent pour fixer le curseur (acteur principal).
@@ -338,14 +598,25 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     // Pendant la réaction « tapote », l'ouverture des yeux est pilotée par
     // patLid (négatif = écarquillés de surprise, positif = plissés de joie).
     const lidClose = pat.current > 0 ? patLid : close
-    const upTarget = -0.04 + lidClose * 1.15
-    const lowTarget = 0.04 - lidClose * 0.5
-    for (const l of [lUp.current, rUp.current]) if (l) l.rotation.x += (upTarget - l.rotation.x) * Math.min(1, d * 18)
-    for (const l of [lLow.current, rLow.current]) if (l) l.rotation.x += (lowTarget - l.rotation.x) * Math.min(1, d * 18)
+    // Plissement (eyeOpen<1) / grands yeux (eyeOpen>1) / clin d'œil par œil (pose).
+    const squint = posed ? Math.max(0, 1 - pcr.eyeOpen) : 0
+    const wide = posed ? Math.max(0, pcr.eyeOpen - 1) : 0
+    const baseUp = -0.04 + lidClose * 1.15 - wide * 0.5
+    const baseLow = 0.04 - lidClose * 0.5 + squint * 0.55
+    const upL = baseUp + (posed ? pcr.winkL : 0) * 1.15
+    const upR = baseUp + (posed ? pcr.winkR : 0) * 1.15
+    const lowL = baseLow - (posed ? pcr.winkL : 0) * 0.5
+    const lowR = baseLow - (posed ? pcr.winkR : 0) * 0.5
+    const lidK = Math.min(1, d * 18)
+    if (lUp.current) lUp.current.rotation.x += (upL - lUp.current.rotation.x) * lidK
+    if (rUp.current) rUp.current.rotation.x += (upR - rUp.current.rotation.x) * lidK
+    if (lLow.current) lLow.current.rotation.x += (lowL - lLow.current.rotation.x) * lidK
+    if (rLow.current) rLow.current.rotation.x += (lowR - rLow.current.rotation.x) * lidK
 
     // Iris : couleur (humeur) + éclat selon la réflexion, avec pulsation vivante.
     const pulse = 1 + Math.sin(t * (2.5 + k * 6)) * (0.12 + k * 0.45)
-    const col = MOOD_COLOR[mood].clone().lerp(IRIS_THINK, k)
+    const effMood = acc.pose ? POSES[acc.pose].mood : acc.mood
+    const col = MOOD_COLOR[effMood].clone().lerp(IRIS_THINK, k)
     for (const m of [lIris.current, rIris.current]) {
       if (!m) continue
       m.emissive.copy(col)
@@ -409,11 +680,29 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
       }
     }
 
-    if (group.current && !reducedMotion) {
-      group.current.position.y = -0.02 + Math.sin(t * 1.1) * 0.03
-      group.current.rotation.z = Math.sin(t * 0.5) * 0.01
-    } else if (group.current) {
-      group.current.position.y = -0.02
+    if (group.current) {
+      const float = reducedMotion ? 0 : Math.sin(t * 1.1) * 0.03
+      group.current.position.y = -0.02 + float + (posed ? pcr.y * 0.4 : 0)
+      group.current.position.x = posed ? pcr.x * 0.5 : 0
+      group.current.rotation.z = reducedMotion ? 0 : Math.sin(t * 0.5) * 0.01
+      const baseScale = (acc.laptop ? 0.8 : 1) * bodyScale
+      group.current.scale.setScalar(baseScale * (posed ? pcr.scale : 1))
+    }
+
+    // Visibilité des accessoires (impérative → suit les changements même si la
+    // réconciliation R3F des enfants conditionnels ne suit pas en rendu continu).
+    if (glassesRef.current) glassesRef.current.visible = acc.glasses
+    if (laptopRef.current) laptopRef.current.visible = acc.laptop
+    for (const n of PROP_NAMES) {
+      const g = propRefs.current[n]
+      if (!g) continue
+      const item = acc.props.find((p) => p.name === n)
+      g.visible = !!item
+      if (item) {
+        // Décalage (dx/dy) + échelle par rapport à Blumi (déplace l'objet).
+        g.position.set(item.dx * 1.3, item.dy * 1.3, 0)
+        g.scale.setScalar(item.scale || 1)
+      }
     }
 
     // Halo orbital.
@@ -465,20 +754,73 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
           <sphereGeometry args={[0.13, 24, 24]} />
           <meshStandardMaterial color={SKIN} roughness={0.5} metalness={0.05} />
         </mesh>
-        {/* Lèvres / bouche (s'ouvre lors de l'étonnement) */}
-        <mesh ref={mouthRef} position={[0, -0.43, 0.86]} scale={MOUTH_SCALE} rotation={[Math.PI / 2, 0, 0]}>
-          <capsuleGeometry args={[0.05, 0.34, 6, 16]} />
-          <meshStandardMaterial color="#cda4b1" roughness={0.45} metalness={0.05} />
+        {/* Lèvres / bouche : forme reconstruite chaque frame (sourire ↔ moue ↔
+            ouverture) — voir buildMouthGeometry / useFrame. */}
+        <mesh ref={mouthRef} position={[0, -0.42, 0.89]}>
+          <primitive object={buildMouthGeometry(0.12, 0)} attach="geometry" />
+          <meshStandardMaterial color="#9b3b4d" roughness={0.5} metalness={0.05} side={THREE.DoubleSide} />
         </mesh>
+
+        {/* Joues rouges (joie/timidité) — affichées via .visible/opacity (useFrame). */}
+        {[-1, 1].map((s, i) => (
+          <mesh
+            key={`bl${s}`}
+            ref={(el) => (blushRefs.current[i] = el)}
+            position={[s * 0.5, -0.16, 0.8]}
+            rotation={[0, s * 0.3, 0]}
+            scale={[1.25, 0.85, 1]}
+            visible={false}
+          >
+            <circleGeometry args={[0.15, 24]} />
+            <meshStandardMaterial color="#ff5d7a" transparent opacity={0} roughness={0.6} toneMapped />
+          </mesh>
+        ))}
+
+        {/* Larmes (tristesse) : une sous chaque œil — glissent le long de la joue. */}
+        {[-1, 1].map((s, i) => (
+          <mesh
+            key={`tr${s}`}
+            ref={(el) => (tearRefs.current[i] = el)}
+            position={[s * 0.36, -0.02, 0.9]}
+            scale={0.7}
+            visible={false}
+          >
+            <sphereGeometry args={[0.05, 16, 16]} />
+            <meshStandardMaterial color="#bfe3ff" emissive="#9ecbff" emissiveIntensity={0.35} transparent opacity={0} roughness={0.1} metalness={0.2} />
+          </mesh>
+        ))}
+
+        {/* Goutte de sueur (peur/gêne) : perle sur la tempe droite, bien visible. */}
+        <group ref={sweatRef} position={[0.52, 0.5, 0.72]} visible={false}>
+          {/* Bulle ronde + petite pointe en haut (forme de goutte). */}
+          <mesh scale={[1, 1.15, 1]}>
+            <sphereGeometry args={[0.075, 18, 18]} />
+            <meshStandardMaterial color="#a9d8ff" emissive="#7fc0ff" emissiveIntensity={0.5} transparent opacity={0} roughness={0.05} metalness={0.3} />
+          </mesh>
+          <mesh position={[0, 0.09, 0]}>
+            <coneGeometry args={[0.04, 0.08, 14]} />
+            <meshStandardMaterial color="#a9d8ff" emissive="#7fc0ff" emissiveIntensity={0.5} transparent opacity={0} roughness={0.05} metalness={0.3} />
+          </mesh>
+        </group>
+
+        {/* Marque de colère (veine 💢) : trois traits rouges qui pulsent, tempe gauche. */}
+        <group ref={angerRef} position={[-0.55, 0.55, 0.62]} visible={false}>
+          {[0, 1, 2].map((i) => (
+            <mesh key={i} rotation={[0, 0, (i / 3) * Math.PI * 2]} position={[0, 0, 0]}>
+              <boxGeometry args={[0.02, 0.13, 0.02]} />
+              <meshStandardMaterial color="#ff2d55" emissive="#ff2d55" emissiveIntensity={0.6} transparent opacity={0} toneMapped />
+            </mesh>
+          ))}
+        </group>
 
         {/* Yeux — acteurs principaux de l'interaction */}
         <Eye side={-1} eyeball={lEye} irisMat={lIris} upperLid={lUp} lowerLid={lLow} />
         <Eye side={1} eyeball={rEye} irisMat={rIris} upperLid={rUp} lowerLid={rLow} />
 
-        {/* Lunettes de vue rondes (variante « Luminator ») */}
-        {glasses && (
-          <group position={[0, 0.07, 0.86]}>
-            {[-1, 1].map((s) => (
+        {/* Lunettes de vue rondes (variante « Luminator ») — montées en
+            permanence, affichées via .visible (voir useFrame). */}
+        <group ref={glassesRef} position={[0, 0.07, 0.86]} visible={glasses}>
+          {[-1, 1].map((s) => (
               <group key={s}>
                 {/* Cerclage rond */}
                 <mesh position={[s * 0.35, 0, 0.14]}>
@@ -504,13 +846,12 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
                 </mesh>
               </group>
             ))}
-            {/* Pont entre les deux verres */}
-            <mesh position={[0, 0.04, 0.14]} rotation={[0, 0, Math.PI / 2]}>
-              <cylinderGeometry args={[0.016, 0.016, 0.18, 10]} />
-              <meshStandardMaterial color="#23283c" roughness={0.3} metalness={0.5} />
-            </mesh>
-          </group>
-        )}
+          {/* Pont entre les deux verres */}
+          <mesh position={[0, 0.04, 0.14]} rotation={[0, 0, Math.PI / 2]}>
+            <cylinderGeometry args={[0.016, 0.016, 0.18, 10]} />
+            <meshStandardMaterial color="#23283c" roughness={0.3} metalness={0.5} />
+          </mesh>
+        </group>
 
         {/* Oreilles */}
         {[-1, 1].map((s) => (
@@ -518,6 +859,14 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
             <sphereGeometry args={[0.18, 24, 24]} />
             <meshStandardMaterial color={SKIN} roughness={0.5} metalness={0.05} />
           </mesh>
+        ))}
+
+        {/* Accessoires du casier (attachés à la tête → suivent les poses).
+            Tous montés, affichés via .visible (voir useFrame). */}
+        {PROP_NAMES.map((n) => (
+          <group key={n} ref={(el) => { propRefs.current[n] = el }} visible={propList.some((p) => p.name === n)}>
+            <Prop name={n} />
+          </group>
         ))}
       </group>
 
@@ -528,8 +877,10 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
       </mesh>
 
       {/* Petit ordinateur portable lumineux (variante « Bluminator ») : posé
-          devant, sous le menton — discret, jamais coupé au bord du cadre. */}
-      {laptop && <Laptop />}
+          devant, sous le menton. Monté en permanence, affiché via .visible. */}
+      <group ref={laptopRef} visible={laptop}>
+        <Laptop />
+      </group>
 
       {/* Halo orbital de particules (flux de pensée) */}
       <group ref={halo} rotation={[0.5, 0, 0]}>
@@ -612,18 +963,300 @@ function Laptop() {
   )
 }
 
-export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, laptop = false, speaking = false, interactive = true }: Props) {
+// Accessoires du « casier » de Blumi : petits objets amusants, en géométrie
+// simple (léger). Un seul à la fois, attaché à la tête (il suit les poses).
+function Prop({ name }: { name: PropName }) {
+  const GOLD = '#ffcf3f'
+  switch (name) {
+    case 'party-hat':
+      return (
+        <group position={[0.12, 1.05, 0]} rotation={[0, 0, -0.18]}>
+          <mesh position={[0, 0.4, 0]}>
+            <coneGeometry args={[0.44, 1.0, 32]} />
+            <meshStandardMaterial color="#ff5d8f" roughness={0.4} metalness={0.1} />
+          </mesh>
+          {/* Bandes décoratives */}
+          {[0.12, 0.42, 0.72].map((y) => (
+            <mesh key={y} position={[0, 0.1 + y, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[0.4 - y * 0.42, 0.028, 8, 32]} />
+              <meshStandardMaterial color={GOLD} roughness={0.4} metalness={0.3} />
+            </mesh>
+          ))}
+          {/* Pompon */}
+          <mesh position={[0, 0.94, 0]}>
+            <sphereGeometry args={[0.13, 16, 16]} />
+            <meshStandardMaterial color={GOLD} emissive={GOLD} emissiveIntensity={0.25} roughness={0.5} />
+          </mesh>
+        </group>
+      )
+    case 'grad-cap':
+      return (
+        <group position={[0, 1.02, 0]}>
+          <mesh position={[0, 0.06, 0]}>
+            <cylinderGeometry args={[0.3, 0.36, 0.2, 28]} />
+            <meshStandardMaterial color="#14142a" roughness={0.5} metalness={0.2} />
+          </mesh>
+          <mesh position={[0, 0.2, 0]} rotation={[0, 0.35, 0]}>
+            <boxGeometry args={[0.92, 0.05, 0.92]} />
+            <meshStandardMaterial color="#0e0e24" roughness={0.5} metalness={0.2} />
+          </mesh>
+          <mesh position={[0, 0.24, 0]}>
+            <sphereGeometry args={[0.05, 12, 12]} />
+            <meshStandardMaterial color={GOLD} metalness={0.6} roughness={0.3} />
+          </mesh>
+          {/* Gland (tassel) qui pend sur le côté */}
+          <mesh position={[0.32, 0.11, 0.32]}>
+            <cylinderGeometry args={[0.012, 0.012, 0.34, 8]} />
+            <meshStandardMaterial color={GOLD} metalness={0.5} roughness={0.4} />
+          </mesh>
+          <mesh position={[0.32, -0.08, 0.32]}>
+            <sphereGeometry args={[0.055, 10, 10]} />
+            <meshStandardMaterial color={GOLD} metalness={0.5} roughness={0.4} />
+          </mesh>
+        </group>
+      )
+    case 'crown':
+      return (
+        <group position={[0, 1.08, 0.02]}>
+          <mesh>
+            <cylinderGeometry args={[0.38, 0.4, 0.2, 28, 1, true]} />
+            <meshStandardMaterial color={GOLD} metalness={0.85} roughness={0.22} side={THREE.DoubleSide} />
+          </mesh>
+          {[0, 1, 2, 3, 4, 5].map((i) => {
+            const a = (i / 6) * Math.PI * 2
+            return (
+              <mesh key={i} position={[Math.sin(a) * 0.38, 0.19, Math.cos(a) * 0.38]}>
+                <coneGeometry args={[0.07, 0.22, 12]} />
+                <meshStandardMaterial color={GOLD} metalness={0.85} roughness={0.22} />
+              </mesh>
+            )
+          })}
+          {[0, 1, 2].map((i) => {
+            const a = (i / 3) * Math.PI * 2 + 0.5
+            return (
+              <mesh key={`j${i}`} position={[Math.sin(a) * 0.38, 0.02, Math.cos(a) * 0.38 + 0.02]}>
+                <sphereGeometry args={[0.05, 12, 12]} />
+                <meshStandardMaterial color="#ff4d6d" emissive="#ff4d6d" emissiveIntensity={0.4} roughness={0.2} />
+              </mesh>
+            )
+          })}
+        </group>
+      )
+    case 'lightbulb':
+      return (
+        <group position={[0, 1.72, 0.12]}>
+          <mesh>
+            <sphereGeometry args={[0.29, 24, 24]} />
+            <meshStandardMaterial color="#fff6cf" emissive="#ffdf80" emissiveIntensity={0.85} transparent opacity={0.92} toneMapped />
+          </mesh>
+          {/* Culot à vis */}
+          <mesh position={[0, -0.34, 0]}>
+            <cylinderGeometry args={[0.14, 0.14, 0.16, 16]} />
+            <meshStandardMaterial color="#b9bcc6" metalness={0.75} roughness={0.35} />
+          </mesh>
+          {[0, 1, 2].map((i) => (
+            <mesh key={i} position={[0, -0.29 - i * 0.05, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[0.14, 0.014, 8, 20]} />
+              <meshStandardMaterial color="#9a9da8" metalness={0.7} roughness={0.4} />
+            </mesh>
+          ))}
+        </group>
+      )
+    case 'pointer':
+      // Baguette de présentateur, tenue en bas à droite, pointant vers le contenu.
+      return (
+        <group position={[0.95, -0.5, 0.8]} rotation={[0, 0, 0.95]}>
+          <mesh>
+            <cylinderGeometry args={[0.028, 0.028, 1.8, 12]} />
+            <meshStandardMaterial color="#2a2a34" roughness={0.4} metalness={0.5} />
+          </mesh>
+          {/* Poignée dorée */}
+          <mesh position={[0, -0.82, 0]}>
+            <cylinderGeometry args={[0.05, 0.05, 0.28, 12]} />
+            <meshStandardMaterial color="#ffcf3f" metalness={0.6} roughness={0.3} />
+          </mesh>
+          {/* Embout rouge lumineux */}
+          <mesh position={[0, 0.94, 0]}>
+            <sphereGeometry args={[0.06, 16, 16]} />
+            <meshStandardMaterial color="#ff3b3b" emissive="#ff3b3b" emissiveIntensity={0.5} roughness={0.3} />
+          </mesh>
+        </group>
+      )
+    case 'magnifier':
+      return (
+        <group position={[1.0, -0.05, 0.9]} rotation={[0, 0, -0.5]}>
+          <mesh>
+            <torusGeometry args={[0.28, 0.045, 16, 40]} />
+            <meshStandardMaterial color="#c9ccd6" metalness={0.8} roughness={0.2} />
+          </mesh>
+          <mesh>
+            <circleGeometry args={[0.27, 32]} />
+            <meshStandardMaterial color="#bfe3ff" transparent opacity={0.32} roughness={0.05} metalness={0.1} side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, -0.52, 0]}>
+            <cylinderGeometry args={[0.045, 0.05, 0.52, 12]} />
+            <meshStandardMaterial color="#7a4a2a" roughness={0.6} metalness={0.1} />
+          </mesh>
+        </group>
+      )
+    case 'mic':
+      return (
+        <group position={[0.15, -0.62, 1.2]} rotation={[0.5, 0, -0.15]}>
+          <mesh position={[0, 0.28, 0]}>
+            <sphereGeometry args={[0.18, 20, 20]} />
+            <meshStandardMaterial color="#3a3a44" metalness={0.65} roughness={0.35} />
+          </mesh>
+          <mesh position={[0, -0.02, 0]}>
+            <cylinderGeometry args={[0.09, 0.1, 0.5, 16]} />
+            <meshStandardMaterial color="#1b1b26" metalness={0.5} roughness={0.4} />
+          </mesh>
+          <mesh position={[0, 0.13, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.11, 0.022, 8, 20]} />
+            <meshStandardMaterial color="#ffcf3f" metalness={0.6} roughness={0.3} />
+          </mesh>
+        </group>
+      )
+    case 'heart':
+      return (
+        <group position={[0.66, 1.02, 0.35]} scale={0.95}>
+          {[-1, 1].map((s) => (
+            <mesh key={s} position={[s * 0.13, 0.1, 0]}>
+              <sphereGeometry args={[0.16, 20, 20]} />
+              <meshStandardMaterial color="#ff3b6b" emissive="#ff3b6b" emissiveIntensity={0.35} roughness={0.3} />
+            </mesh>
+          ))}
+          <mesh position={[0, -0.13, 0]} rotation={[Math.PI, 0, 0]}>
+            <coneGeometry args={[0.27, 0.36, 24]} />
+            <meshStandardMaterial color="#ff3b6b" emissive="#ff3b6b" emissiveIntensity={0.35} roughness={0.3} />
+          </mesh>
+        </group>
+      )
+    case 'trophy':
+      return (
+        <group position={[0.98, -0.05, 0.7]} scale={0.85}>
+          {/* Coupe */}
+          <mesh position={[0, 0.26, 0]}>
+            <cylinderGeometry args={[0.22, 0.12, 0.32, 24]} />
+            <meshStandardMaterial color={GOLD} metalness={0.85} roughness={0.2} />
+          </mesh>
+          {/* Anses */}
+          {[-1, 1].map((s) => (
+            <mesh key={s} position={[s * 0.27, 0.3, 0]} rotation={[0, 0, s * Math.PI / 2]}>
+              <torusGeometry args={[0.1, 0.025, 10, 20, Math.PI]} />
+              <meshStandardMaterial color={GOLD} metalness={0.85} roughness={0.2} />
+            </mesh>
+          ))}
+          {/* Pied + socle */}
+          <mesh position={[0, 0.03, 0]}>
+            <cylinderGeometry args={[0.045, 0.045, 0.16, 12]} />
+            <meshStandardMaterial color={GOLD} metalness={0.85} roughness={0.2} />
+          </mesh>
+          <mesh position={[0, -0.09, 0]}>
+            <cylinderGeometry args={[0.14, 0.17, 0.09, 20]} />
+            <meshStandardMaterial color="#e0a92e" metalness={0.7} roughness={0.3} />
+          </mesh>
+          {/* Étoile lumineuse */}
+          <mesh position={[0, 0.28, 0.22]}>
+            <circleGeometry args={[0.07, 5]} />
+            <meshStandardMaterial color="#fff6cf" emissive="#ffe08a" emissiveIntensity={0.5} toneMapped />
+          </mesh>
+        </group>
+      )
+    case 'rocket':
+      return (
+        <group position={[0.95, -0.2, 0.7]} rotation={[0, 0, -0.5]} scale={0.85}>
+          {/* Corps */}
+          <mesh>
+            <cylinderGeometry args={[0.14, 0.14, 0.5, 20]} />
+            <meshStandardMaterial color="#eef2ff" metalness={0.3} roughness={0.4} />
+          </mesh>
+          {/* Nez */}
+          <mesh position={[0, 0.36, 0]}>
+            <coneGeometry args={[0.14, 0.28, 20]} />
+            <meshStandardMaterial color="#ff5d5d" metalness={0.3} roughness={0.4} />
+          </mesh>
+          {/* Hublot */}
+          <mesh position={[0, 0.07, 0.145]}>
+            <circleGeometry args={[0.06, 18]} />
+            <meshStandardMaterial color="#8fd0ff" emissive="#8fd0ff" emissiveIntensity={0.35} toneMapped />
+          </mesh>
+          {/* Ailerons */}
+          {[-1, 1].map((s) => (
+            <mesh key={s} position={[s * 0.15, -0.24, 0]} rotation={[0, 0, s * 0.5]}>
+              <boxGeometry args={[0.1, 0.17, 0.03]} />
+              <meshStandardMaterial color="#ff5d5d" metalness={0.3} roughness={0.4} />
+            </mesh>
+          ))}
+          {/* Flamme */}
+          <mesh position={[0, -0.42, 0]} rotation={[Math.PI, 0, 0]}>
+            <coneGeometry args={[0.1, 0.26, 16]} />
+            <meshStandardMaterial color="#ffb020" emissive="#ff7a00" emissiveIntensity={0.85} toneMapped />
+          </mesh>
+        </group>
+      )
+    case 'star':
+      return (
+        <group position={[0.66, 1.05, 0.35]} rotation={[0, 0, 0]} scale={1}>
+          <mesh>
+            <circleGeometry args={[0.24, 5]} />
+            <meshStandardMaterial color="#ffe14d" emissive="#ffd21f" emissiveIntensity={0.55} toneMapped side={THREE.DoubleSide} />
+          </mesh>
+          <mesh rotation={[0, 0, Math.PI]} position={[0, 0, -0.01]}>
+            <circleGeometry args={[0.24, 5]} />
+            <meshStandardMaterial color="#ffe14d" emissive="#ffd21f" emissiveIntensity={0.55} toneMapped side={THREE.DoubleSide} />
+          </mesh>
+        </group>
+      )
+    case 'fire':
+      return (
+        <group position={[0.66, 0.95, 0.4]}>
+          {[
+            { c: '#ff7a00', s: 1, y: 0 },
+            { c: '#ffb020', s: 0.7, y: 0.06 },
+            { c: '#ffe14d', s: 0.4, y: 0.12 },
+          ].map((f, i) => (
+            <mesh key={i} position={[0, f.y, i * 0.01]} scale={[f.s, f.s * 1.4, f.s]}>
+              <coneGeometry args={[0.16, 0.4, 16]} />
+              <meshStandardMaterial color={f.c} emissive={f.c} emissiveIntensity={0.7} toneMapped />
+            </mesh>
+          ))}
+        </group>
+      )
+    case 'coin':
+      return (
+        <group position={[0.72, -0.05, 0.65]} rotation={[0, 0.2, 0]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.26, 0.26, 0.055, 30]} />
+            <meshStandardMaterial color={GOLD} metalness={0.9} roughness={0.2} />
+          </mesh>
+          {/* Liseré + étoile gravée lumineuse (face caméra) */}
+          <mesh position={[0, 0, 0.03]}>
+            <ringGeometry args={[0.2, 0.24, 30]} />
+            <meshStandardMaterial color="#e0a92e" metalness={0.8} roughness={0.3} side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, 0, 0.031]}>
+            <circleGeometry args={[0.13, 5]} />
+            <meshStandardMaterial color="#fff6cf" emissive="#ffe08a" emissiveIntensity={0.45} toneMapped />
+          </mesh>
+        </group>
+      )
+    default:
+      return null
+  }
+}
+
+export default function RobotAvatar({ state, mood = 'neutral', active = true, glasses = false, laptop = false, speaking = false, interactive = true, capture = false, staticGaze = false, pose, prop, props, bodyScale, accessoryRef }: Props) {
   usePointerTracking()
   return (
     <Canvas
       // 'demand' : rend une frame au montage puis s'arrête (figé) ; 'always' anime.
       frameloop={active ? 'always' : 'demand'}
       dpr={[1, 2]}
-      gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
+      gl={{ alpha: true, antialias: true, powerPreference: 'high-performance', preserveDrawingBuffer: capture }}
       camera={{ position: [0, 0.02, 4.9], fov: 30 }}
       style={{ background: 'transparent' }}
     >
-      <Face state={state} mood={mood} glasses={glasses} laptop={laptop} speaking={speaking} interactive={interactive} />
+      <Face state={state} mood={mood} glasses={glasses} laptop={laptop} speaking={speaking} interactive={interactive} staticGaze={staticGaze} pose={pose} prop={prop} props={props} bodyScale={bodyScale} accessoryRef={accessoryRef} />
       {/* Environnement studio généré localement (aucun téléchargement réseau). */}
       <Environment resolution={128}>
         <Lightformer intensity={0.8} position={[0, 1, 4]} scale={[10, 8, 1]} color="#ffffff" />

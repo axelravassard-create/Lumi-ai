@@ -117,6 +117,14 @@ pédagogique.
   prêts à l'emploi), ciblé sur sa profession + ses compétences. Garde aussi le
   coaching (reconversion, compétences, etc.).
 - **Streaming** (la bouche bouge pendant qu'il parle).
+- **Expression réactive au fil de la conversation** (`detectChatPose()`) : le visage
+  de Blumi dans l'en-tête du chat change selon **la façon dont l'utilisateur parle**
+  (empathie) et reflète sa propre émotion quand il l'exprime — heuristique légère
+  (emoji + mots-clés FR/EN) → `pose` passée à `<Avatar>` (triste/inquiet → `concerned`,
+  content → `happy`, surpris → `surprised`, salutation → `greet`, question →
+  `thinking`). ⚠️ Les regex à classes d'emoji DOIVENT porter le drapeau `u` (sinon
+  la demi-surrogate partagée `\uD83D` fait matcher n'importe quel emoji sur la 1re
+  branche).
 - **Crash de l'API géré** : `describeError()` (`llm.ts`) traduit les pannes
   (`InternalServerError`/5xx, `APIConnectionError`, surcharge…) en messages clairs
   dans le chat (« Le service IA est momentanément indisponible. Réessaie dans un
@@ -246,6 +254,251 @@ pédagogique.
 ## Moteur — `src/lib/engine.ts` / `src/lib/professions.ts`
 - Score heuristique sur 7 facteurs ; ~242 métiers. Le compteur de l'accueil affiche
   `PROFESSIONS.length`.
+
+## Studio de clips viraux — route `#/studio` (`src/components/studio/`)
+- **Responsive** : `ClipStudio` empile verticalement sur mobile (aperçu `h-[46vh]` +
+  transport + timeline, puis panneaux pleine largeur défilables) et repasse côte à
+  côte en `lg:` (aside `w-[340px]`). En-tête compact (labels masqués `< sm`).
+- **Export iPhone** : sur iOS (`isIOS()`), `exportClip` reçoit `includeAudio:false`
+  → **vidéo SEULE, sans piste audio** (l'ajout d'une piste audio Web Audio à un flux
+  canvas fait échouer MediaRecorder sur iOS). L'enregistrement utilise `rec.start(500)`
+  (timeslice) + `requestData()` avant `stop()` + garde anti-fichier vide (`size===0`
+  → throw) pour ne plus produire de MP4 0 octet. Si `canvas.captureStream` est
+  vraiment absent → throw capté par `runExport` → message clair (pas de plantage).
+  ⚠️ Dépend du support WebKit de `captureStream` (OK iOS récent) ; SFX/voix jamais
+  dans l'export (musique seulement, et pas sur iOS).
+- **Outil PRIVÉ (mono-utilisateur)** pour produire des shorts verticaux (9:16) :
+  vidéo de fond importée + cinématique animée par-dessus (Blumi débarque, scanne le
+  métier, révèle un score choc, puis Blumiman donne la solution), export MP4.
+- **Architecture déterministe** (aperçu == export, image par image) :
+  `src/lib/studio/timeline.ts` `evalFrame(project, t) → Frame` (état visuel complet à
+  l'instant t, aucun recours à l'horloge réelle). `src/lib/studio/render.ts`
+  `renderOverlay(ctx, frame, …)` dessine TOUS les overlays 2D (hook karaoké, faisceau
+  de scan, jauge+compteur %, cartes d'action, CTA, watermark, safe-zones) — code de
+  rendu **partagé** entre l'aperçu et l'export.
+- **3 couches composées** dans un canvas maître 1080×1920 : vidéo de fond (crop 9:16
+  via `coverRect`) → **avatar WebGL capturable** (`RobotAvatar capture` =
+  `preserveDrawingBuffer`, rendu hors-vue puis `drawImage` dans le maître) → overlays
+  2D. Voir `StudioPreview.tsx` (le seul `drawFrame(t)`, réutilisé par l'export).
+- **Beats** (7, déplaçables/redimensionnables via `Timeline.tsx`) : hook / scan /
+  verdict / pivot / glowup / solution / cta. Le glow-up transforme Blumi → palier
+  choisi (`character.tier` : lunettes Blumiman, +ordi Bluminator). Presets dans
+  `library.ts` (Doom→Glow-up, POV analyse, Tier list) + bibliothèque de HOOKS/CTA.
+- **Métier & score** : autocomplétion sur `PROFESSIONS`, score auto via
+  `analyze().currentRisk`, override manuel. `{METIER}`/`{SCORE}` injectés partout.
+- **Audio** (`audio.ts`) : SFX synthétisés Web Audio (pop/riser/sting/shimmer/whoosh)
+  calés sur les beats + voix off TTS FR (`tts.ts`) + musique importée. ⚠️ **Déblocage
+  audio** (`unlockStudioAudio()`) appelé au 1er geste (pointerdown/touchstart/keydown)
+  ET dans `play()` : réveille le contexte + joue un buffer muet → sinon les
+  bruitages/musique restent MUETS sur iPhone (politique d'autoplay). ⚠️ La voix
+  TTS (SpeechSynthesis) n'est PAS routable dans Web Audio → jouée à l'aperçu mais
+  **absente du MP4 exporté** ; emplacement prévu pour brancher une voix API (buffer
+  mixable) dans `tts.ts`.
+  - **Musique réglable** (`AudioCfg.musicStart`/`musicFrom`/`musicTo`) : `musicStart`
+    = départ DANS le morceau (quelle partie jouer), `musicFrom`/`musicTo` = fenêtre
+    de lecture DANS la vidéo (0 = jusqu'à la fin). `musicGain()` (volume+fenêtre+
+    fondus+ducking) pilote `<audio>.volume` — appliqué dans `drawFrame` donc valable
+    à l'aperçu ET à l'export ; `syncMusicPlayback()` pilote lecture/position/offset
+    chaque frame (aperçu + boucle d'export). ⚠️ À l'export, le gain Web Audio de la
+    musique est à 1 (le niveau est porté par `<audio>.volume`, pas de double
+    application). Persistée dans le projet (l'URL du média, elle, n'est pas persistée).
+- **Export** (`export.ts`) : `captureStream(30)` + `MediaRecorder` avec piste audio
+  (musique+SFX mixés). ⚡ `pickMime()` tente **`video/mp4` en premier** → sur Safari
+  (et Chromium récent) l'enregistrement sort **directement en MP4**, donc AUCUNE
+  conversion (0→98 % = enregistrement, pas de blocage). Sinon (WebM) conversion
+  WebM→MP4 via **ffmpeg.wasm** (preset `ultrafast`, CDN unpkg→jsdelivr, **timeout
+  300 s → repli WebM** pour ne jamais rester figé). Multi-projets en `localStorage`
+  (`blumi.studio.*`), médias (object-URLs) non persistés. Cover PNG exportable.
+  **Auto-save** (ClipStudio) : chaque modif du projet est enregistrée (debounce
+  700 ms via `saveProject`) + à `pagehide`/`visibilitychange` → aucun travail perdu
+  au rechargement (seuls les MÉDIAS sont à ré-importer). Pastille « ✓ Enregistré /
+  ⤳ Auto » dans l'en-tête ; `loadCurrent()` restaure au montage.
+- **Idées à partir de l'actu IA** (onglet « Idées », `IdeasPanel` + `src/lib/studio/ideas.ts`
+  + `generateReelIdeas` dans `llm.ts`) : Claude (Sonnet + `web_search_20260209`) cherche
+  une **info IA récente** impactant un métier et en tire un concept de réel (info +
+  source + métier + hook + format + légende). **« Idée du jour »** mise en cache
+  localStorage (`blumi.studio.idea.<YYYY-MM-DD>`, 1/jour, pour publier 1 clip/jour) +
+  bouton « 3 idées de plus ». `applyIdea()` applique au projet (métier + score
+  recalculé via `analyze`, hook, preset déduit du format). Gaté sur `aiReady()`
+  (message si l'IA n'est pas active). Pattern calqué sur `generateSectorTrend`.
+- **Communication réseaux** (`src/lib/studio/social.ts` + onglet « Réseaux »,
+  `SocialPanel`) : à partir du métier/score/hook/CTA du projet, génère la **légende
+  prête à coller** (ton adapté : TikTok/Reels/Shorts punchy, LinkedIn pro, X court),
+  les **hashtags** (base + tag métier via `metierTag`), le **format conseillé**
+  (ratio/durée/cadence/créneau) et les **bonnes pratiques** par plateforme, plus des
+  **angles de contenu** (`ANGLES`) applicables en 1 clic (preset + hook). Ferme la
+  boucle production → publication. ⚠️ Playbook (durées, créneaux, cadence, tips,
+  nb de hashtags) **calé sur des benchmarks 2026** (`SOCIAL_2026`, `SOURCES_2026`
+  affichés dans l'UI) : complétion ~70 %, Social SEO > hashtags (3–5 max, légende +
+  texte à l'écran riches en mots-clés), audio original reboosté, 1re heure décisive.
+- **Regard caméra** : dans le studio, `RobotAvatar staticGaze` fixe le regard vers
+  la caméra (micro-vie) au lieu de suivre le curseur → l'export ne montre plus
+  Blumi loucher vers la souris.
+- **Raccourcis** (ClipStudio) : Espace = lecture/pause, ←/→ = image (±0,1 s ; ±1 s
+  avec Maj), Début = t0 ; + boutons ⏪/⏩ de pas image par image.
+- **Blumi caché dans les trous** : `evalFrame` calcule `frame.avatarAlpha` (fondu 0,18 s
+  aux bords) ; si l'instant `t` n'est dans AUCUN moment actif (trou de timeline),
+  `avatarAlpha=0` → `StudioPreview` ne dessine pas l'avatar, ET `renderOverlay`
+  efface aussi la **vignette** + le **watermark** (proportionnels à `a=avatarAlpha`)
+  → dans un trou, fond 100 % nu (seuls restent les repères d'édition, hors export).
+- **Durée liée aux moments** : `project.autoDuration` (défaut true) → `normalizeDuration()`
+  fixe `duration` = fin du dernier moment actif. Toute édition passe par `applyProject`
+  (ClipStudio) qui normalise. La `Timeline` affiche avec une **marge à droite** (`span`
+  = `max(duration,lastEnd)*1.12`) découplée de `duration` pour pouvoir étirer le
+  dernier moment. Bascule dans l'onglet Format (sinon curseur manuel 8–40 s).
+- **Moments activables** : chaque beat a `enabled?: boolean` (onglet « Moments »,
+  `BeatsPanel`). Un beat désactivé est ignoré par `windows()`/`activeBeat()` (aucun
+  overlay ni transition — ex. retirer le pivot). Bouton « Compacter »
+  (`compactBeats`) resserre les moments actifs bout à bout et ajuste `duration` ;
+  les moments masqués sont parqués à la fin. Réglage numérique **Début** (position,
+  `setBeatStart`, libre) + **Durée** (`setBeatDur`, ripple sur les suivants) par
+  moment (−/+ 0,25 s + saisie exacte) → déplacer un moment dans le temps sans le
+  glisser sur la timeline (pratique au doigt).
+- **Voix off éditable + multi-voix** (onglet Audio) : `audio.voiceName` = voix TTS
+  globale (liste via `tts.listVoices()`, dépend du navigateur/OS) ; `script.vo`
+  (`Partial<Record<BeatKind, {text?,voice?}>>`) permet d'**éditer le texte dit par
+  réplique** (ajout/suppression de mots, vide = muet, « ↺ auto » = revient au texte
+  dérivé) et d'assigner une **voix différente par réplique**. `voiceLineFor(phase, s)`
+  résout override→auto ; `speak(text, rate, vol, voiceName?)`. `StudioPreview` cale la
+  voix off sur les beats actifs (ignore les beats désactivés). ⚠️ La voix est
+  **queue** (non annulée entre beats) → si un moment est plus court que sa réplique,
+  la voix est coupée/décalée. `tts.estimateSpeechSec(text, rate)` (~2,6 mots/s FR)
+  estime la durée parlée ; l'onglet Audio affiche `est/dur` + ⚠️ si ça déborde, et
+  le bouton « Caler la durée » (`projects.fitToVoice`) allonge chaque moment actif à
+  la durée parlée (jamais en dessous du visuel voulu) + reflow + ajuste `duration`.
+- **Réglages fins** : humeur du perso manuelle (`character.mood`, sinon `auto` par
+  beat) + vraies entrées `pop`/`slide`/`zoom` (transforme `avatarScale`/`avatarDX/DY`
+  dans le `Frame`) ; écoute TTS par réplique (bouton 🔊) ; **ducking** auto (la
+  musique baisse quand `frame.speaking`) ; **tempo** (`project.tempo` : grille BPM +
+  aimantation des beats) ; **7 facteurs** du métier affichés ; **timing manuel** des
+  captions (`caption.timing/offset/pace`) ; **file multi-métiers** (onglet File →
+  export en lot, un clip par métier). ⚠️ `projects.ts` `migrate()` complète les
+  projets enregistrés avant l'ajout de ces champs.
+- Deps ajoutées : `@ffmpeg/ffmpeg`, `@ffmpeg/util`.
+- **Deux formats de reel** (`project.mode: 'cinematic' | 'presentation'`, onglet
+  « Reel ») :
+  - **Cinématique** (défaut) = les 7 beats Doom→Glow-up décrits ci-dessus.
+  - **Présentation** (« 1 jour, 1 info sur ton métier ») = Blumi enchaîne des
+    **poses** en parlant devant des **fonds qui défilent** comme un diaporama ;
+    le texte s'écrit **au fil de la voix** (karaoké). Modèle : `PresentationModel`
+    (`src/lib/studio/types.ts` : `title`/`showTitle`, `segments: PresSegment[]`,
+    `backgrounds: PresBackground[]`). Une **diapo** (`PresSegment`) = une pose +
+    un fond (`bgId`) + un texte dit + `dur` réglable ; les diapos sont **packées
+    bout à bout** (ordre du tableau) → « déplacer dans le temps » = réordonner +
+    régler la durée (pas de start libre). Moteur déterministe **`evalPresentation`**
+    (`src/lib/studio/presentation.ts`) → `PresFrame` (pose, karaoké mot à mot,
+    fondu de diapo `bgFade`, présence `avatarAlpha`) ; rendu **`renderPresentation`**
+    (`render.ts`) : bandeau titre + sous-titre karaoké + watermark ; `StudioPreview`
+    compose fond(s) image (fondu) + **personnage posé** (prop `pose` sur
+    `RobotAvatar`/`Avatar`) + overlays. **Modèles rapides** (`PRES_TEMPLATES` +
+    `applyTemplate`) : 4 structures virales prêtes (Info choc, Astuce express,
+    Avant/Après, Top 3) qui remplacent les diapos avec poses/textes/objets/bruitages
+    adaptés. Panneau **`PresentationPanel`** : bascule
+    de format, titre, gestion des fonds (images, non persistées), éditeur de diapos
+    (pose via `POSE_LIST` — **18 poses**, texte, fond, voix par diapo, durée,
+    **personnage** `tier` blumi/blumiman/bluminator via `TIER_LIST`, **position**
+    dans la scène `x`/`y` (-1..1, sliders), **apparition** `entrance` via
+    `ENTRANCE_LIST` (direct/fondu/pop/zoom/par le bas/depuis la gauche-droite),
+    réordonner/dupliquer/supprimer, « ⏱️ Caler sur la voix » = `fitPresentationToVoice`)
+    + bandeau de diapos `PresentationStrip` sous l'aperçu (la `Timeline` de beats
+    est masquée en présentation).
+    - **Personnage par diapo** (`PresSegment.tier`) : `tierOf(seg)` → lunettes
+      (blumiman) / +ordi (bluminator) ; le laptop coexiste avec les poses (la pose
+      garde la main sur le regard/la tête, le laptop n'ajoute que le mesh + scale 0.8).
+    - **Transition** (`PresSegment.entrance`) jouée au début de la diapo
+      (`ENTRANCE_DUR` ≈ 0,5 s) : `evalPresentation` produit `avatarScale`/`avatarDX`/
+      `avatarDY` (+ fondu sur `avatarAlpha`), consommés par `presAvatarRect(project, f,…)`.
+      L'utilisateur **choisit par diapo** : `glide` = déplacement **fluide** de la
+      position/profondeur depuis la diapo précédente (`MOVE_DUR` ≈ 0,6 s, `easeInOut`,
+      même si Blumi change complètement d'endroit) ; `none` = **coupe franche**
+      (position instantanée) ; ou une apparition dédiée (fondu/pop/zoom/bord).
+      Défaut des nouvelles diapos = `glide`.
+    - **Position** (`PresSegment.x`/`y`) → `posX`/`posY` dans le `PresFrame`,
+      appliqués par `presAvatarRect` (placement de Blumi dans la scène). La
+      **profondeur** (`PresSegment.z`, -1..1) → `posScale` (loin/petit ↔
+      proche/grand, échelle 0,45..1,7) multiplie l'échelle dans `presAvatarRect`.
+    - **Casier d'objets** (`PresSegment.props` — **plusieurs à la fois**, `segProps()`
+      + rétrocompat mono `prop` ; `PROP_LIST`, `toggleProp`, composant `Prop` dans
+      `RobotAvatar`) : 13 accessoires 3D (pointeur, loupe, ampoule, micro, chapeau,
+      toque, couronne, cœur, trophée, fusée, étoile, feu, pièce) attachables par
+      diapo, **cumulables**, et **déplaçables/redimensionnables par rapport à Blumi**
+      (`PresSegment.propPos[name] = {dx,dy,scale}`, `setPropPos`, `segPropPlacements`
+      → `PropPlacement[]` dans `AvatarLiveState.props` ; le groupe de l'objet est
+      décalé/scalé dans `useFrame`). Fond animé **Ken Burns** (zoom/pan lent,
+      `bgZoom`/`bgPanX` déterministes). Présence d'objet(s) ⇒ `PROP_ZOOM`
+      (0,62) réduit le perso dans son canvas (marge) et `presAvatarRect` compense
+      (`1/PROP_ZOOM`) → tête à taille constante, zoom **constant sur toute la
+      présentation** (aucun à-coup). Fond **importable par diapo** (bouton ＋ →
+      `addBackgroundToSegment`).
+    - ⚠️ **Fiabilité du perso (canal impératif)** : en rendu continu, R3F ne
+      réconcilie PAS de façon fiable les props du personnage (lunettes/ordi/objet
+      restaient affichés au changement). Le studio pilote donc l'avatar via
+      `accessoryRef` (type `AvatarLiveState` : glasses/laptop/prop/pose/mood/
+      speaking), mis à jour **chaque frame** dans `drawFrame`/`drawPresentationFrame`
+      depuis la frame déterministe ; `RobotAvatar` monte tous les accessoires en
+      permanence et bascule leur `.visible` dans `useFrame` en lisant ce ref.
+      `StudioPreview` recompose le maître **en continu** à l'arrêt (`settle` boucle
+      tant qu'on est en pause) → l'aperçu figé reflète toujours l'état vivant.
+    - **Voix expressive** (`presProsody(seg, project)`) : hauteur (`pitch`) + débit
+      (`rate`) dérivés de la **pose** (`POSE_PROSODY`) et de la **ponctuation**
+      (! plus vif, ? plus haut, … plus posé) → la voix « colle » à l'émotion de la
+      pose (moins robotique). `speak()` accepte désormais un paramètre `pitch`. ⚠️ Aperçu figé : `settle()` recompose le maître
+    ~1 s pour voir la **transition de pose même à l'arrêt** (le canvas WebGL du
+    perso rend en continu mais le maître ne se redessine qu'une fois au scrub).
+    Voix off calée **par diapo**. **Bruitages par diapo** (`PresSfxCue`
+    `{segId,at,kind}` dans `PresentationModel.sfx`, `SFX_LIST` = 11 SFX synthétisés
+    Web Audio pop/whoosh/riser/sting/shimmer/applause/ding/heartbeat/coin/boing/drumroll) : l'utilisateur ajoute un
+    bruitage sur une diapo et le **positionne dans le temps** (`at` = offset depuis
+    le début de la diapo → suit la diapo si déplacée). `presSfxMarkers()` résout en
+    temps absolus ; planifiés à l'aperçu (boucle de lecture) ET à l'export via
+    `scheduleMarkers()` (gaté sur `audio.sfx`, volume `audio.sfxVolume`).
+    `normalizeDuration`/`migrate` gèrent le champ `presentation`.
+    - **Effets d'écran par diapo** (`PresFxCue` `{segId,at,dur,kind}` dans
+      `PresentationModel.fx`, `FX_LIST` = 6 effets : 🌑 fondu noir / ⚡ flash /
+      🌫️ flou / 📳 secousse / 🎬 vignette / ⚫ noir & blanc) : posés sur une diapo,
+      **positionnés dans le temps** (`at` offset depuis le début de la diapo) +
+      **durée réglable** (`dur`). L'éditeur expose Début (`at`) et Durée (`dur`)
+      avec steppers −/+. `computeFx(project,t)` agrège les cues actifs en `ScreenFx`
+      (`{black,white,blur,shake,vignette,gray}` 0..1) porté par `PresFrame.fx` ;
+      enveloppe temporelle `fxEnv` (flash = pic puis fondu, autres = trapèze bords
+      doux). Rendu dans `StudioPreview.drawPresentationFrame` : **secousse** =
+      translate aléatoire de la scène, **flou** + **noir & blanc** = scène rendue
+      dans un canvas hors-écran (`fxCanvasRef`) recomposée avec
+      `ctx.filter='blur(Npx) grayscale(N)'` (cumulables) + léger sur-cadrage (pas
+      de bords sombres), **fondu noir/flash blanc** = `fillRect` plein écran
+      par-dessus TOUT (y compris overlays), **vignette** = dégradé radial
+      assombrissant les bords. Le flou/la secousse/le noir & blanc n'affectent que
+      la scène (fond + perso) → les overlays (titre, karaoké) restent nets et en
+      couleur. S'appliquent à l'aperçu ET à l'export (partagent `drawFrame`). CRUD
+      `addFxCue`/`removeFxCue`/`updateFxCue`/`fxCuesForSegment` ; éditeur « 🎞️
+      Effets d'écran » dans `SegmentCard` (calqué sur les bruitages). Défaut de
+      durée par effet via `fxDefaultDur`. `migrate`/`defaultPresentation` posent
+      `fx: []`.
+- **Système de poses** (`RobotAvatar.tsx` : `PoseName`, `POSES`, prop `pose`) :
+  23 poses interpolées image par image (yaw/pitch/roll, sourcils, ouverture des
+  yeux, clin d'œil, humeur, position, échelle, bouche) → transitions naturelles.
+  Quand `pose` est fourni, le regard/la tête suivent la pose (override du suivi
+  curseur) et l'humeur = celle de la pose. Réutilisable hors studio.
+- **Expressions du visage (traits marqués)** (`RobotAvatar.tsx`) : chaque pose ET
+  chaque humeur portent des `ExprTraits` `{smile, browIn, blush, tear, sweat, anger}`
+  interpolés en douceur (ref `ec`) pour renforcer fortement l'émotion, au-delà des
+  yeux/tête :
+  - **Bouche morphable** : reconstruite chaque frame (`buildMouthGeometry(smile,
+    open)`, `ShapeGeometry` d'une lentille) → **sourire** (coins relevés, centre
+    bas) ↔ **moue** (coins bas) ↔ **bouche ouverte** (parole/surprise). Rebuild
+    quantifié (≈32 pas) pour la perf. Remplace l'ancienne capsule statique.
+  - **Sourcils inclinables** : `browIn>0` = extrémité INTERNE relevée (triste/
+    inquiet, forme `/\`), `<0` = abaissée (colère, forme `\/`) via `rotation.z` par
+    sourcil ; la hauteur reste pilotée par `brow`.
+  - **Traits ajoutés** (meshes montés en permanence, `.visible`/opacité pilotés en
+    `useFrame`) : **joues rouges** (`blush`, joie/amour/timidité), **larmes**
+    (`tear`, glissent en boucle, tristesse), **goutte de sueur** (`sweat`, perle sur
+    la tempe, peur), **veine de colère 💢** (`anger`, 3 traits rouges qui pulsent).
+  - **Nouvelles poses émotion** dans `POSE_LIST` : 😂 Rigole (`laugh`), 😍 Adore
+    (`love`), 😨 Peur (`afraid`), 😢 Triste (`sad`), 😠 En colère (`angry`) — avec
+    prosodie TTS dédiée (`POSE_PROSODY`). Hors studio, `moodExpr(mood)` dérive une
+    expression de repos (calm = sourire+joues, concerned = moue+sourcils inquiets).
+  - La réaction « tapote » ajoute sourire + joues rouges (`patDelight`).
 
 ## Conformité / légal
 - Pages : `src/components/LegalScreen.tsx` (routes `#/legal/mentions|confidentialite|cgu`),

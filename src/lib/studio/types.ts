@@ -1,0 +1,318 @@
+// Modèle de données du Studio de clips viraux Blumi.
+// Tout est sérialisable (localStorage / export projet) : aucune fonction, aucun
+// objet non-JSON. Les URLs de médias sont des object-URLs recréées à l'import.
+import type { AvatarMood, PoseName, PropName } from '../../components/avatar/RobotAvatar'
+import type { SfxKind } from './audio'
+
+export type Fmt = '9:16' | '1:1' | '16:9'
+
+// Deux formats de reel : la cinématique virale (Doom→Glow-up, 7 beats) et le
+// mode « présentation » (« 1 jour une info sur ton métier ») où Blumi enchaîne
+// des poses en parlant devant des fonds qui défilent comme un diaporama.
+export type StudioMode = 'cinematic' | 'presentation'
+
+// Quand un accessoire (« casier ») est attaché au personnage, on réduit
+// l'ensemble dans son canvas pour laisser de la marge (chapeau au-dessus,
+// pointeur sur le côté) sans rien couper ; le compositing du studio compense
+// (cf. `presAvatarRect`) → la tête garde sa taille. Partagé entre le rendu 3D
+// (RobotAvatar) et le compositing (render.ts) pour rester en phase.
+export const PROP_ZOOM = 0.62
+export type CaptionStyle = 'tiktok' | 'hormozi' | 'neon'
+export type AvatarTier = 'blumi' | 'blumiman' | 'bluminator'
+
+// Les 7 « beats » de la cinématique. Ordre = déroulé du clip.
+export type BeatKind = 'hook' | 'scan' | 'verdict' | 'pivot' | 'glowup' | 'solution' | 'cta'
+export const BEAT_ORDER: BeatKind[] = ['hook', 'scan', 'verdict', 'pivot', 'glowup', 'solution', 'cta']
+
+// Cadrage 9:16 de la vidéo de fond : zoom + décalage (fraction -1..1 du débord).
+export interface Crop {
+  zoom: number
+  x: number
+  y: number
+}
+
+export interface Background {
+  name: string
+  url: string
+  trimIn: number
+  trimOut: number
+  duration: number
+  crop: Crop
+  volume: number
+}
+
+export interface ActionCard {
+  icon: string
+  text: string
+}
+
+// Contenu éditable de la cinématique (le métier s'injecte via {METIER}/{SCORE}).
+// Réglage de la voix off pour un beat : texte dit (override) + voix (override).
+export interface VoiceLine {
+  text?: string // ce que la voix DIT (si absent : dérivé du script/on-screen)
+  voice?: string // nom de la voix (si absent : voix globale)
+}
+
+export interface ScriptModel {
+  metier: string
+  score: number
+  level: string
+  hook: string
+  hookB: string
+  abTest: boolean
+  scanLabel: string
+  verdictLabel: string
+  pivot: string
+  actions: ActionCard[]
+  cta: string
+  // Voix off personnalisée par moment (texte et/ou voix). Vide = auto.
+  vo?: Partial<Record<BeatKind, VoiceLine>>
+}
+
+// Un beat placé sur la timeline : déplaçable / redimensionnable / activable.
+export interface BeatDef {
+  id: BeatKind
+  start: number
+  dur: number
+  enabled?: boolean // undefined = actif ; false = moment retiré du clip
+}
+
+export interface CaptionCfg {
+  enabled: boolean
+  style: CaptionStyle
+  posY: number // 0..1 (part de la hauteur, dans la safe-zone basse)
+  scale: number
+  timing: 'auto' | 'manual'
+  offset: number // décalage manuel (s) : - = plus tôt, + = plus tard
+  pace: number // vitesse de défilement des mots (1 = cale sur le beat)
+}
+
+export interface AudioCfg {
+  voice: boolean
+  voiceName: string // voix TTS globale (nom SpeechSynthesis) ; '' = auto FR
+  voiceVolume: number
+  voiceRate: number
+  musicUrl: string
+  musicName: string
+  musicVolume: number
+  musicStart: number // départ dans le morceau (s) : quelle partie de la musique jouer
+  musicFrom: number // instant de la vidéo où la musique démarre (s)
+  musicTo: number // instant de la vidéo où la musique s'arrête (s) ; 0 = jusqu'à la fin
+  sfx: boolean
+  sfxVolume: number
+  duck: boolean
+}
+
+export interface CharacterCfg {
+  tier: AvatarTier
+  scale: number
+  x: number // -1..1
+  y: number // -1..1
+  entrance: 'pop' | 'slide' | 'zoom'
+  mood: AvatarMood | 'auto' // 'auto' = humeur pilotée par les beats
+}
+
+export interface TempoCfg {
+  bpm: number
+  enabled: boolean // affiche la grille + aimante les beats sur le tempo
+}
+
+// ── Mode « présentation » (diaporama parlé) ──────────────────────────────────
+// Un fond de diapo : image (défile comme une présentation) ou dégradé si vide.
+export interface PresBackground {
+  id: string
+  name: string
+  url: string // object-URL d'une image (non persisté)
+  crop: Crop
+}
+
+// Transition du personnage au début d'une diapo. 'none' = coupe franche (position
+// instantanée) ; 'glide' = déplacement fluide depuis la diapo précédente ; les
+// autres = animations d'apparition (fondu, pop, zoom, arrivée d'un bord).
+export type PresEntrance = 'none' | 'glide' | 'fade' | 'pop' | 'zoom' | 'slide-up' | 'slide-left' | 'slide-right'
+
+// Un « segment » = une diapo : une pose de Blumi + un fond + un texte qu'il dit
+// (voix + karaoké). Comme un moment : durée et position réglables (packés dans
+// l'ordre du tableau).
+export interface PresSegment {
+  id: string
+  pose: PoseName
+  bgId: string | null // fond affiché (null = dégradé)
+  text: string // ce que Blumi dit ET affiche (karaoké mot à mot)
+  start: number // recalculé par reflow (packing séquentiel)
+  dur: number
+  voice?: string // voix TTS (override) ; sinon voix globale
+  mood?: AvatarMood | 'auto' // 'auto' = humeur de la pose
+  tier?: AvatarTier // personnage : blumi / blumiman (lunettes) / bluminator (+ordi)
+  x?: number // position horizontale -1..1 (placement dans la scène)
+  y?: number // position verticale -1..1
+  z?: number // profondeur -1..1 (loin/petit ↔ proche/grand)
+  entrance?: PresEntrance // apparition au début de la diapo
+  props?: PropName[] // accessoires du casier attachés (plusieurs possibles)
+  prop?: PropName // legacy (mono-objet) — migré vers `props`
+  // Décalage/échelle de chaque accessoire par rapport à Blumi (par diapo).
+  propPos?: Partial<Record<PropName, { dx: number; dy: number; scale: number }>>
+}
+
+// Placement résolu d'un accessoire (nom + décalage/échelle) pour le rendu 3D.
+export interface PropPlacement { name: PropName; dx: number; dy: number; scale: number }
+
+// Un bruitage placé sur une diapo, à un instant réglable (offset depuis le début
+// de la diapo → suit la diapo si on la déplace/redimensionne).
+export interface PresSfxCue {
+  id: string
+  segId: string // diapo à laquelle le bruitage est rattaché
+  at: number // décalage (s) depuis le début de la diapo
+  kind: SfxKind
+}
+
+// Effet d'écran placé sur une diapo (fondu noir, flash, flou, secousse, vignette,
+// noir & blanc), à un instant + durée réglables (comme les bruitages).
+export type PresFxKind = 'black' | 'flash' | 'blur' | 'shake' | 'vignette' | 'grayscale'
+export interface PresFxCue {
+  id: string
+  segId: string
+  at: number // décalage (s) depuis le début de la diapo
+  dur: number // durée de l'effet (s)
+  kind: PresFxKind
+}
+
+// État agrégé des effets d'écran à un instant t (0..1 par effet).
+export interface ScreenFx {
+  black: number // fondu vers le noir
+  white: number // flash blanc
+  blur: number // flou (→ pixels au rendu)
+  shake: number // amplitude de secousse
+  vignette: number // assombrissement des bords
+  gray: number // désaturation (0 = couleur, 1 = noir & blanc)
+}
+
+export interface PresentationModel {
+  title: string // petit bandeau (ex. « 1 jour, 1 info · {METIER} »)
+  showTitle: boolean
+  segments: PresSegment[]
+  backgrounds: PresBackground[]
+  sfx: PresSfxCue[] // bruitages placés sur les diapos
+  fx: PresFxCue[] // effets d'écran placés sur les diapos
+}
+
+export interface Project {
+  id: string
+  name: string
+  mode: StudioMode // 'cinematic' (défaut) ou 'presentation'
+  fmt: Fmt
+  duration: number
+  autoDuration: boolean // true = la durée vidéo = fin du dernier moment (liée)
+  showSafeZones: boolean
+  platform: 'tiktok' | 'reels' | 'shorts'
+  background: Background | null
+  script: ScriptModel
+  beats: BeatDef[]
+  presentation: PresentationModel
+  caption: CaptionCfg
+  audio: AudioCfg
+  character: CharacterCfg
+  tempo: TempoCfg
+  preset: string
+  updatedAt: number
+}
+
+// ── Sortie du moteur de timeline : état visuel complet à l'instant t ──────────
+export interface CaptionWord {
+  text: string
+  active: boolean
+  done: boolean
+}
+
+export interface FrameCard {
+  icon: string
+  text: string
+  in: number // 0..1 progression du pop
+}
+
+export interface Frame {
+  t: number
+  phase: BeatKind
+  // Personnage
+  glasses: boolean
+  laptop: boolean
+  mood: AvatarMood
+  speaking: boolean
+  avatarIn: number // 0..1 progression d'entrée
+  avatarAlpha: number // 0 = Blumi caché (trou sans moment) ; 1 = visible
+  avatarScale: number // multiplicateur d'échelle (entrée pop/zoom)
+  avatarDX: number // décalage horizontal (fraction de largeur, entrée slide)
+  avatarDY: number // décalage vertical (fraction de hauteur, entrée slide)
+  shake: number // amplitude du screen-shake (px @1080)
+  flash: number // 0..1 flash du glow-up
+  zoomPulse: number // 1 = neutre, >1 = zoom (verdict)
+  // Hook (gros titre karaoké en haut)
+  hookWords: CaptionWord[]
+  hookOut: number // 0..1 sortie
+  // Scan
+  scanActive: boolean
+  scanProgress: number // 0..1 balayage
+  scanLabel: string
+  // Verdict
+  gaugeIn: number // 0..1 apparition + remplissage
+  score: number // valeur affichée du compteur
+  scoreFrozen: boolean
+  verdictLabel: string
+  riskColor: string
+  // Pivot
+  pivotIn: number
+  pivotText: string
+  // Solution
+  cards: FrameCard[]
+  // CTA + boucle
+  ctaIn: number
+  ctaText: string
+  swipe: number // 0..1 anim du « swipe up »
+  loop: number // 0..1 fondu de bouclage vers le cadrage du hook
+  // Captions karaoké (bas)
+  caption: { words: CaptionWord[]; style: CaptionStyle } | null
+}
+
+// État visuel complet du mode présentation à l'instant t (déterministe).
+export interface PresFrame {
+  t: number
+  segIndex: number
+  pose: PoseName
+  mood: AvatarMood
+  speaking: boolean
+  glasses: boolean // personnage : lunettes (blumiman/bluminator)
+  laptop: boolean // personnage : ordinateur portable (bluminator)
+  props: PropPlacement[] // accessoires du casier (nom + placement) — plusieurs à la fois
+  avatarAlpha: number // 0 = Blumi caché (avant le 1er segment / trou)
+  posX: number // position horizontale de la scène (-1..1)
+  posY: number // position verticale de la scène (-1..1)
+  posScale: number // échelle de profondeur (loin/petit ↔ proche/grand)
+  avatarScale: number // échelle d'entrée (pop/zoom)
+  avatarDX: number // décalage horizontal d'entrée (slide, fraction de largeur)
+  avatarDY: number // décalage vertical d'entrée (slide, fraction de hauteur)
+  bgId: string | null // fond du segment courant
+  bgPrevId: string | null // fond précédent (pour le fondu de diapo)
+  bgFade: number // 0..1 : fondu du fond courant par-dessus le précédent
+  bgZoom: number // effet Ken Burns : zoom lent du fond courant (1 → ~1,08)
+  bgPanX: number // Ken Burns : léger panoramique horizontal (fraction)
+  words: CaptionWord[] // texte dit, révélé mot à mot (karaoké)
+  title: string
+  showTitle: boolean // titre affiché (1re diapo uniquement)
+  titleOut: number // 0..1 : fondu de sortie du titre à la fin de la 1re diapo
+  fx: ScreenFx // effets d'écran agrégés à l'instant t (noir/flash/flou/secousse/vignette)
+}
+
+export const PLATFORM_SAFE: Record<Project['platform'], { top: number; bottom: number; right: number }> = {
+  // Fractions de la hauteur/largeur couvertes par l'UI de la plateforme.
+  tiktok: { top: 0.08, bottom: 0.2, right: 0.12 },
+  reels: { top: 0.1, bottom: 0.22, right: 0.13 },
+  shorts: { top: 0.1, bottom: 0.16, right: 0.11 },
+}
+
+export function fmtSize(fmt: Fmt): { w: number; h: number } {
+  if (fmt === '1:1') return { w: 1080, h: 1080 }
+  if (fmt === '16:9') return { w: 1920, h: 1080 }
+  return { w: 1080, h: 1920 }
+}
+
+export type { AvatarMood, PoseName, PropName }
