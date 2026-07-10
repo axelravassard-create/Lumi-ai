@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Avatar } from './Avatar'
+import type { PoseName } from './avatar/RobotAvatar'
 import { streamLuminatorChat, describeError, type ChatMsg } from '../lib/llm'
 import { applyProfilePatch } from '../lib/profile'
 import { addPlanItem } from '../lib/plan'
@@ -18,6 +19,34 @@ interface Props {
 }
 
 const STARTER_KEYS = ['chat.starter0', 'chat.starter1', 'chat.starter2']
+
+// Expression du visage de Blumi PENDANT le chat : il réagit à la façon dont
+// l'utilisateur parle (empathie) et reflète sa propre émotion quand il l'exprime.
+// Heuristique légère (emoji + mots-clés FR/EN) → pose du personnage.
+function detectChatPose(userText: string, assistantText: string): PoseName {
+  const a = assistantText || ''
+  // 1) Blumi reflète d'abord SA propre émotion s'il l'exprime clairement.
+  // ⚠️ Le drapeau `u` est OBLIGATOIRE : sans lui, une classe [emoji] matche sur la
+  // demi-surrogate haute partagée (\uD83D) → n'importe quel emoji déclencherait la
+  // 1re branche. Avec `u`, les emoji sont traités comme des points de code entiers.
+  if (/[😄😃😁🎉🥳🤩]|félicitation|bravo|génial|excellent|super\b|bonne nouvelle/iu.test(a)) return 'happy'
+  // 2) Sinon il réagit avec empathie à ce que dit l'utilisateur.
+  const u = (userText || '').toLowerCase().trim()
+  if (!u) return 'presenter'
+  if (/^(bonjour|salut|coucou|hello|hey|yo|bonsoir|hi)\b/u.test(u)) return 'greet'
+  if (/[😢😞😔😟😪]|triste|déprim|déçu|décourag|perdu mon (emploi|job|travail)|licenci|chômage|au chômage|galère|c'est nul|déprime/u.test(u)) return 'concerned'
+  if (/[😨😰😱😥]|peur|angoiss|inquiet|inquièt|stress|remplac|menac|va me (remplacer|piquer)|risque de perdre|fini/u.test(u)) return 'concerned'
+  if (/[😠😡🤬]|énervé|marre|colère|frustr|injuste|ras.?le.?bol|nul à/u.test(u)) return 'concerned'
+  if (/[😮😲🤯😳]|wow|incroyable|sérieux|vraiment ?\?|c'est quoi|quoi ?\?|\?!|hallucinant|dingue/u.test(u)) return 'surprised'
+  if (/[😄😊🙂😁👍❤️🎉🙏]|merci|génial|super|cool|top|content|heureu|j'adore|parfait|excellent|trop bien|nickel/u.test(u)) return 'happy'
+  if (/\?\s*$/u.test((userText || '').trim())) return 'thinking'
+  return 'presenter'
+}
+
+function lastContent(messages: ChatMsg[], role: 'user' | 'assistant'): string {
+  for (let i = messages.length - 1; i >= 0; i--) if (messages[i].role === role) return messages[i].content
+  return ''
+}
 
 // Mémoire de la conversation : conservée d'une session à l'autre.
 const STORAGE_KEY = 'lumi.luminator.chat'
@@ -183,7 +212,15 @@ export function LuminatorChat({ onClose, aiEnabled, onOpenSettings, extraContext
           </div>
           <div className="flex flex-col items-center">
             <div className="h-24 w-24">
-              <Avatar glasses speaking={streaming} className="h-full w-full" />
+              {/* Blumi réagit à la façon dont l'utilisateur parle (empathie) et
+                  reflète sa propre émotion → l'expression du visage change au fil
+                  de la conversation. */}
+              <Avatar
+                glasses
+                speaking={streaming}
+                pose={detectChatPose(lastContent(messages, 'user'), lastContent(messages, 'assistant'))}
+                className="h-full w-full"
+              />
             </div>
             <div className="mt-1.5 font-display text-base font-bold text-ink-900">{name}</div>
             <div className="flex items-center gap-1.5 text-xs text-ink-500">

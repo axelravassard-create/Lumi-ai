@@ -115,6 +115,14 @@ pédagogique.
   prêts à l'emploi), ciblé sur sa profession + ses compétences. Garde aussi le
   coaching (reconversion, compétences, etc.).
 - **Streaming** (la bouche bouge pendant qu'il parle).
+- **Expression réactive au fil de la conversation** (`detectChatPose()`) : le visage
+  de Blumi dans l'en-tête du chat change selon **la façon dont l'utilisateur parle**
+  (empathie) et reflète sa propre émotion quand il l'exprime — heuristique légère
+  (emoji + mots-clés FR/EN) → `pose` passée à `<Avatar>` (triste/inquiet → `concerned`,
+  content → `happy`, surpris → `surprised`, salutation → `greet`, question →
+  `thinking`). ⚠️ Les regex à classes d'emoji DOIVENT porter le drapeau `u` (sinon
+  la demi-surrogate partagée `\uD83D` fait matcher n'importe quel emoji sur la 1re
+  branche).
 - **Crash de l'API géré** : `describeError()` (`llm.ts`) traduit les pannes
   (`InternalServerError`/5xx, `APIConnectionError`, surcharge…) en messages clairs
   dans le chat (« Le service IA est momentanément indisponible. Réessaie dans un
