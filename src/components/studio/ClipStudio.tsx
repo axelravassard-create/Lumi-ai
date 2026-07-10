@@ -3,7 +3,7 @@ import type { BeatKind, Project } from '../../lib/studio/types'
 import { compactBeats, loadCurrent, newProject, normalizeDuration, saveProject } from '../../lib/studio/projects'
 import { captureCover, downloadBlob, exportClip } from '../../lib/studio/export'
 import { warmTTS } from '../../lib/studio/tts'
-import { sharedCtx } from '../../lib/studio/audio'
+import { unlockStudioAudio } from '../../lib/studio/audio'
 import { analyze } from '../../lib/engine'
 import { riskEmoji } from '../../lib/studio/script'
 import { POSE_LIST, presDuration } from '../../lib/studio/presentation'
@@ -114,6 +114,17 @@ export function ClipStudio({ onBack }: Props) {
 
   useEffect(() => {
     warmTTS()
+    // Débloque l'audio (contexte Web Audio) au 1er geste — sinon, sur iPhone
+    // notamment, les bruitages/musique restent muets (politique d'autoplay).
+    const unlock = () => unlockStudioAudio()
+    window.addEventListener('pointerdown', unlock)
+    window.addEventListener('touchstart', unlock, { passive: true })
+    window.addEventListener('keydown', unlock)
+    return () => {
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('touchstart', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
   }, [])
 
   // ── Enregistrement AUTOMATIQUE ────────────────────────────────────────────
@@ -162,7 +173,7 @@ export function ClipStudio({ onBack }: Props) {
   }, [])
 
   const play = () => {
-    sharedCtx() // débloque l'audio
+    unlockStudioAudio() // réveille + arme le contexte audio (iOS) dans le geste
     setSeek((s) => (s >= projectRef.current.duration - 0.05 ? 0 : s))
     setPlaying(true)
   }

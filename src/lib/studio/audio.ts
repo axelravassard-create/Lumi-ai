@@ -58,6 +58,26 @@ export function sharedCtx(): AudioContext | null {
   return shared
 }
 
+// Déblocage audio (autoplay policy, surtout iOS) : à appeler DANS un geste
+// utilisateur. Réveille le contexte + joue un buffer muet pour l'« armer ».
+let unlocked = false
+export function unlockStudioAudio() {
+  const ctx = sharedCtx()
+  if (!ctx) return
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {})
+  if (unlocked) return
+  unlocked = true
+  try {
+    const b = ctx.createBuffer(1, 1, 22050)
+    const s = ctx.createBufferSource()
+    s.buffer = b
+    s.connect(ctx.destination)
+    s.start(0)
+  } catch {
+    /* ignore */
+  }
+}
+
 // ── Synthèse d'un SFX à un instant `at` (temps du contexte) ──────────────────
 export function playSfx(ctx: AudioContext, kind: SfxKind, at: number, out: AudioNode, vol = 1) {
   const g = ctx.createGain()

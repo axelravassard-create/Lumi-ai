@@ -272,7 +272,10 @@ pédagogique.
 - **Métier & score** : autocomplétion sur `PROFESSIONS`, score auto via
   `analyze().currentRisk`, override manuel. `{METIER}`/`{SCORE}` injectés partout.
 - **Audio** (`audio.ts`) : SFX synthétisés Web Audio (pop/riser/sting/shimmer/whoosh)
-  calés sur les beats + voix off TTS FR (`tts.ts`) + musique importée. ⚠️ La voix
+  calés sur les beats + voix off TTS FR (`tts.ts`) + musique importée. ⚠️ **Déblocage
+  audio** (`unlockStudioAudio()`) appelé au 1er geste (pointerdown/touchstart/keydown)
+  ET dans `play()` : réveille le contexte + joue un buffer muet → sinon les
+  bruitages/musique restent MUETS sur iPhone (politique d'autoplay). ⚠️ La voix
   TTS (SpeechSynthesis) n'est PAS routable dans Web Audio → jouée à l'aperçu mais
   **absente du MP4 exporté** ; emplacement prévu pour brancher une voix API (buffer
   mixable) dans `tts.ts`.
