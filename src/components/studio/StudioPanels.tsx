@@ -4,8 +4,8 @@ import { BEAT_ORDER } from '../../lib/studio/types'
 import {
   ENTRANCE_LIST, POSE_LIST, PRES_TEMPLATES, PROP_LIST, SFX_LIST, TIER_LIST, addBackgroundToSegment, addSegment,
   addSfxCue, applyTemplate, duplicateSegment, fitPresentationToVoice, moveSegment, poseLabel, presDuration,
-  presProsody, removeSegment, removeSfxCue, segProps, segmentLine, sfxCuesForSegment, tierOf, toggleProp,
-  updateSegment, updateSfxCue,
+  presProsody, propPosOf, removeSegment, removeSfxCue, segProps, segmentLine, setPropPos, sfxCuesForSegment,
+  tierOf, toggleProp, updateSegment, updateSfxCue,
 } from '../../lib/studio/presentation'
 import { playSfx, sharedCtx } from '../../lib/studio/audio'
 import { BEAT_META } from './Timeline'
@@ -917,7 +917,7 @@ function SegmentCard({ project, onChange, seg, index, count, voices }: P & { seg
       </div>
 
       {/* Casier : objets attachés au personnage (plusieurs possibles à la fois) */}
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <span className="text-[11px] text-ink-400">🧰 Casier de Blumi <span className="text-ink-300">(plusieurs possibles)</span></span>
         <div className="flex flex-wrap gap-1">
           {PROP_LIST.map((pr) => {
@@ -935,6 +935,35 @@ function SegmentCard({ project, onChange, seg, index, count, voices }: P & { seg
             )
           })}
         </div>
+        {/* Position/taille de chaque objet actif (déplacer par rapport à Blumi) */}
+        {segProps(seg).map((name) => {
+          const meta = PROP_LIST.find((pr) => pr.value === name)
+          const pp = propPosOf(seg, name)
+          return (
+            <div key={name} className="space-y-1 rounded-lg bg-ink-50 p-1.5">
+              <div className="flex items-center gap-1 text-[11px] text-ink-500">
+                <span>{meta?.emoji}</span><span className="font-semibold">{meta?.label}</span>
+                {(pp.dx || pp.dy || pp.scale !== 1) ? (
+                  <button onClick={() => onChange(setPropPos(project, seg.id, name, { dx: 0, dy: 0, scale: 1 }))} className="ml-auto text-[10px] text-ink-400 hover:text-brand-600">↺ recentrer</button>
+                ) : null}
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="w-4 text-[11px] text-ink-400" title="gauche/droite">↔</span>
+                <input type="range" min={-1} max={1} step={0.05} value={pp.dx}
+                  onChange={(e) => onChange(setPropPos(project, seg.id, name, { dx: parseFloat(e.target.value) }))}
+                  className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-ink-200 accent-brand-600" />
+                <span className="w-4 text-[11px] text-ink-400" title="haut/bas">↕</span>
+                <input type="range" min={-1} max={1} step={0.05} value={pp.dy}
+                  onChange={(e) => onChange(setPropPos(project, seg.id, name, { dy: parseFloat(e.target.value) }))}
+                  className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-ink-200 accent-brand-600" />
+                <span className="w-4 text-[11px] text-ink-400" title="taille">⇲</span>
+                <input type="range" min={0.4} max={2} step={0.05} value={pp.scale}
+                  onChange={(e) => onChange(setPropPos(project, seg.id, name, { scale: parseFloat(e.target.value) }))}
+                  className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-ink-200 accent-brand-600" />
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       {/* Position dans la scène */}

@@ -3,7 +3,7 @@
 // Blumi enchaîne des poses en parlant (voix + karaoké) devant des fonds qui
 // défilent comme un diaporama. Les segments sont packés bout à bout (ordre du
 // tableau) : « déplacer dans le temps » = réordonner + régler la durée.
-import type { AvatarMood, AvatarTier, PoseName, PresEntrance, PresFrame, PresSegment, PresSfxCue, Project, PropName } from './types'
+import type { AvatarMood, AvatarTier, PoseName, PresEntrance, PresFrame, PresSegment, PresSfxCue, Project, PropName, PropPlacement } from './types'
 import type { SfxKind, SfxMarker } from './audio'
 import { interpolate } from './script'
 import { splitWords } from './timeline'
@@ -50,6 +50,9 @@ export const SFX_LIST: { kind: SfxKind; label: string; emoji: string; hint: stri
   { kind: 'applause', label: 'Applaudissements', emoji: '👏', hint: 'public / bravo' },
   { kind: 'ding', label: 'Ding', emoji: '🔔', hint: 'notification / info' },
   { kind: 'heartbeat', label: 'Battement', emoji: '🫀', hint: 'tension / émotion' },
+  { kind: 'coin', label: 'Pièce', emoji: '🪙', hint: 'récompense / gain' },
+  { kind: 'boing', label: 'Ressort', emoji: '🤸', hint: 'comique / rebond' },
+  { kind: 'drumroll', label: 'Roulement', emoji: '🥁', hint: 'suspense / révélation' },
 ]
 
 export function sfxLabel(kind: SfxKind): string {
@@ -69,6 +72,9 @@ export const PROP_LIST: { value: PropName; label: string; emoji: string }[] = [
   { value: 'heart', label: 'Cœur', emoji: '❤️' },
   { value: 'trophy', label: 'Trophée', emoji: '🏆' },
   { value: 'rocket', label: 'Fusée', emoji: '🚀' },
+  { value: 'star', label: 'Étoile', emoji: '⭐' },
+  { value: 'fire', label: 'Feu', emoji: '🔥' },
+  { value: 'coin', label: 'Pièce', emoji: '🪙' },
 ]
 
 // Émotion de la voix par pose (deltas de hauteur/débit) → la voix « colle » à la
@@ -109,10 +115,31 @@ export function tierOf(seg: PresSegment): AvatarTier {
   return seg.tier ?? 'blumi'
 }
 
-// Accessoires d'une diapo (liste). Rétrocompat : ancien champ mono `prop`.
+// Accessoires d'une diapo (liste de noms). Rétrocompat : ancien champ mono `prop`.
 export function segProps(seg: PresSegment): PropName[] {
   if (seg.props) return seg.props
   return seg.prop && seg.prop !== 'none' ? [seg.prop] : []
+}
+
+// Placement d'un accessoire sur une diapo (décalage/échelle par rapport à Blumi).
+export function propPosOf(seg: PresSegment, name: PropName): { dx: number; dy: number; scale: number } {
+  return seg.propPos?.[name] ?? { dx: 0, dy: 0, scale: 1 }
+}
+
+// Liste résolue (nom + placement) pour le rendu 3D.
+export function segPropPlacements(seg: PresSegment): PropPlacement[] {
+  return segProps(seg).map((name) => ({ name, ...propPosOf(seg, name) }))
+}
+
+// Déplace/redimensionne un accessoire sur une diapo (dx/dy = fraction, scale).
+export function setPropPos(project: Project, segId: string, name: PropName, patch: Partial<{ dx: number; dy: number; scale: number }>): Project {
+  const segments = project.presentation.segments.map((s) => {
+    if (s.id !== segId) return s
+    const cur = propPosOf(s, name)
+    const propPos = { ...(s.propPos ?? {}), [name]: { ...cur, ...patch } }
+    return { ...s, propPos }
+  })
+  return { ...project, presentation: { ...project.presentation, segments } }
 }
 
 // Ajoute/retire un accessoire de la diapo (plusieurs objets possibles à la fois).
@@ -337,7 +364,7 @@ export function evalPresentation(project: Project, t: number): PresFrame {
     speaking,
     glasses,
     laptop,
-    props: segProps(seg),
+    props: segPropPlacements(seg),
     avatarAlpha,
     posX: fx,
     posY: fy,

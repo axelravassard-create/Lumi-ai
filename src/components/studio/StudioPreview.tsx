@@ -121,7 +121,7 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
     const f = evalPresentation(p, t)
     const a = accRef.current
     a.glasses = f.glasses; a.laptop = f.laptop; a.props = f.props; a.pose = f.pose; a.mood = f.mood; a.speaking = f.speaking
-    syncControl({ glasses: f.glasses, laptop: f.laptop, mood: f.mood, speaking: f.speaking, state: 'idle', pose: f.pose, props: f.props, propsKey: f.props.join(',') })
+    syncControl({ glasses: f.glasses, laptop: f.laptop, mood: f.mood, speaking: f.speaking, state: 'idle', pose: f.pose, props: f.props.map((p) => p.name), propsKey: f.props.map((p) => `${p.name}${p.dx}${p.dy}${p.scale}`).join('|') })
 
     // Volume musique : fenêtre (from→to) + fondus + ducking sous la voix.
     const music = audioRef.current

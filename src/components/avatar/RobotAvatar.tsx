@@ -8,8 +8,8 @@ import { playPat } from '../../lib/sfx'
 export type AvatarState = 'idle' | 'thinking'
 export type AvatarMood = 'neutral' | 'calm' | 'concerned'
 // Accessoires « casier » : petits objets amusants attachés au personnage.
-export type PropName = 'none' | 'pointer' | 'magnifier' | 'lightbulb' | 'party-hat' | 'grad-cap' | 'crown' | 'mic' | 'heart' | 'trophy' | 'rocket'
-const PROP_NAMES: Exclude<PropName, 'none'>[] = ['pointer', 'magnifier', 'lightbulb', 'mic', 'party-hat', 'grad-cap', 'crown', 'heart', 'trophy', 'rocket']
+export type PropName = 'none' | 'pointer' | 'magnifier' | 'lightbulb' | 'party-hat' | 'grad-cap' | 'crown' | 'mic' | 'heart' | 'trophy' | 'rocket' | 'star' | 'fire' | 'coin'
+const PROP_NAMES: Exclude<PropName, 'none'>[] = ['pointer', 'magnifier', 'lightbulb', 'mic', 'party-hat', 'grad-cap', 'crown', 'heart', 'trophy', 'rocket', 'star', 'fire', 'coin']
 
 interface Props {
   state: AvatarState
@@ -43,11 +43,14 @@ interface Props {
   accessoryRef?: RefObject<AvatarLiveState>
 }
 
+// Placement d'un accessoire : nom + décalage (dx/dy, fraction) + échelle.
+export interface AvatarProp { name: PropName; dx: number; dy: number; scale: number }
+
 // État vivant du personnage piloté image par image (studio).
 export interface AvatarLiveState {
   glasses: boolean
   laptop: boolean
-  props: PropName[] // accessoires visibles simultanément
+  props: AvatarProp[] // accessoires visibles simultanément (avec placement)
   pose?: PoseName
   mood: AvatarMood
   speaking: boolean
@@ -237,7 +240,8 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
   const propRefs = useRef<Record<string, THREE.Group | null>>({})
   // Valeurs vives lues dans useFrame (le corps du composant s'exécute à chaque
   // re-render → toujours à jour, même si la closure de useFrame ne l'est pas).
-  const propList = props ?? (prop && prop !== 'none' ? [prop] : [])
+  const propList: AvatarProp[] = (props ?? (prop && prop !== 'none' ? [prop] : []))
+    .map((n) => ({ name: n, dx: 0, dy: 0, scale: 1 }))
   const live = useRef<AvatarLiveState>({ glasses, laptop, props: propList, pose, mood, speaking })
   live.current = { glasses, laptop, props: propList, pose, mood, speaking }
 
@@ -558,7 +562,14 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
     if (laptopRef.current) laptopRef.current.visible = acc.laptop
     for (const n of PROP_NAMES) {
       const g = propRefs.current[n]
-      if (g) g.visible = acc.props.includes(n)
+      if (!g) continue
+      const item = acc.props.find((p) => p.name === n)
+      g.visible = !!item
+      if (item) {
+        // Décalage (dx/dy) + échelle par rapport à Blumi (déplace l'objet).
+        g.position.set(item.dx * 1.3, item.dy * 1.3, 0)
+        g.scale.setScalar(item.scale || 1)
+      }
     }
 
     // Halo orbital.
@@ -667,7 +678,7 @@ function Face({ state, mood = 'neutral', glasses = false, laptop = false, speaki
         {/* Accessoires du casier (attachés à la tête → suivent les poses).
             Tous montés, affichés via .visible (voir useFrame). */}
         {PROP_NAMES.map((n) => (
-          <group key={n} ref={(el) => { propRefs.current[n] = el }} visible={propList.includes(n)}>
+          <group key={n} ref={(el) => { propRefs.current[n] = el }} visible={propList.some((p) => p.name === n)}>
             <Prop name={n} />
           </group>
         ))}
@@ -994,6 +1005,52 @@ function Prop({ name }: { name: PropName }) {
           <mesh position={[0, -0.42, 0]} rotation={[Math.PI, 0, 0]}>
             <coneGeometry args={[0.1, 0.26, 16]} />
             <meshStandardMaterial color="#ffb020" emissive="#ff7a00" emissiveIntensity={0.85} toneMapped />
+          </mesh>
+        </group>
+      )
+    case 'star':
+      return (
+        <group position={[0.66, 1.05, 0.35]} rotation={[0, 0, 0]} scale={1}>
+          <mesh>
+            <circleGeometry args={[0.24, 5]} />
+            <meshStandardMaterial color="#ffe14d" emissive="#ffd21f" emissiveIntensity={0.55} toneMapped side={THREE.DoubleSide} />
+          </mesh>
+          <mesh rotation={[0, 0, Math.PI]} position={[0, 0, -0.01]}>
+            <circleGeometry args={[0.24, 5]} />
+            <meshStandardMaterial color="#ffe14d" emissive="#ffd21f" emissiveIntensity={0.55} toneMapped side={THREE.DoubleSide} />
+          </mesh>
+        </group>
+      )
+    case 'fire':
+      return (
+        <group position={[0.66, 0.95, 0.4]}>
+          {[
+            { c: '#ff7a00', s: 1, y: 0 },
+            { c: '#ffb020', s: 0.7, y: 0.06 },
+            { c: '#ffe14d', s: 0.4, y: 0.12 },
+          ].map((f, i) => (
+            <mesh key={i} position={[0, f.y, i * 0.01]} scale={[f.s, f.s * 1.4, f.s]}>
+              <coneGeometry args={[0.16, 0.4, 16]} />
+              <meshStandardMaterial color={f.c} emissive={f.c} emissiveIntensity={0.7} toneMapped />
+            </mesh>
+          ))}
+        </group>
+      )
+    case 'coin':
+      return (
+        <group position={[0.72, -0.05, 0.65]} rotation={[0, 0.2, 0]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.26, 0.26, 0.055, 30]} />
+            <meshStandardMaterial color={GOLD} metalness={0.9} roughness={0.2} />
+          </mesh>
+          {/* Liseré + étoile gravée lumineuse (face caméra) */}
+          <mesh position={[0, 0, 0.03]}>
+            <ringGeometry args={[0.2, 0.24, 30]} />
+            <meshStandardMaterial color="#e0a92e" metalness={0.8} roughness={0.3} side={THREE.DoubleSide} />
+          </mesh>
+          <mesh position={[0, 0, 0.031]}>
+            <circleGeometry args={[0.13, 5]} />
+            <meshStandardMaterial color="#fff6cf" emissive="#ffe08a" emissiveIntensity={0.45} toneMapped />
           </mesh>
         </group>
       )

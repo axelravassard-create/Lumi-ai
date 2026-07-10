@@ -7,7 +7,7 @@
 // audio réel, lui, mixable) est prévu dans tts.ts.
 import type { AudioCfg, BeatDef, BeatKind, Project } from './types'
 
-export type SfxKind = 'pop' | 'riser' | 'sting' | 'shimmer' | 'whoosh' | 'applause' | 'ding' | 'heartbeat'
+export type SfxKind = 'pop' | 'riser' | 'sting' | 'shimmer' | 'whoosh' | 'applause' | 'ding' | 'heartbeat' | 'coin' | 'boing' | 'drumroll'
 
 // ── Musique de fond : fenêtre de lecture (from→to) + départ dans le morceau ───
 // Volume voulu de la musique à l'instant `t` de la vidéo (0 hors fenêtre), avec
@@ -262,6 +262,80 @@ export function playSfx(ctx: AudioContext, kind: SfxKind, at: number, out: Audio
       thump(at + 0.18, 0.45)
       thump(at + 0.72, 0.7)
       thump(at + 0.9, 0.45)
+      break
+    }
+    case 'coin': {
+      // « Ching » de pièce : deux notes aiguës rapides (jeu vidéo / récompense).
+      const notes = [988, 1319] // B5 puis E6
+      notes.forEach((f, i) => {
+        const o = ctx.createOscillator()
+        o.type = 'square'
+        o.frequency.value = f
+        const og = ctx.createGain()
+        const s = at + i * 0.08
+        og.gain.setValueAtTime(0.0001, s)
+        og.gain.exponentialRampToValueAtTime(0.22 * vol, s + 0.005)
+        og.gain.exponentialRampToValueAtTime(0.0001, s + 0.22)
+        o.connect(og).connect(g)
+        o.start(s)
+        o.stop(s + 0.25)
+      })
+      break
+    }
+    case 'boing': {
+      // Ressort comique : hauteur qui plonge avec un vibrato.
+      const o = ctx.createOscillator()
+      o.type = 'sine'
+      o.frequency.setValueAtTime(600, at)
+      o.frequency.exponentialRampToValueAtTime(90, at + 0.35)
+      const lfo = ctx.createOscillator()
+      lfo.type = 'sine'
+      lfo.frequency.value = 18
+      const lg = ctx.createGain()
+      lg.gain.value = 40
+      lfo.connect(lg).connect(o.frequency)
+      g.gain.setValueAtTime(0.35 * vol, at)
+      g.gain.exponentialRampToValueAtTime(0.0001, at + 0.4)
+      o.connect(g)
+      o.start(at)
+      o.stop(at + 0.45)
+      lfo.start(at)
+      lfo.stop(at + 0.45)
+      break
+    }
+    case 'drumroll': {
+      // Roulement de tambour : impulsions de bruit qui accélèrent puis « tah ».
+      const roll = 1.1
+      let ti = at
+      let gap = 0.055
+      while (ti < at + roll) {
+        const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.02), ctx.sampleRate)
+        const d = buf.getChannelData(0)
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length)
+        const src = ctx.createBufferSource()
+        src.buffer = buf
+        const lp = ctx.createBiquadFilter()
+        lp.type = 'lowpass'
+        lp.frequency.value = 2200
+        const hg = ctx.createGain()
+        hg.gain.value = 0.18 * vol
+        src.connect(lp).connect(hg).connect(g)
+        src.start(ti)
+        src.stop(ti + 0.03)
+        ti += gap
+        gap = Math.max(0.02, gap * 0.92) // accélère
+      }
+      // Coup final « tah »
+      const boom = ctx.createOscillator()
+      boom.type = 'sine'
+      boom.frequency.setValueAtTime(160, at + roll)
+      boom.frequency.exponentialRampToValueAtTime(60, at + roll + 0.3)
+      const bg = ctx.createGain()
+      bg.gain.setValueAtTime(0.5 * vol, at + roll)
+      bg.gain.exponentialRampToValueAtTime(0.0001, at + roll + 0.35)
+      boom.connect(bg).connect(g)
+      boom.start(at + roll)
+      boom.stop(at + roll + 0.4)
       break
     }
   }
