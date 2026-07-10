@@ -291,6 +291,10 @@ pédagogique.
   WebM→MP4 via **ffmpeg.wasm** (preset `ultrafast`, CDN unpkg→jsdelivr, **timeout
   300 s → repli WebM** pour ne jamais rester figé). Multi-projets en `localStorage`
   (`blumi.studio.*`), médias (object-URLs) non persistés. Cover PNG exportable.
+  **Auto-save** (ClipStudio) : chaque modif du projet est enregistrée (debounce
+  700 ms via `saveProject`) + à `pagehide`/`visibilitychange` → aucun travail perdu
+  au rechargement (seuls les MÉDIAS sont à ré-importer). Pastille « ✓ Enregistré /
+  ⤳ Auto » dans l'en-tête ; `loadCurrent()` restaure au montage.
 - **Idées à partir de l'actu IA** (onglet « Idées », `IdeasPanel` + `src/lib/studio/ideas.ts`
   + `generateReelIdeas` dans `llm.ts`) : Claude (Sonnet + `web_search_20260209`) cherche
   une **info IA récente** impactant un métier et en tire un concept de réel (info +

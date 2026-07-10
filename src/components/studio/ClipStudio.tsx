@@ -110,9 +110,40 @@ export function ClipStudio({ onBack }: Props) {
   exportingRef.current = exporting
   const [progress, setProgress] = useState(0)
   const [status, setStatus] = useState('')
+  const [saved, setSaved] = useState(false) // pastille « enregistré » (auto-save)
 
   useEffect(() => {
     warmTTS()
+  }, [])
+
+  // ── Enregistrement AUTOMATIQUE ────────────────────────────────────────────
+  // Chaque modif du projet est sauvegardée (localStorage) après un court délai,
+  // + à la fermeture/mise en arrière-plan → on ne perd jamais son travail.
+  // (Les médias — vidéo/musique/images — ne sont pas persistés : à ré-importer.)
+  const firstRun = useRef(true)
+  useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false // ne pas ré-enregistrer le projet fraîchement chargé
+      return
+    }
+    const id = window.setTimeout(() => {
+      saveProject(projectRef.current)
+      setSaved(true)
+      window.setTimeout(() => setSaved(false), 1500)
+    }, 700)
+    return () => window.clearTimeout(id)
+  }, [project])
+
+  // Filet de sécurité : enregistre immédiatement si on quitte/masque l'onglet.
+  useEffect(() => {
+    const flush = () => saveProject(projectRef.current)
+    const onVis = () => { if (document.visibilityState === 'hidden') flush() }
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      window.removeEventListener('pagehide', flush)
+      document.removeEventListener('visibilitychange', onVis)
+    }
   }, [])
 
   // Toute édition passe par ici : la durée vidéo est reliée aux moments (si auto).
@@ -321,8 +352,11 @@ export function ClipStudio({ onBack }: Props) {
           onChange={(e) => setProject({ ...project, name: e.target.value })}
           className="min-w-0 flex-1 rounded-lg bg-white/5 px-2 py-1 text-sm text-white/90 outline-none focus:bg-white/10 sm:ml-2 sm:w-44 sm:flex-none"
         />
+        <span className={`hidden text-xs transition-opacity sm:inline ${saved ? 'text-emerald-300 opacity-100' : 'text-white/30 opacity-100'}`}>
+          {saved ? '✓ Enregistré' : '⤳ Auto'}
+        </span>
         <div className="flex items-center gap-2">
-          <button onClick={doSave} className="rounded-lg bg-white/10 px-2.5 py-1.5 text-sm font-semibold hover:bg-white/20">💾<span className="hidden sm:inline"> Enregistrer</span></button>
+          <button onClick={doSave} title="Enregistré automatiquement — clique pour forcer" className="rounded-lg bg-white/10 px-2.5 py-1.5 text-sm font-semibold hover:bg-white/20">💾<span className="hidden sm:inline"> Enregistrer</span></button>
           <button onClick={exportCover} disabled={exporting} className="rounded-lg bg-white/10 px-2.5 py-1.5 text-sm font-semibold hover:bg-white/20 disabled:opacity-40">🖼️<span className="hidden sm:inline"> Cover</span></button>
           <button onClick={runExport} disabled={exporting} className="rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-bold hover:bg-brand-400 disabled:opacity-50">
             {exporting ? 'Export…' : <>⬇️<span className="hidden sm:inline"> Exporter MP4</span></>}
