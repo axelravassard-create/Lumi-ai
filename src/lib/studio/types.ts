@@ -166,12 +166,33 @@ export interface PresSfxCue {
   kind: SfxKind
 }
 
+// Effet d'écran placé sur une diapo (fondu noir, flash, flou, secousse, vignette),
+// à un instant + durée réglables (comme les bruitages).
+export type PresFxKind = 'black' | 'flash' | 'blur' | 'shake' | 'vignette'
+export interface PresFxCue {
+  id: string
+  segId: string
+  at: number // décalage (s) depuis le début de la diapo
+  dur: number // durée de l'effet (s)
+  kind: PresFxKind
+}
+
+// État agrégé des effets d'écran à un instant t (0..1 par effet).
+export interface ScreenFx {
+  black: number // fondu vers le noir
+  white: number // flash blanc
+  blur: number // flou (→ pixels au rendu)
+  shake: number // amplitude de secousse
+  vignette: number // assombrissement des bords
+}
+
 export interface PresentationModel {
   title: string // petit bandeau (ex. « 1 jour, 1 info · {METIER} »)
   showTitle: boolean
   segments: PresSegment[]
   backgrounds: PresBackground[]
   sfx: PresSfxCue[] // bruitages placés sur les diapos
+  fx: PresFxCue[] // effets d'écran placés sur les diapos
 }
 
 export interface Project {
@@ -277,6 +298,7 @@ export interface PresFrame {
   title: string
   showTitle: boolean // titre affiché (1re diapo uniquement)
   titleOut: number // 0..1 : fondu de sortie du titre à la fin de la 1re diapo
+  fx: ScreenFx // effets d'écran agrégés à l'instant t (noir/flash/flou/secousse/vignette)
 }
 
 export const PLATFORM_SAFE: Record<Project['platform'], { top: number; bottom: number; right: number }> = {

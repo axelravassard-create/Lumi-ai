@@ -3,7 +3,7 @@
 // Blumi enchaîne des poses en parlant (voix + karaoké) devant des fonds qui
 // défilent comme un diaporama. Les segments sont packés bout à bout (ordre du
 // tableau) : « déplacer dans le temps » = réordonner + régler la durée.
-import type { AvatarMood, AvatarTier, PoseName, PresEntrance, PresFrame, PresSegment, PresSfxCue, Project, PropName, PropPlacement } from './types'
+import type { AvatarMood, AvatarTier, PoseName, PresEntrance, PresFrame, PresFxCue, PresFxKind, PresSegment, PresSfxCue, Project, PropName, PropPlacement, ScreenFx } from './types'
 import type { SfxKind, SfxMarker } from './audio'
 import { interpolate } from './script'
 import { splitWords } from './timeline'
@@ -54,6 +54,23 @@ export const SFX_LIST: { kind: SfxKind; label: string; emoji: string; hint: stri
   { kind: 'boing', label: 'Ressort', emoji: '🤸', hint: 'comique / rebond' },
   { kind: 'drumroll', label: 'Roulement', emoji: '🥁', hint: 'suspense / révélation' },
 ]
+
+// Effets d'écran plaçables sur une diapo (durée par défaut adaptée à chaque effet).
+export const FX_LIST: { kind: PresFxKind; label: string; emoji: string; hint: string; dur: number }[] = [
+  { kind: 'black', label: 'Fondu noir', emoji: '🌑', hint: 'coupure / suspense', dur: 0.8 },
+  { kind: 'flash', label: 'Flash', emoji: '⚡', hint: 'révélation / impact', dur: 0.28 },
+  { kind: 'blur', label: 'Flou', emoji: '🌫️', hint: 'flou / transition', dur: 1 },
+  { kind: 'shake', label: 'Secousse', emoji: '📳', hint: 'choc / énergie', dur: 0.5 },
+  { kind: 'vignette', label: 'Vignette', emoji: '🎬', hint: 'focus / dramatique', dur: 1 },
+]
+
+export function fxLabel(kind: PresFxKind): string {
+  return FX_LIST.find((f) => f.kind === kind)?.label ?? kind
+}
+
+export function fxDefaultDur(kind: PresFxKind): number {
+  return FX_LIST.find((f) => f.kind === kind)?.dur ?? 0.6
+}
 
 export function sfxLabel(kind: SfxKind): string {
   return SFX_LIST.find((s) => s.kind === kind)?.label ?? kind
@@ -268,6 +285,41 @@ function karaoke(text: string, start: number, span: number, t: number) {
   })
 }
 
+// État « aucun effet d'écran ».
+function emptyFx(): ScreenFx {
+  return { black: 0, white: 0, blur: 0, shake: 0, vignette: 0 }
+}
+
+// Enveloppe temporelle d'un effet (0..1 sur sa durée). Le flash frappe fort puis
+// s'éteint ; les autres montent puis redescendent (trapèze avec bords doux).
+function fxEnv(kind: PresFxKind, p: number): number {
+  if (p <= 0 || p >= 1) return 0
+  if (kind === 'flash') return Math.max(0, 1 - p) // pic instantané → fondu
+  const edge = 0.2
+  return clamp(Math.min(p / edge, 1, (1 - p) / edge))
+}
+
+// Agrège les effets d'écran actifs à l'instant t (offsets résolus par diapo).
+function computeFx(project: Project, t: number): ScreenFx {
+  const out = emptyFx()
+  const cues = project.presentation.fx ?? []
+  for (const cue of cues) {
+    const seg = project.presentation.segments.find((s) => s.id === cue.segId)
+    if (!seg) continue
+    const start = seg.start + cue.at
+    const dur = Math.max(0.05, cue.dur || fxDefaultDur(cue.kind))
+    const p = (t - start) / dur
+    const v = fxEnv(cue.kind, p)
+    if (v <= 0) continue
+    if (cue.kind === 'black') out.black = Math.max(out.black, v)
+    else if (cue.kind === 'flash') out.white = Math.max(out.white, v)
+    else if (cue.kind === 'blur') out.blur = Math.max(out.blur, v)
+    else if (cue.kind === 'shake') out.shake = Math.max(out.shake, v)
+    else if (cue.kind === 'vignette') out.vignette = Math.max(out.vignette, v)
+  }
+  return out
+}
+
 export function evalPresentation(project: Project, t: number): PresFrame {
   const pm = project.presentation
   const segs = pm.segments
@@ -285,6 +337,7 @@ export function evalPresentation(project: Project, t: number): PresFrame {
       glasses: false, laptop: false, props: [], avatarAlpha: 0, posX: 0, posY: 0, posScale: 1,
       avatarScale: 1, avatarDX: 0, avatarDY: 0,
       bgId: null, bgPrevId: null, bgFade: 1, bgZoom: 1, bgPanX: 0, words: [], title, showTitle: false, titleOut: 0,
+      fx: emptyFx(),
     }
   }
 
@@ -381,6 +434,7 @@ export function evalPresentation(project: Project, t: number): PresFrame {
     title,
     showTitle,
     titleOut,
+    fx: computeFx(project, t),
   }
 }
 
@@ -410,6 +464,38 @@ export function updateSfxCue(project: Project, id: string, patch: Partial<PresSf
 
 export function sfxCuesForSegment(project: Project, segId: string): PresSfxCue[] {
   return sfxList(project).filter((c) => c.segId === segId)
+}
+
+// ── Effets d'écran (FX) placés sur les diapos ─────────────────────────────────
+function fxCueList(project: Project): PresFxCue[] {
+  return project.presentation.fx ?? []
+}
+
+export function addFxCue(project: Project, segId: string, kind: PresFxKind = 'black', at = 0): Project {
+  const cue: PresFxCue = { id: 'fx_' + Math.random().toString(36).slice(2, 9), segId, at: Math.max(0, at), dur: fxDefaultDur(kind), kind }
+  return { ...project, presentation: { ...project.presentation, fx: [...fxCueList(project), cue] } }
+}
+
+export function removeFxCue(project: Project, id: string): Project {
+  return { ...project, presentation: { ...project.presentation, fx: fxCueList(project).filter((c) => c.id !== id) } }
+}
+
+export function updateFxCue(project: Project, id: string, patch: Partial<PresFxCue>): Project {
+  const fx = fxCueList(project).map((c) =>
+    c.id === id
+      ? {
+          ...c,
+          ...patch,
+          at: patch.at != null ? Math.max(0, +patch.at.toFixed(2)) : c.at,
+          dur: patch.dur != null ? Math.max(0.05, +patch.dur.toFixed(2)) : c.dur,
+        }
+      : c,
+  )
+  return { ...project, presentation: { ...project.presentation, fx } }
+}
+
+export function fxCuesForSegment(project: Project, segId: string): PresFxCue[] {
+  return fxCueList(project).filter((c) => c.segId === segId)
 }
 
 // Résout les bruitages en marqueurs à temps absolu sur la timeline (offset dans

@@ -62,6 +62,18 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
   const accRef = useRef<AvatarLiveState>({ glasses: false, laptop: false, props: [], pose: undefined, mood: 'neutral', speaking: false })
   // Cache des images de fond (mode présentation) — décodées une fois par URL.
   const bgImagesRef = useRef<Record<string, HTMLImageElement>>({})
+  // Canvas hors-écran pour l'effet de flou (on rend la scène dedans puis on la
+  // recompose floutée dans le maître — `ctx.filter` s'applique au drawImage).
+  const fxCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const fxCanvas = (): HTMLCanvasElement => {
+    let c = fxCanvasRef.current
+    if (!c) {
+      c = document.createElement('canvas')
+      fxCanvasRef.current = c
+    }
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h }
+    return c
+  }
 
   // (Re)charge les images de fond de la présentation quand la liste change.
   useEffect(() => {
@@ -127,36 +139,90 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
     const music = audioRef.current
     if (music && p.audio.musicUrl) music.volume = musicGain(p.audio, p.duration, t, f.speaking)
 
+    // Scène (fond + personnage) : dessinée dans un contexte cible (le maître, ou un
+    // canvas hors-écran quand on la floute avant de la recomposer).
+    const drawScene = (dctx: CanvasRenderingContext2D) => {
+      dctx.clearRect(0, 0, w, h)
+      // Fond : diapo courante en fondu par-dessus la précédente (défilé de diapos).
+      // Couche du dessous = fond précédent (ou dégradé si aucun).
+      const prev = bgImage(f.bgPrevId)
+      if (prev) drawBackground(dctx, prev, bgCrop(f.bgPrevId), w, h)
+      else drawEmptyBackground(dctx, w, h)
+      // Couche du dessus = fond courant qui apparaît (bgFade) + Ken Burns (zoom/pan
+      // lent). Si pas d'image et pas de fond précédent → dégradé ; sinon on laisse la
+      // couche du dessous visible.
+      const cur = bgImage(f.bgId)
+      dctx.save()
+      dctx.globalAlpha = f.bgFade
+      if (cur) {
+        const base = bgCrop(f.bgId)
+        drawBackground(dctx, cur, { zoom: base.zoom * f.bgZoom, x: base.x + f.bgPanX, y: base.y }, w, h)
+      } else if (!prev) drawEmptyBackground(dctx, w, h)
+      dctx.restore()
+
+      // Personnage posé.
+      const av = avatarCanvas()
+      if (av && av.width > 0 && f.avatarAlpha > 0.001) {
+        const r = presAvatarRect(p, f, w, h)
+        dctx.save()
+        dctx.globalAlpha = f.avatarAlpha
+        dctx.drawImage(av, r.x, r.y, r.w, r.h)
+        dctx.restore()
+      }
+    }
+
+    // Effets d'écran (secousse / flou) appliqués à la scène. La secousse décale le
+    // rendu ; le flou passe par un canvas hors-écran (léger sur-cadrage pour éviter
+    // les bords sombres révélés par le flou).
+    const fx = f.fx
+    const sh = fx.shake > 0.001 ? fx.shake * 34 : 0
+    const sx = sh ? (Math.random() - 0.5) * sh : 0
+    const sy = sh ? (Math.random() - 0.5) * sh : 0
     ctx.clearRect(0, 0, w, h)
-
-    // Fond : diapo courante en fondu par-dessus la précédente (défilé de diapos).
-    // Couche du dessous = fond précédent (ou dégradé si aucun).
-    const prev = bgImage(f.bgPrevId)
-    if (prev) drawBackground(ctx, prev, bgCrop(f.bgPrevId), w, h)
-    else drawEmptyBackground(ctx, w, h)
-    // Couche du dessus = fond courant qui apparaît (bgFade) + Ken Burns (zoom/pan
-    // lent). Si pas d'image et pas de fond précédent → dégradé ; sinon on laisse la
-    // couche du dessous visible.
-    const cur = bgImage(f.bgId)
-    ctx.save()
-    ctx.globalAlpha = f.bgFade
-    if (cur) {
-      const base = bgCrop(f.bgId)
-      drawBackground(ctx, cur, { zoom: base.zoom * f.bgZoom, x: base.x + f.bgPanX, y: base.y }, w, h)
-    } else if (!prev) drawEmptyBackground(ctx, w, h)
-    ctx.restore()
-
-    // Personnage posé.
-    const av = avatarCanvas()
-    if (av && av.width > 0 && f.avatarAlpha > 0.001) {
-      const r = presAvatarRect(p, f, w, h)
+    if (fx.blur > 0.001) {
+      const tmp = fxCanvas()
+      const tctx = tmp.getContext('2d')!
+      drawScene(tctx)
       ctx.save()
-      ctx.globalAlpha = f.avatarAlpha
-      ctx.drawImage(av, r.x, r.y, r.w, r.h)
+      ctx.filter = `blur(${(fx.blur * 16).toFixed(1)}px)`
+      const pad = Math.max(10, sh)
+      ctx.drawImage(tmp, sx - pad, sy - pad, w + pad * 2, h + pad * 2)
       ctx.restore()
+    } else if (sx || sy) {
+      ctx.save()
+      ctx.translate(sx, sy)
+      drawScene(ctx)
+      ctx.restore()
+    } else {
+      drawScene(ctx)
     }
 
     renderPresentation(ctx, f, p, w, h, { safeZones: !exportRef.current && p.showSafeZones, watermark: true })
+
+    // Voile plein écran par-dessus tout (fondu noir / flash blanc) + vignette.
+    if (fx.vignette > 0.001) {
+      const g = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.28, w / 2, h / 2, Math.max(w, h) * 0.72)
+      g.addColorStop(0, 'rgba(0,0,0,0)')
+      g.addColorStop(1, `rgba(0,0,0,${(0.88 * Math.min(1, fx.vignette)).toFixed(3)})`)
+      ctx.save()
+      ctx.fillStyle = g
+      ctx.fillRect(0, 0, w, h)
+      ctx.restore()
+    }
+    if (fx.black > 0.001) {
+      ctx.save()
+      ctx.globalAlpha = Math.min(1, fx.black)
+      ctx.fillStyle = '#000'
+      ctx.fillRect(0, 0, w, h)
+      ctx.restore()
+    }
+    if (fx.white > 0.001) {
+      ctx.save()
+      ctx.globalAlpha = Math.min(1, fx.white)
+      ctx.fillStyle = '#fff'
+      ctx.fillRect(0, 0, w, h)
+      ctx.restore()
+    }
   }
 
   // Compose une frame complète dans le canvas maître à l'instant t.

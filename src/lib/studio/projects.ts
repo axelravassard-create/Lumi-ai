@@ -26,7 +26,7 @@ function defaultPresentation(): PresentationModel {
     t += dur
     return seg
   })
-  return { title: '1 jour, 1 info · {METIER}', showTitle: true, segments, backgrounds: [], sfx: [] }
+  return { title: '1 jour, 1 info · {METIER}', showTitle: true, segments, backgrounds: [], sfx: [], fx: [] }
 }
 
 // Allonge chaque moment actif pour que la voix off ait le temps de finir sa
@@ -114,7 +114,7 @@ function migrate(p: Project): Project {
     mode: p.mode ?? 'cinematic',
     autoDuration: p.autoDuration ?? true,
     presentation: p.presentation
-      ? { ...d.presentation, ...p.presentation, backgrounds: p.presentation.backgrounds ?? [], sfx: p.presentation.sfx ?? [] }
+      ? { ...d.presentation, ...p.presentation, backgrounds: p.presentation.backgrounds ?? [], sfx: p.presentation.sfx ?? [], fx: p.presentation.fx ?? [] }
       : d.presentation,
     caption: { ...d.caption, ...p.caption },
     audio: { ...d.audio, ...p.audio },

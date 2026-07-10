@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BeatKind, Fmt, PresSegment, Project } from '../../lib/studio/types'
 import { BEAT_ORDER } from '../../lib/studio/types'
 import {
-  ENTRANCE_LIST, POSE_LIST, PRES_TEMPLATES, PROP_LIST, SFX_LIST, TIER_LIST, addBackgroundToSegment, addSegment,
-  addSfxCue, applyTemplate, duplicateSegment, fitPresentationToVoice, moveSegment, poseLabel, presDuration,
-  presProsody, propPosOf, removeSegment, removeSfxCue, segProps, segmentLine, setPropPos, sfxCuesForSegment,
-  tierOf, toggleProp, updateSegment, updateSfxCue,
+  ENTRANCE_LIST, FX_LIST, POSE_LIST, PRES_TEMPLATES, PROP_LIST, SFX_LIST, TIER_LIST, addBackgroundToSegment, addSegment,
+  addFxCue, addSfxCue, applyTemplate, duplicateSegment, fitPresentationToVoice, fxCuesForSegment, moveSegment, poseLabel, presDuration,
+  presProsody, propPosOf, removeFxCue, removeSegment, removeSfxCue, segProps, segmentLine, setPropPos, sfxCuesForSegment,
+  tierOf, toggleProp, updateFxCue, updateSegment, updateSfxCue,
 } from '../../lib/studio/presentation'
 import { playSfx, sharedCtx } from '../../lib/studio/audio'
 import { BEAT_META } from './Timeline'
@@ -1037,6 +1037,41 @@ function SegmentCard({ project, onChange, seg, index, count, voices }: P & { seg
             <button onClick={() => onChange(updateSfxCue(project, cue.id, { at: cue.at + 0.25 }))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">+</button>
             <button onClick={() => { const c = sharedCtx(); if (c) playSfx(c, cue.kind, c.currentTime + 0.02, c.destination, project.audio.sfxVolume) }} title="Écouter" className="shrink-0 rounded-md border border-ink-200 px-1.5 py-1 text-xs text-ink-500 hover:border-brand-300 hover:text-brand-600">🔊</button>
             <button onClick={() => onChange(removeSfxCue(project, cue.id))} title="Supprimer" className="shrink-0 px-1 text-xs text-red-400 hover:text-red-600">✕</button>
+          </div>
+        ))}
+      </div>
+
+      {/* Effets d'écran placés sur la diapo (noir, flash, flou, secousse, vignette) */}
+      <div className="space-y-1.5 rounded-xl bg-ink-50 p-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-semibold text-ink-500">🎞️ Effets d'écran</span>
+          <button onClick={() => onChange(addFxCue(project, seg.id, 'black', 0))} className="rounded-md bg-brand-500 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-brand-400">+ Ajouter</button>
+        </div>
+        {fxCuesForSegment(project, seg.id).map((cue) => (
+          <div key={cue.id} className="flex flex-wrap items-center gap-1">
+            <select
+              value={cue.kind}
+              onChange={(e) => onChange(updateFxCue(project, cue.id, { kind: e.target.value as typeof cue.kind }))}
+              className="field !py-1 text-xs"
+            >
+              {FX_LIST.map((f) => <option key={f.kind} value={f.kind}>{f.emoji} {f.label} — {f.hint}</option>)}
+            </select>
+            <span className="text-[11px] text-ink-400">à</span>
+            <button onClick={() => onChange(updateFxCue(project, cue.id, { at: cue.at - 0.25 }))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">−</button>
+            <input
+              type="number" step={0.25} min={0} max={seg.dur} value={cue.at}
+              onChange={(e) => { const v = parseFloat(e.target.value); if (!Number.isNaN(v)) onChange(updateFxCue(project, cue.id, { at: v })) }}
+              className="field !w-14 !px-1 !py-1 text-center text-xs"
+            />
+            <span className="text-[11px] text-ink-400">s ·</span>
+            <span className="text-[11px] text-ink-400" title="Durée de l'effet">durée</span>
+            <input
+              type="number" step={0.1} min={0.05} value={cue.dur}
+              onChange={(e) => { const v = parseFloat(e.target.value); if (!Number.isNaN(v)) onChange(updateFxCue(project, cue.id, { dur: v })) }}
+              className="field !w-14 !px-1 !py-1 text-center text-xs"
+            />
+            <span className="text-[11px] text-ink-400">s</span>
+            <button onClick={() => onChange(removeFxCue(project, cue.id))} title="Supprimer" className="shrink-0 px-1 text-xs text-red-400 hover:text-red-600">✕</button>
           </div>
         ))}
       </div>
