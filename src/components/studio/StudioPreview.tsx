@@ -171,21 +171,25 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
       }
     }
 
-    // Effets d'écran (secousse / flou) appliqués à la scène. La secousse décale le
-    // rendu ; le flou passe par un canvas hors-écran (léger sur-cadrage pour éviter
-    // les bords sombres révélés par le flou).
+    // Effets d'écran (secousse / flou / noir & blanc) appliqués à la scène. La
+    // secousse décale le rendu ; le flou et le noir & blanc passent par un canvas
+    // hors-écran recomposé avec `ctx.filter` (léger sur-cadrage pour éviter les
+    // bords sombres révélés par le flou/la secousse).
     const fx = f.fx
     const sh = fx.shake > 0.001 ? fx.shake * 34 : 0
     const sx = sh ? (Math.random() - 0.5) * sh : 0
     const sy = sh ? (Math.random() - 0.5) * sh : 0
     ctx.clearRect(0, 0, w, h)
-    if (fx.blur > 0.001) {
+    if (fx.blur > 0.001 || fx.gray > 0.001) {
       const tmp = fxCanvas()
       const tctx = tmp.getContext('2d')!
       drawScene(tctx)
       ctx.save()
-      ctx.filter = `blur(${(fx.blur * 16).toFixed(1)}px)`
-      const pad = Math.max(10, sh)
+      const parts: string[] = []
+      if (fx.blur > 0.001) parts.push(`blur(${(fx.blur * 16).toFixed(1)}px)`)
+      if (fx.gray > 0.001) parts.push(`grayscale(${Math.min(1, fx.gray).toFixed(3)})`)
+      ctx.filter = parts.join(' ')
+      const pad = Math.max(fx.blur > 0.001 ? 10 : 0, sh)
       ctx.drawImage(tmp, sx - pad, sy - pad, w + pad * 2, h + pad * 2)
       ctx.restore()
     } else if (sx || sy) {

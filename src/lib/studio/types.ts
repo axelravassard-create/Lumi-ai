@@ -166,9 +166,9 @@ export interface PresSfxCue {
   kind: SfxKind
 }
 
-// Effet d'écran placé sur une diapo (fondu noir, flash, flou, secousse, vignette),
-// à un instant + durée réglables (comme les bruitages).
-export type PresFxKind = 'black' | 'flash' | 'blur' | 'shake' | 'vignette'
+// Effet d'écran placé sur une diapo (fondu noir, flash, flou, secousse, vignette,
+// noir & blanc), à un instant + durée réglables (comme les bruitages).
+export type PresFxKind = 'black' | 'flash' | 'blur' | 'shake' | 'vignette' | 'grayscale'
 export interface PresFxCue {
   id: string
   segId: string
@@ -184,6 +184,7 @@ export interface ScreenFx {
   blur: number // flou (→ pixels au rendu)
   shake: number // amplitude de secousse
   vignette: number // assombrissement des bords
+  gray: number // désaturation (0 = couleur, 1 = noir & blanc)
 }
 
 export interface PresentationModel {

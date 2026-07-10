@@ -62,6 +62,7 @@ export const FX_LIST: { kind: PresFxKind; label: string; emoji: string; hint: st
   { kind: 'blur', label: 'Flou', emoji: '🌫️', hint: 'flou / transition', dur: 1 },
   { kind: 'shake', label: 'Secousse', emoji: '📳', hint: 'choc / énergie', dur: 0.5 },
   { kind: 'vignette', label: 'Vignette', emoji: '🎬', hint: 'focus / dramatique', dur: 1 },
+  { kind: 'grayscale', label: 'Noir & blanc', emoji: '⚫', hint: 'rétro / dramatique', dur: 1.2 },
 ]
 
 export function fxLabel(kind: PresFxKind): string {
@@ -287,7 +288,7 @@ function karaoke(text: string, start: number, span: number, t: number) {
 
 // État « aucun effet d'écran ».
 function emptyFx(): ScreenFx {
-  return { black: 0, white: 0, blur: 0, shake: 0, vignette: 0 }
+  return { black: 0, white: 0, blur: 0, shake: 0, vignette: 0, gray: 0 }
 }
 
 // Enveloppe temporelle d'un effet (0..1 sur sa durée). Le flash frappe fort puis
@@ -316,6 +317,7 @@ function computeFx(project: Project, t: number): ScreenFx {
     else if (cue.kind === 'blur') out.blur = Math.max(out.blur, v)
     else if (cue.kind === 'shake') out.shake = Math.max(out.shake, v)
     else if (cue.kind === 'vignette') out.vignette = Math.max(out.vignette, v)
+    else if (cue.kind === 'grayscale') out.gray = Math.max(out.gray, v)
   }
   return out
 }

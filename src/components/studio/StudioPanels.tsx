@@ -1041,37 +1041,48 @@ function SegmentCard({ project, onChange, seg, index, count, voices }: P & { seg
         ))}
       </div>
 
-      {/* Effets d'écran placés sur la diapo (noir, flash, flou, secousse, vignette) */}
+      {/* Effets d'écran placés sur la diapo (noir, flash, flou, secousse, vignette,
+          noir & blanc) — chaque effet est positionnable dans le temps (Début) et
+          de durée réglable (Durée). */}
       <div className="space-y-1.5 rounded-xl bg-ink-50 p-2">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold text-ink-500">🎞️ Effets d'écran</span>
           <button onClick={() => onChange(addFxCue(project, seg.id, 'black', 0))} className="rounded-md bg-brand-500 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-brand-400">+ Ajouter</button>
         </div>
         {fxCuesForSegment(project, seg.id).map((cue) => (
-          <div key={cue.id} className="flex flex-wrap items-center gap-1">
-            <select
-              value={cue.kind}
-              onChange={(e) => onChange(updateFxCue(project, cue.id, { kind: e.target.value as typeof cue.kind }))}
-              className="field !py-1 text-xs"
-            >
-              {FX_LIST.map((f) => <option key={f.kind} value={f.kind}>{f.emoji} {f.label} — {f.hint}</option>)}
-            </select>
-            <span className="text-[11px] text-ink-400">à</span>
-            <button onClick={() => onChange(updateFxCue(project, cue.id, { at: cue.at - 0.25 }))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">−</button>
-            <input
-              type="number" step={0.25} min={0} max={seg.dur} value={cue.at}
-              onChange={(e) => { const v = parseFloat(e.target.value); if (!Number.isNaN(v)) onChange(updateFxCue(project, cue.id, { at: v })) }}
-              className="field !w-14 !px-1 !py-1 text-center text-xs"
-            />
-            <span className="text-[11px] text-ink-400">s ·</span>
-            <span className="text-[11px] text-ink-400" title="Durée de l'effet">durée</span>
-            <input
-              type="number" step={0.1} min={0.05} value={cue.dur}
-              onChange={(e) => { const v = parseFloat(e.target.value); if (!Number.isNaN(v)) onChange(updateFxCue(project, cue.id, { dur: v })) }}
-              className="field !w-14 !px-1 !py-1 text-center text-xs"
-            />
-            <span className="text-[11px] text-ink-400">s</span>
-            <button onClick={() => onChange(removeFxCue(project, cue.id))} title="Supprimer" className="shrink-0 px-1 text-xs text-red-400 hover:text-red-600">✕</button>
+          <div key={cue.id} className="space-y-1 rounded-lg bg-white/60 p-1.5">
+            <div className="flex items-center gap-1">
+              <select
+                value={cue.kind}
+                onChange={(e) => onChange(updateFxCue(project, cue.id, { kind: e.target.value as typeof cue.kind }))}
+                className="field !py-1 text-xs"
+              >
+                {FX_LIST.map((f) => <option key={f.kind} value={f.kind}>{f.emoji} {f.label} — {f.hint}</option>)}
+              </select>
+              <button onClick={() => onChange(removeFxCue(project, cue.id))} title="Supprimer" className="shrink-0 px-1 text-xs text-red-400 hover:text-red-600">✕</button>
+            </div>
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="w-12 shrink-0 text-[11px] text-ink-400" title="Position de l'effet dans la diapo">Début</span>
+              <button onClick={() => onChange(updateFxCue(project, cue.id, { at: cue.at - 0.25 }))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">−</button>
+              <input
+                type="number" step={0.25} min={0} max={seg.dur} value={cue.at}
+                onChange={(e) => { const v = parseFloat(e.target.value); if (!Number.isNaN(v)) onChange(updateFxCue(project, cue.id, { at: v })) }}
+                className="field !w-14 !px-1 !py-1 text-center text-xs"
+              />
+              <button onClick={() => onChange(updateFxCue(project, cue.id, { at: cue.at + 0.25 }))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">+</button>
+              <span className="text-[11px] text-ink-400">s</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="w-12 shrink-0 text-[11px] text-ink-400" title="Durée de l'effet">Durée</span>
+              <button onClick={() => onChange(updateFxCue(project, cue.id, { dur: cue.dur - 0.1 }))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">−</button>
+              <input
+                type="number" step={0.1} min={0.05} value={cue.dur}
+                onChange={(e) => { const v = parseFloat(e.target.value); if (!Number.isNaN(v)) onChange(updateFxCue(project, cue.id, { dur: v })) }}
+                className="field !w-14 !px-1 !py-1 text-center text-xs"
+              />
+              <button onClick={() => onChange(updateFxCue(project, cue.id, { dur: cue.dur + 0.1 }))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">+</button>
+              <span className="text-[11px] text-ink-400">s</span>
+            </div>
           </div>
         ))}
       </div>

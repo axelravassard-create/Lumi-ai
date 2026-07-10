@@ -439,20 +439,22 @@ pédagogique.
     `scheduleMarkers()` (gaté sur `audio.sfx`, volume `audio.sfxVolume`).
     `normalizeDuration`/`migrate` gèrent le champ `presentation`.
     - **Effets d'écran par diapo** (`PresFxCue` `{segId,at,dur,kind}` dans
-      `PresentationModel.fx`, `FX_LIST` = 5 effets : 🌑 fondu noir / ⚡ flash /
-      🌫️ flou / 📳 secousse / 🎬 vignette) : posés sur une diapo, **positionnés
-      dans le temps** (`at` offset depuis le début de la diapo) + **durée réglable**
-      (`dur`). `computeFx(project,t)` agrège les cues actifs en `ScreenFx`
-      (`{black,white,blur,shake,vignette}` 0..1) porté par `PresFrame.fx` ;
+      `PresentationModel.fx`, `FX_LIST` = 6 effets : 🌑 fondu noir / ⚡ flash /
+      🌫️ flou / 📳 secousse / 🎬 vignette / ⚫ noir & blanc) : posés sur une diapo,
+      **positionnés dans le temps** (`at` offset depuis le début de la diapo) +
+      **durée réglable** (`dur`). L'éditeur expose Début (`at`) et Durée (`dur`)
+      avec steppers −/+. `computeFx(project,t)` agrège les cues actifs en `ScreenFx`
+      (`{black,white,blur,shake,vignette,gray}` 0..1) porté par `PresFrame.fx` ;
       enveloppe temporelle `fxEnv` (flash = pic puis fondu, autres = trapèze bords
       doux). Rendu dans `StudioPreview.drawPresentationFrame` : **secousse** =
-      translate aléatoire de la scène, **flou** = scène rendue dans un canvas
-      hors-écran (`fxCanvasRef`) recomposée avec `ctx.filter='blur(Npx)'` +
-      léger sur-cadrage (pas de bords sombres), **fondu noir/flash blanc** =
-      `fillRect` plein écran par-dessus TOUT (y compris overlays), **vignette** =
-      dégradé radial assombrissant les bords. Le flou/la secousse n'affectent que
-      la scène (fond + perso) → les overlays (titre, karaoké) restent nets.
-      S'appliquent à l'aperçu ET à l'export (partagent `drawFrame`). CRUD
+      translate aléatoire de la scène, **flou** + **noir & blanc** = scène rendue
+      dans un canvas hors-écran (`fxCanvasRef`) recomposée avec
+      `ctx.filter='blur(Npx) grayscale(N)'` (cumulables) + léger sur-cadrage (pas
+      de bords sombres), **fondu noir/flash blanc** = `fillRect` plein écran
+      par-dessus TOUT (y compris overlays), **vignette** = dégradé radial
+      assombrissant les bords. Le flou/la secousse/le noir & blanc n'affectent que
+      la scène (fond + perso) → les overlays (titre, karaoké) restent nets et en
+      couleur. S'appliquent à l'aperçu ET à l'export (partagent `drawFrame`). CRUD
       `addFxCue`/`removeFxCue`/`updateFxCue`/`fxCuesForSegment` ; éditeur « 🎞️
       Effets d'écran » dans `SegmentCard` (calqué sur les bruitages). Défaut de
       durée par effet via `fxDefaultDur`. `migrate`/`defaultPresentation` posent
