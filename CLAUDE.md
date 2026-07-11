@@ -301,6 +301,15 @@ pédagogique.
   TTS (SpeechSynthesis) n'est PAS routable dans Web Audio → jouée à l'aperçu mais
   **absente du MP4 exporté** ; emplacement prévu pour brancher une voix API (buffer
   mixable) dans `tts.ts`.
+  - ⚠️ **Bruitages déclenchés DEPUIS la boucle de lecture** (`StudioPreview`), pas
+    planifiés d'un coup à l'avance : un `while` dans le rAF joue `playSfx()` pile
+    quand la lecture atteint chaque marqueur, avec `actx.currentTime` **vivant**.
+    Raison : la planification en amont (à `currentTime+0.05`) était **avalée** quand
+    le contexte était encore suspendu/à peine réveillé au moment du Play (surtout
+    iOS) → seuls les bruitages restaient muets alors que musique (`<audio>`) et voix
+    (SpeechSynthesis, hors Web Audio) marchaient. Vaut pour cinématique (`sfxMarkers`)
+    ET présentation (`presSfxMarkers`). L'export (`export.ts`) garde la planification
+    en amont (le contexte y tourne déjà pendant la capture temps réel).
   - **Musique réglable** (`AudioCfg.musicStart`/`musicFrom`/`musicTo`) : `musicStart`
     = départ DANS le morceau (quelle partie jouer), `musicFrom`/`musicTo` = fenêtre
     de lecture DANS la vidéo (0 = jusqu'à la fin). `musicGain()` (volume+fenêtre+

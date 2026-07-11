@@ -5,7 +5,8 @@ import { PROP_ZOOM, fmtSize } from '../../lib/studio/types'
 import { evalFrame } from '../../lib/studio/timeline'
 import { evalPresentation, presProsody, presSfxMarkers, segProps, segmentLine } from '../../lib/studio/presentation'
 import { avatarRect, drawBackground, drawEmptyBackground, presAvatarRect, renderOverlay, renderPresentation } from '../../lib/studio/render'
-import { musicGain, scheduleMarkers, scheduleSfx, sharedCtx, syncMusicPlayback } from '../../lib/studio/audio'
+import { musicGain, playSfx, sfxMarkers, sharedCtx, syncMusicPlayback } from '../../lib/studio/audio'
+import type { SfxMarker } from '../../lib/studio/audio'
 import { voiceLineFor } from '../../lib/studio/script'
 import { speak, stopTTS, warmTTS } from '../../lib/studio/tts'
 
@@ -353,11 +354,18 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
     // Audio : SFX (Web Audio) + voix (TTS) + musique, calés sur la timeline.
     const actx = sharedCtx()
     const ttsTimers: number[] = []
-    if (actx && p.mode !== 'presentation') scheduleSfx(actx, p, actx.currentTime + 0.05, startOffset, actx.destination, 1)
-    // Présentation : bruitages placés sur les diapos (positionnés dans le temps).
-    if (actx && p.mode === 'presentation' && p.audio.sfx) {
-      scheduleMarkers(actx, presSfxMarkers(p), actx.currentTime + 0.05, startOffset, actx.destination, p.audio.sfxVolume)
-    }
+    // ⚠️ Les bruitages sont déclenchés DEPUIS la boucle de lecture (horloge audio
+    // vive), pas planifiés d'un coup à l'avance : sinon, si le contexte est encore
+    // suspendu/à peine réveillé au moment du Play (surtout iOS), les sons planifiés
+    // sont avalés → on n'entend rien. Ici chaque bruitage est joué pile quand la
+    // lecture atteint son instant, avec le contexte réellement en marche.
+    const sfxOn = !!p.audio.sfx
+    const sfxVol = p.audio.sfxVolume ?? 1
+    const markers: SfxMarker[] = sfxOn
+      ? (p.mode === 'presentation' ? presSfxMarkers(p) : sfxMarkers(p)).slice().sort((a, b) => a.time - b.time)
+      : []
+    let sfxIdx = 0
+    while (sfxIdx < markers.length && markers[sfxIdx].time < startOffset - 0.02) sfxIdx++
     if (p.audio.voice && p.mode === 'presentation') {
       // Voix off calée sur chaque segment (diapo), avec émotion (hauteur/débit
       // selon la pose et la ponctuation) pour un rendu plus vivant.
@@ -398,6 +406,13 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
         return
       }
       if (music && p.audio.musicUrl) syncMusicPlayback(music, p.audio, p.duration, t)
+      // Déclenche les bruitages dont l'instant vient de passer (horloge audio vive).
+      if (actx && sfxOn) {
+        while (sfxIdx < markers.length && markers[sfxIdx].time <= t) {
+          playSfx(actx, markers[sfxIdx].kind, actx.currentTime + 0.01, actx.destination, sfxVol)
+          sfxIdx++
+        }
+      }
       drawFrame(t)
       if (t - lastUi > 0.08) {
         lastUi = t
