@@ -316,6 +316,12 @@ pédagogique.
     export), indépendamment de cette case, sinon la décocher les rendait muets sans
     raison évidente (piège classique : « je n'entends que les bruitages manquer »).
     La boucle re-`resume()` aussi le contexte s'il n'est pas `running`.
+  - ⚠️ **`playSfxNow(kind, vol)`** (audio.ts) : joue un bruitage TOUT DE SUITE de
+    façon fiable → réveille le contexte et ne synthétise QU'UNE FOIS qu'il tourne
+    (`resume().then(...)`), sinon un son planifié sur une horloge encore gelée est
+    avalé. Utilisé par les boutons « Écouter » (🔊), qui jouent au **volume plein**
+    (min 0,9), indépendamment du curseur « Volume SFX » (un aperçu doit toujours
+    s'entendre, même si le mix est à 0).
   - **Musique réglable** (`AudioCfg.musicStart`/`musicFrom`/`musicTo`) : `musicStart`
     = départ DANS le morceau (quelle partie jouer), `musicFrom`/`musicTo` = fenêtre
     de lecture DANS la vidéo (0 = jusqu'à la fin). `musicGain()` (volume+fenêtre+

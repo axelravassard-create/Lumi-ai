@@ -78,6 +78,17 @@ export function unlockStudioAudio() {
   }
 }
 
+// Joue un bruitage TOUT DE SUITE de façon fiable : réveille le contexte et ne
+// synthétise qu'une fois qu'il tourne réellement (sinon, planifié sur une horloge
+// encore gelée, le son est avalé). Utilisé par les boutons « Écouter » (🔊).
+export function playSfxNow(kind: SfxKind, vol = 1) {
+  const ctx = sharedCtx()
+  if (!ctx) return
+  const go = () => playSfx(ctx, kind, ctx.currentTime + 0.03, ctx.destination, vol)
+  if (ctx.state === 'running') go()
+  else ctx.resume().then(go).catch(go)
+}
+
 // ── Synthèse d'un SFX à un instant `at` (temps du contexte) ──────────────────
 export function playSfx(ctx: AudioContext, kind: SfxKind, at: number, out: AudioNode, vol = 1) {
   const g = ctx.createGain()

@@ -7,7 +7,7 @@ import {
   presProsody, propPosOf, removeFxCue, removeSegment, removeSfxCue, segProps, segmentLine, setPropPos, sfxCuesForSegment,
   tierOf, toggleProp, updateFxCue, updateSegment, updateSfxCue,
 } from '../../lib/studio/presentation'
-import { playSfx, sharedCtx } from '../../lib/studio/audio'
+import { playSfxNow } from '../../lib/studio/audio'
 import { BEAT_META } from './Timeline'
 import { ANGLES, PLATFORMS, SOCIAL_2026, SOURCES_2026, generatePost, platform, type PlatformKey } from '../../lib/studio/social'
 import { aiReady, describeError, generateReelIdeas } from '../../lib/llm'
@@ -1035,7 +1035,7 @@ function SegmentCard({ project, onChange, seg, index, count, voices }: P & { seg
             />
             <span className="text-[11px] text-ink-400">s</span>
             <button onClick={() => onChange(updateSfxCue(project, cue.id, { at: cue.at + 0.25 }))} className="grid h-6 w-6 place-items-center rounded-md bg-ink-100 text-ink-600 hover:bg-ink-200">+</button>
-            <button onClick={() => { const c = sharedCtx(); if (c) playSfx(c, cue.kind, c.currentTime + 0.02, c.destination, project.audio.sfxVolume) }} title="Écouter" className="shrink-0 rounded-md border border-ink-200 px-1.5 py-1 text-xs text-ink-500 hover:border-brand-300 hover:text-brand-600">🔊</button>
+            <button onClick={() => playSfxNow(cue.kind, Math.max(0.9, project.audio.sfxVolume))} title="Écouter" className="shrink-0 rounded-md border border-ink-200 px-1.5 py-1 text-xs text-ink-500 hover:border-brand-300 hover:text-brand-600">🔊</button>
             <button onClick={() => onChange(removeSfxCue(project, cue.id))} title="Supprimer" className="shrink-0 px-1 text-xs text-red-400 hover:text-red-600">✕</button>
           </div>
         ))}
