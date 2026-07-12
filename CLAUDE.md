@@ -310,6 +310,12 @@ pédagogique.
     (SpeechSynthesis, hors Web Audio) marchaient. Vaut pour cinématique (`sfxMarkers`)
     ET présentation (`presSfxMarkers`). L'export (`export.ts`) garde la planification
     en amont (le contexte y tourne déjà pendant la capture temps réel).
+  - ⚠️ **La case « Effets sonores » (`audio.sfx`) ne pilote QUE les SFX AUTO de la
+    cinématique** (beats). Les **bruitages de présentation** sont placés
+    EXPLICITEMENT par l'utilisateur sur les diapos → **toujours joués** (aperçu ET
+    export), indépendamment de cette case, sinon la décocher les rendait muets sans
+    raison évidente (piège classique : « je n'entends que les bruitages manquer »).
+    La boucle re-`resume()` aussi le contexte s'il n'est pas `running`.
   - **Musique réglable** (`AudioCfg.musicStart`/`musicFrom`/`musicTo`) : `musicStart`
     = départ DANS le morceau (quelle partie jouer), `musicFrom`/`musicTo` = fenêtre
     de lecture DANS la vidéo (0 = jusqu'à la fin). `musicGain()` (volume+fenêtre+

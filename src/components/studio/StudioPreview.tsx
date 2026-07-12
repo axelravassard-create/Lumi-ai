@@ -353,17 +353,22 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
 
     // Audio : SFX (Web Audio) + voix (TTS) + musique, calés sur la timeline.
     const actx = sharedCtx()
+    if (actx && actx.state !== 'running') actx.resume().catch(() => {}) // réveille au cas où
     const ttsTimers: number[] = []
     // ⚠️ Les bruitages sont déclenchés DEPUIS la boucle de lecture (horloge audio
     // vive), pas planifiés d'un coup à l'avance : sinon, si le contexte est encore
     // suspendu/à peine réveillé au moment du Play (surtout iOS), les sons planifiés
     // sont avalés → on n'entend rien. Ici chaque bruitage est joué pile quand la
     // lecture atteint son instant, avec le contexte réellement en marche.
-    const sfxOn = !!p.audio.sfx
+    // ⚠️ En PRÉSENTATION, les bruitages sont placés EXPLICITEMENT par l'utilisateur
+    // sur les diapos → on les joue toujours (indépendamment de la case « Effets
+    // sonores » qui, elle, ne pilote que les SFX AUTOMATIQUES de la cinématique).
     const sfxVol = p.audio.sfxVolume ?? 1
-    const markers: SfxMarker[] = sfxOn
-      ? (p.mode === 'presentation' ? presSfxMarkers(p) : sfxMarkers(p)).slice().sort((a, b) => a.time - b.time)
-      : []
+    const markers: SfxMarker[] = (
+      p.mode === 'presentation' ? presSfxMarkers(p) : p.audio.sfx ? sfxMarkers(p) : []
+    )
+      .slice()
+      .sort((a, b) => a.time - b.time)
     let sfxIdx = 0
     while (sfxIdx < markers.length && markers[sfxIdx].time < startOffset - 0.02) sfxIdx++
     if (p.audio.voice && p.mode === 'presentation') {
@@ -407,7 +412,8 @@ export const StudioPreview = forwardRef<PreviewHandle, Props>(function StudioPre
       }
       if (music && p.audio.musicUrl) syncMusicPlayback(music, p.audio, p.duration, t)
       // Déclenche les bruitages dont l'instant vient de passer (horloge audio vive).
-      if (actx && sfxOn) {
+      if (actx && markers.length) {
+        if (actx.state !== 'running') actx.resume().catch(() => {})
         while (sfxIdx < markers.length && markers[sfxIdx].time <= t) {
           playSfx(actx, markers[sfxIdx].kind, actx.currentTime + 0.01, actx.destination, sfxVol)
           sfxIdx++

@@ -78,7 +78,9 @@ export async function exportClip(h: ExportHandle): Promise<Blob> {
       // sur les diapos (positionnés dans le temps par l'utilisateur).
       const when0 = actx.currentTime + 0.15
       if (project.mode === 'presentation') {
-        if (project.audio.sfx) scheduleMarkers(actx, presSfxMarkers(project), when0, 0, master, project.audio.sfxVolume)
+        // Bruitages placés explicitement sur les diapos → toujours inclus (la case
+        // « Effets sonores » ne pilote que les SFX auto de la cinématique).
+        scheduleMarkers(actx, presSfxMarkers(project), when0, 0, master, project.audio.sfxVolume)
       } else {
         scheduleSfx(actx, project, when0, 0, master, 1)
       }
