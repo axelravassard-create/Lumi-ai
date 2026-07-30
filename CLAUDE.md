@@ -341,18 +341,24 @@ pédagogique.
   700 ms via `saveProject`) + à `pagehide`/`visibilitychange` → aucun travail perdu
   au rechargement (seuls les MÉDIAS sont à ré-importer). Pastille « ✓ Enregistré /
   ⤳ Auto » dans l'en-tête ; `loadCurrent()` restaure au montage.
-- **Tournages viraux prêts à l'emploi** (`src/lib/studio/shoots.ts`) : 5 reels de
-  **présentation entièrement montés** (POV l'IA, 3 métiers, maçon vs IA, teste ton
-  métier, 1 jour 1 info) exploitant un MAX d'outils — poses expressives (dont
-  laugh/love/sad/afraid/angry), accessoires cumulés, fonds dégradés animés,
-  transitions, positions x/y/z, bruitages, effets d'écran (flash/shake/grayscale/
-  vignette), voix karaoké, évolution du palier blumi→blumiman→bluminator, tempo.
-  `seedViralShoots()` les installe dans la liste des projets ; **auto-seed au 1er
-  lancement** (studio vide) + bouton « 🎬 Générer des tournages viraux » dans
-  l'onglet Projets. ⚠️ Les **fonds sont des PNG data-URI** générés côté client
-  (`gradientPng`) → ils PERSISTENT (via `serializable` qui conserve les URL `data:`)
-  et ne « taintent » pas le canvas à l'export (contrairement aux images object-URL).
-  `fitPresentationToVoice` cale les durées sur la voix.
+- **Tournages viraux prêts à l'emploi** (`src/lib/studio/shoots.ts`) : 6 reels de
+  **présentation entièrement montés**, sujets liés à la mission (métiers face à l'IA)
+  traités comme du **contenu de valeur / curiosité pour déclencher le clic SANS
+  pitcher le site** (CTA d'engagement : commente / enregistre / abonne-toi — pas de
+  « teste sur Blumi »). Exploitent un MAX d'outils — poses expressives (dont
+  laugh/love/sad/afraid/angry), accessoires cumulés, transitions, positions x/y/z,
+  bruitages, effets d'écran (flash/shake/grayscale/vignette), voix karaoké, évolution
+  du palier blumi→blumiman→bluminator, tempo.
+  - **Fonds ATYPIQUES dessinés** (`paintScene`) : styles `tvstudio` (projecteurs +
+    sol de scène), `grid` (grille futuriste en perspective), `quote` (mur de
+    citation), `spotlight`, `news` (bandeau LIVE + points), `gradient` — + un emoji
+    représentatif estompé. Peints en **PNG data-URI côté client** → ils PERSISTENT
+    (via `serializable` qui conserve les URL `data:`) et ne « taintent » pas le
+    canvas à l'export (contrairement aux images object-URL).
+  - `seedViralShoots()` (idempotent : remplace les tournages de même nom, pas de
+    doublon) les installe ; **auto-seed au 1er lancement** (studio vide) + bouton
+    « 🎬 Générer des tournages viraux » (onglet Projets). `fitPresentationToVoice`
+    cale les durées sur la voix.
 - **Idées à partir de l'actu IA** (onglet « Idées », `IdeasPanel` + `src/lib/studio/ideas.ts`
   + `generateReelIdeas` dans `llm.ts`) : Claude (Sonnet + `web_search_20260209`) cherche
   une **info IA récente** impactant un métier et en tire un concept de réel (info +
