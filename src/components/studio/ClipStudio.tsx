@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { BeatKind, Project } from '../../lib/studio/types'
-import { compactBeats, loadCurrent, newProject, normalizeDuration, saveProject } from '../../lib/studio/projects'
+import { compactBeats, listProjects, loadCurrent, newProject, normalizeDuration, saveProject } from '../../lib/studio/projects'
+import { hasSeededShoots, seedViralShoots } from '../../lib/studio/shoots'
 import { captureCover, downloadBlob, exportClip } from '../../lib/studio/export'
 import { warmTTS } from '../../lib/studio/tts'
 import { unlockStudioAudio } from '../../lib/studio/audio'
@@ -87,7 +88,15 @@ function PresentationStrip({ project, time, onSeek }: { project: Project; time: 
 export function ClipStudio({ onBack }: Props) {
   const [project, setProject] = useState<Project>(() => {
     const c = loadCurrent()
-    if (!c) return newProject()
+    if (!c) {
+      // Premier lancement (aucun projet) → on installe des tournages viraux prêts
+      // à l'emploi pour ne jamais partir d'un studio vide.
+      if (!listProjects().length && !hasSeededShoots()) {
+        const shoots = seedViralShoots()
+        if (shoots.length) return normalizeDuration(shoots[0])
+      }
+      return newProject()
+    }
     // Les médias (object-URLs) ne survivent pas à un rechargement : on repart propre.
     if (c.background && !c.background.url) c.background = null
     if (!c.audio.musicUrl) c.audio = { ...c.audio, musicName: '' }

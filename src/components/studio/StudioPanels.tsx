@@ -18,6 +18,7 @@ import { HOOKS, CTAS, PIVOTS, PRESETS } from '../../lib/studio/library'
 import { interpolate, riskEmoji, voiceLineFor } from '../../lib/studio/script'
 import { estimateSpeechSec, listVoices, speak } from '../../lib/studio/tts'
 import { deleteProject, duplicateProject, fitToVoice, listProjects, newProject, setBeatDur, setBeatStart } from '../../lib/studio/projects'
+import { seedViralShoots } from '../../lib/studio/shoots'
 import { Row, Section, Segmented, Slider } from './ui'
 
 type P = { project: Project; onChange: (p: Project) => void }
@@ -1228,6 +1229,15 @@ export function ProjectsPanel({ project, onChange, onSave }: P & { onSave: () =>
         <button onClick={() => onChange(newProject())} className="btn-ghost flex-1 !py-2 text-xs">➕ Nouveau</button>
         <button onClick={() => onChange(duplicateProject(project))} className="btn-ghost flex-1 !py-2 text-xs">⧉ Dupliquer</button>
       </div>
+      {/* Tournages viraux prêts à l'emploi : reels de présentation entièrement montés
+          (poses, accessoires, fonds, bruitages, effets d'écran, voix). */}
+      <button
+        onClick={() => { const s = seedViralShoots(); force((n) => n + 1); if (s[0]) onChange({ ...s[0] }) }}
+        className="w-full rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:from-brand-700 hover:to-brand-600"
+      >
+        🎬 Générer des tournages viraux
+      </button>
+      <p className="text-[11px] text-ink-400">Reels prêts à l’emploi : poses, accessoires, fonds, bruitages, effets d’écran &amp; voix. Ouvre-en un, écoute, puis exporte.</p>
       <div className="space-y-1.5">
         {projects.map((p) => (
           <div key={p.id} className={`flex items-center gap-2 rounded-xl border p-2 ${p.id === project.id ? 'border-brand-300 bg-brand-50' : 'border-ink-100'}`}>

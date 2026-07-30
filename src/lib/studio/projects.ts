@@ -159,12 +159,16 @@ export function normalizeDuration(p: Project): Project {
   return end === p.duration ? p : { ...p, duration: end }
 }
 
-// Retire les médias non sérialisables avant sauvegarde.
+// Retire les médias non sérialisables avant sauvegarde. On CONSERVE les URL
+// `data:` (ex. fonds dégradés générés par les « tournages viraux ») car ce sont
+// des chaînes persistables ; on ne retire que les object-URLs (`blob:`) éphémères.
+function keepUrl(u: string | undefined | null): string {
+  return u && u.startsWith('data:') ? u : ''
+}
 function serializable(p: Project): Project {
-  const bg = p.background ? { ...p.background, url: '' } : null
-  // Les fonds de présentation sont des object-URLs éphémères → non persistés.
-  const presentation = { ...p.presentation, backgrounds: p.presentation.backgrounds.map((b) => ({ ...b, url: '' })) }
-  return { ...p, background: bg, presentation, audio: { ...p.audio, musicUrl: '' } }
+  const bg = p.background ? { ...p.background, url: keepUrl(p.background.url) } : null
+  const presentation = { ...p.presentation, backgrounds: p.presentation.backgrounds.map((b) => ({ ...b, url: keepUrl(b.url) })) }
+  return { ...p, background: bg, presentation, audio: { ...p.audio, musicUrl: keepUrl(p.audio.musicUrl) } }
 }
 
 export function listProjects(): Project[] {
