@@ -341,14 +341,22 @@ pédagogique.
   700 ms via `saveProject`) + à `pagehide`/`visibilitychange` → aucun travail perdu
   au rechargement (seuls les MÉDIAS sont à ré-importer). Pastille « ✓ Enregistré /
   ⤳ Auto » dans l'en-tête ; `loadCurrent()` restaure au montage.
-- **Tournages viraux prêts à l'emploi** (`src/lib/studio/shoots.ts`) : 6 reels de
-  **présentation entièrement montés**, sujets liés à la mission (métiers face à l'IA)
-  traités comme du **contenu de valeur / curiosité pour déclencher le clic SANS
-  pitcher le site** (CTA d'engagement : commente / enregistre / abonne-toi — pas de
-  « teste sur Blumi »). Exploitent un MAX d'outils — poses expressives (dont
+- **Tournages viraux prêts à l'emploi** (`src/lib/studio/shoots.ts`) : 10 reels de
+  **présentation entièrement montés (~18-22 s)**, sujets liés à la mission (métiers
+  face à l'IA) traités comme du **contenu de valeur / curiosité pour déclencher le
+  clic SANS pitcher le site** (CTA d'engagement : commente / enregistre / abonne-toi
+  — pas de « teste sur Blumi »). Exploitent un MAX d'outils — poses expressives (dont
   laugh/love/sad/afraid/angry), accessoires cumulés, transitions, positions x/y/z,
   bruitages, effets d'écran (flash/shake/grayscale/vignette), voix karaoké, évolution
   du palier blumi→blumiman→bluminator, tempo.
+  - **Persona présentateur (attachement)** : un rituel récurrent encadre chaque sujet
+    (`ShootSpec.intro`/`outro`, `host` — `buildShoot` ajoute les segments) — intro
+    « Salut, c'est Blumi ! 👋 {hook} » (pose greet + micro) et sortie chaleureuse
+    « … Abonne-toi, à demain ! 💙 » (pose love + cœur) → Blumi devient un vrai
+    présentateur reconnaissable. `host: false` pour les sketchs (ex. le maçon).
+  - ⚠️ Fonds en **JPEG data-URI** (`toDataURL('image/jpeg', 0.72)`, pas PNG) : lisses
+    et opaques → ~10× plus légers, indispensable pour tenir 10 tournages × 2 fonds
+    sous le quota localStorage (le PNG dépassait → seuls ~6 étaient enregistrés).
   - **Fonds ATYPIQUES dessinés** (`paintScene`) : styles `tvstudio` (projecteurs +
     sol de scène), `grid` (grille futuriste en perspective), `quote` (mur de
     citation), `spotlight`, `news` (bandeau LIVE + points), `gradient` — + un emoji
