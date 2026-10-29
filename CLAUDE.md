@@ -267,9 +267,10 @@ pédagogique.
   endroit à compléter (nom éditeur, SIRET…). `status` ∈ `particulier|micro|societe`
   → les mentions s'adaptent. **Statut actuel : `micro`** (micro-entreprise créée ;
   éditeur Axel Ravassard, adresse 16 bis Avenue des Monts d'Or, 69890 La
-  Tour-de-Salvagny). ⚠️ **Reste à renseigner : le `siret`** (14 chiffres) — tant
-  qu'il est `undefined`, `LegalScreen` masque la ligne SIRET, mais il est
-  OBLIGATOIRE pour une micro-entreprise.
+  Tour-de-Salvagny). ✅ `siret` renseigné (`10675480700019`), contact
+  `contact.getblumi@gmail.com`.
+- **État prod vérifié (29/10/2026)** sur www.getblumi.com : clé IA serveur active,
+  Stripe actif, comptes actifs (KV configuré), dernière version déployée.
 - **Polices auto-hébergées** via `@fontsource/inter` + `@fontsource-variable/plus-jakarta-sans`
   (plus de requête Google Fonts). Famille display = `Plus Jakarta Sans Variable`.
 - `LICENSE` propriétaire ("UNLICENSED" dans package.json).
