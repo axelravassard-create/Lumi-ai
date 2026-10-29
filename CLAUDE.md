@@ -344,6 +344,12 @@ d'URL réinitialise les données utilisateur.
   bouton **Visit** du bon projet Vercel (éviter les URLs devinées), et au besoin
   **Redeploy sans cache**. `vercel.json` fige le framework Vite + dossier `dist`.
 - Toujours **builder** (`npm run build`) avant de pousser.
+- **Anti « écran blanc » après redéploiement** : un onglet ouvert sur l'ancienne version
+  peut réclamer un fichier `assets/*` disparu. (1) `vercel.json` exclut `assets/` du
+  rewrite SPA (`/((?!api/|assets/).*)`) → vrai 404 au lieu d'index.html ; (2) `main.tsx`
+  écoute `vite:preloadError` → **recharge 1 fois** (drapeau sessionStorage
+  `lumi.reloaded_after_update`, réarmé après 10 s) ; (3) `AppErrorBoundary` enveloppe
+  `<App/>` → message + bouton « Recharger » (`err.*`, 5 langues) au lieu d'un écran blanc.
 
 ## Préférences utilisateur notées
 - Veut des effets **dans le cadre** (pas d'éléments coupés au bord).
