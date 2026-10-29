@@ -238,6 +238,19 @@ pédagogique.
   `RESEND_API_KEY`, `EMAIL_FROM` (expéditeur vérifié), `STRIPE_WEBHOOK_SECRET`,
   `APP_URL` (optionnel). ⚠️ logique non testable tant que KV/Resend absents.
 
+## Espace entreprise (B2B) — `src/components/BlumiWorkspace.tsx` (route cachée `#/workspace`)
+- Maquette **fonctionnelle** du futur tableau de bord SaaS (données de démo simulées
+  « en direct », aucun appel réseau). Fichier **autonome** (seulement `react` +
+  `lucide-react`), primitives style shadcn/ui définies dans le fichier.
+- Direction « Soft Tech / Warm Professional » : neutres chauds `stone`, accent `brand`
+  (azur) avec parcimonie, couleurs sémantiques réservées aux statuts. Police **Inter**
+  (`font-inter`, `@fontsource/inter` importé dans le composant).
+- Thème clair/sombre : `tailwind.config.js` est en **`darkMode: 'class'`** ; le composant
+  pose `dark` sur sa racine (préférence `localStorage` `lumi.workspace.theme`, sinon
+  système). Le reste de l'app n'utilise pas `dark:`.
+- Chargé en `lazy()` dans `App.tsx` (chunk séparé) ; FAB du chat masqué sur cette vue.
+- ⚠️ Textes en **français uniquement** (hors i18n, sauf le titre d'onglet `title.workspace`).
+
 ## Profil — `src/components/ProfileScreen.tsx` / `src/lib/profile.ts`
 - Profil carrière en `localStorage` (`yourcareer.profile`). Jauge de complétude.
 - Import de CV (lu par Claude). Bouton **« Supprimer toutes mes données »**

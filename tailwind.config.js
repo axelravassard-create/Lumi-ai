@@ -1,11 +1,16 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  // Mode sombre piloté par une classe `dark` sur un ancêtre (utilisé par
+  // l'espace entreprise, qui a son propre bouton clair/sombre).
+  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
         sans: ['"Manrope Variable"', 'Manrope', 'system-ui', 'sans-serif'],
         display: ['"Sora Variable"', 'Sora', '"Manrope Variable"', 'sans-serif'],
+        // Espace entreprise (B2B) : Inter, très lisible pour les données.
+        inter: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       colors: {
         ink: {
