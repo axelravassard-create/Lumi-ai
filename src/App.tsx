@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Analytics } from '@vercel/analytics/react'
 import { analyze, applyProfileAdjustment, Analysis } from './lib/engine'
 import { aiReady, checkServerKey, ComparisonResult } from './lib/llm'
@@ -28,7 +28,10 @@ import { completeLoginFromUrl, checkAccount } from './lib/account'
 import { AccountModal } from './components/AccountModal'
 import { installAudioUnlock } from './lib/sfx'
 
-type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier' | 'legal' | 'plan' | 'toolbox' | 'veille' | 'generators' | 'studio'
+// Espace entreprise (B2B) : chargé à la demande pour ne pas alourdir le site public.
+const BlumiWorkspace = lazy(() => import('./components/BlumiWorkspace'))
+
+type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier' | 'legal' | 'plan' | 'toolbox' | 'veille' | 'generators' | 'studio' | 'workspace'
 
 const ANALYSIS_STEPS = [
   'Identification du métier…',
@@ -102,6 +105,7 @@ export default function App() {
       veille: t('title.veille'),
       generators: t('title.generators'),
       studio: t('title.studio'),
+      workspace: t('title.workspace'),
     }
     document.title = titles[view] || 'Blumi'
   }, [view, lang])
@@ -141,6 +145,9 @@ export default function App() {
         window.scrollTo({ top: 0 })
       } else if (h === '#/studio') {
         setView('studio')
+        window.scrollTo({ top: 0 })
+      } else if (h === '#/workspace') {
+        setView('workspace')
         window.scrollTo({ top: 0 })
       } else if (h.startsWith('#/legal/')) {
         const d = h.slice('#/legal/'.length)
@@ -269,6 +276,12 @@ export default function App() {
 
       {view === 'studio' && <StudioScene onBack={goHome} />}
 
+      {view === 'workspace' && (
+        <Suspense fallback={<div className="min-h-screen bg-stone-50" />}>
+          <BlumiWorkspace onBack={goHome} />
+        </Suspense>
+      )}
+
       {view === 'directory' && (
         <MetiersDirectory onBack={goHome} onOpenMetier={(id) => { window.location.hash = '/metier/' + id }} />
       )}
@@ -327,7 +340,7 @@ export default function App() {
       {accountOpen && <AccountModal onClose={() => setAccountOpen(false)} />}
 
       {/* Bouton flottant : discuter avec Luminator (une fois l'offre acquise). */}
-      {ownsLuminator && !chatOpen && view !== 'analyzing' && view !== 'studio' && view !== 'legal' && (
+      {ownsLuminator && !chatOpen && view !== 'analyzing' && view !== 'studio' && view !== 'workspace' && view !== 'legal' && (
         <button
           onClick={() => openChat()}
           aria-label={`Discuter avec ${brandName()}`}
