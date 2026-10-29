@@ -238,6 +238,21 @@ pédagogique.
   `RESEND_API_KEY`, `EMAIL_FROM` (expéditeur vérifié), `STRIPE_WEBHOOK_SECRET`,
   `APP_URL` (optionnel). ⚠️ logique non testable tant que KV/Resend absents.
 
+## Nouvel accueil « Editorial & Trust » — `src/components/EditorialHome.tsx` (aperçu `#/accueil-v2`)
+- Refonte demandée : **aucun code visuel IA** (pas de dégradé fluo, pas de thème
+  cyber, **pas de robot**). Direction retenue : **Editorial & Trust** (NYT / Stripe).
+  Papier crème `paper` (#faf8f3), encre `navy-700` (#1e3a5f) comme **unique accent**,
+  titres **Instrument Serif** (`font-editorial`, `@fontsource/instrument-serif`),
+  texte Inter, filets `stone-200`, bento strict (`gap-px` sur fond `stone-200`).
+  Icônes lucide « bureau / artisanat » (compas, règle, dossiers, presse, archive).
+- **Branché sur le vrai moteur** : recherche avec autocomplétion (`PROFESSIONS`,
+  combobox ARIA) → `onAnalyze` ; fiche exemple et 7 facteurs calculés par `analyze()` ;
+  comparateur → `onCompare`. Chargé en `lazy()` (~10 Ko gzip, **sans three.js**).
+- ⚠️ Pas encore l'accueil par défaut (`landing` inchangé) : à basculer sur décision.
+  ⚠️ Textes **FR uniquement** : les données du moteur suivent la langue détectée →
+  à traduire (i18n) avant de remplacer l'accueil, sinon mélange FR/EN pour l'étranger.
+  Libellés d'exposition accordés au féminin localement (`EXPOSURE_LABEL`).
+
 ## Espace entreprise (B2B) — `src/components/BlumiWorkspace.tsx` (route cachée `#/workspace`)
 - Maquette **fonctionnelle** du futur tableau de bord SaaS (données de démo simulées
   « en direct », aucun appel réseau). Fichier **autonome** (seulement `react` +

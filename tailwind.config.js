@@ -11,8 +11,21 @@ export default {
         display: ['"Sora Variable"', 'Sora', '"Manrope Variable"', 'sans-serif'],
         // Espace entreprise (B2B) : Inter, très lisible pour les données.
         inter: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        // Accueil « Editorial & Trust » : serif de titrage institutionnelle.
+        editorial: ['"Instrument Serif"', 'Georgia', 'Cambria', 'serif'],
       },
       colors: {
+        // Accueil « Editorial & Trust » : papier crème + encre bleu marine.
+        paper: '#faf8f3',
+        navy: {
+          50: '#eef2f7',
+          100: '#dce4ee',
+          200: '#b9c8db',
+          600: '#2a4a73',
+          700: '#1e3a5f',
+          800: '#172d4a',
+          900: '#10203a',
+        },
         ink: {
           50: '#f6f7fb',
           100: '#eceef6',

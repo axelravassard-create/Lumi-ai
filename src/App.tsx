@@ -30,8 +30,10 @@ import { installAudioUnlock } from './lib/sfx'
 
 // Espace entreprise (B2B) : chargé à la demande pour ne pas alourdir le site public.
 const BlumiWorkspace = lazy(() => import('./components/BlumiWorkspace'))
+// Nouvel accueil « Editorial & Trust » (aperçu sur #/accueil-v2), chargé à la demande.
+const EditorialHome = lazy(() => import('./components/EditorialHome'))
 
-type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier' | 'legal' | 'plan' | 'toolbox' | 'veille' | 'generators' | 'studio' | 'workspace'
+type View = 'landing' | 'analyzing' | 'dashboard' | 'compare' | 'profile' | 'pricing' | 'directory' | 'metier' | 'legal' | 'plan' | 'toolbox' | 'veille' | 'generators' | 'studio' | 'workspace' | 'home2'
 
 const ANALYSIS_STEPS = [
   'Identification du métier…',
@@ -106,6 +108,7 @@ export default function App() {
       generators: t('title.generators'),
       studio: t('title.studio'),
       workspace: t('title.workspace'),
+      home2: 'Blumi',
     }
     document.title = titles[view] || 'Blumi'
   }, [view, lang])
@@ -148,6 +151,9 @@ export default function App() {
         window.scrollTo({ top: 0 })
       } else if (h === '#/workspace') {
         setView('workspace')
+        window.scrollTo({ top: 0 })
+      } else if (h === '#/accueil-v2') {
+        setView('home2')
         window.scrollTo({ top: 0 })
       } else if (h.startsWith('#/legal/')) {
         const d = h.slice('#/legal/'.length)
@@ -279,6 +285,17 @@ export default function App() {
       {view === 'workspace' && (
         <Suspense fallback={<div className="min-h-screen bg-stone-50" />}>
           <BlumiWorkspace onBack={goHome} />
+        </Suspense>
+      )}
+
+      {view === 'home2' && (
+        <Suspense fallback={<div className="min-h-screen bg-paper" />}>
+          <EditorialHome
+            onAnalyze={(label) => { window.location.hash = ''; handleAnalyze(label) }}
+            onCompare={(a, b) => { window.location.hash = ''; handleCompare(a, b) }}
+            onOpenPricing={() => { window.location.hash = ''; setView('pricing'); window.scrollTo({ top: 0 }) }}
+            onOpenDirectory={() => { window.location.hash = '/metiers' }}
+          />
         </Suspense>
       )}
 
